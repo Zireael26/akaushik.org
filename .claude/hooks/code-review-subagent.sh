@@ -29,6 +29,23 @@
 #     the log. Reviewer input is a JSON envelope {diff, autonomy_level,
 #     decisions_log}; lower levels receive an empty decisions_log string.
 #     The reviewer's output schema (findings array) is unchanged.
+#
+# Reviewer-prompt guidance (Opus 4.8): the dispatched reviewer's job at this
+# stage is COVERAGE, not filtering. Opus 4.8 follows "only report high-severity"
+# instructions more faithfully than older models — told to be conservative it
+# investigates just as deeply but converts fewer investigations into reported
+# findings, silently dropping low-severity bugs it judges below the bar (recall
+# falls even as precision rises). This hook is ALREADY the filter: severity ==
+# "critical" blocks, everything else is advisory. So whoever wires the
+# project-local $REVIEWER MUST prompt it to report every issue it finds —
+# including low-confidence and low-severity ones — and attach `severity` plus an
+# optional `confidence` (0.0–1.0) per finding, rather than self-filtering for
+# importance. The block/advisory split here does the ranking. Concretely, the
+# reviewer prompt should say something like: "Report every issue you find,
+# including ones you are uncertain about or consider low-severity. Do not filter
+# for importance or confidence — the hook does that. For each finding include a
+# confidence level and estimated severity." `confidence` is back-compat:
+# absent ⇒ treat as 1.0; the hook does not key off it today.
 
 set -u
 
