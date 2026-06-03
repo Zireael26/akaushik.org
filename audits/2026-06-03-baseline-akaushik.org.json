@@ -1,0 +1,134 @@
+{
+  "schema": "security-gate.baseline.v1",
+  "project": "akaushik.org",
+  "profile": "web-next",
+  "generated_at": "2026-06-03T05:30:03Z",
+  "tools": {
+    "semgrep": "1.164.0",
+    "osv-scanner": "2.3.8",
+    "gitleaks": "8.30.1"
+  },
+  "llm": {
+    "provider": "none",
+    "model": "",
+    "triage_used": false
+  },
+  "findings": [
+    {
+      "id": "semgrep-0001",
+      "tool": "semgrep",
+      "rule": "javascript.browser.security.wildcard-postmessage-configuration.wildcard-postmessage-configuration",
+      "severity": "medium",
+      "file": "_reference/portfolio/tweaks.js",
+      "line": 57,
+      "message": "The target origin of the window.postMessage() API is set to \"*\". This could allow for information disclosure due to the possibility of any origin allowed to receive the message.",
+      "triage": "no-llm-pass",
+      "triage_reason": "triage skipped",
+      "exploit_steps": "",
+      "suggested_fix": ""
+    },
+    {
+      "id": "semgrep-0002",
+      "tool": "semgrep",
+      "rule": "javascript.browser.security.wildcard-postmessage-configuration.wildcard-postmessage-configuration",
+      "severity": "medium",
+      "file": "_reference/portfolio/tweaks.js",
+      "line": 68,
+      "message": "The target origin of the window.postMessage() API is set to \"*\". This could allow for information disclosure due to the possibility of any origin allowed to receive the message.",
+      "triage": "no-llm-pass",
+      "triage_reason": "triage skipped",
+      "exploit_steps": "",
+      "suggested_fix": ""
+    },
+    {
+      "id": "semgrep-0003",
+      "tool": "semgrep",
+      "rule": "javascript.browser.security.wildcard-postmessage-configuration.wildcard-postmessage-configuration",
+      "severity": "medium",
+      "file": "_reference/portfolio/tweaks.js",
+      "line": 75,
+      "message": "The target origin of the window.postMessage() API is set to \"*\". This could allow for information disclosure due to the possibility of any origin allowed to receive the message.",
+      "triage": "no-llm-pass",
+      "triage_reason": "triage skipped",
+      "exploit_steps": "",
+      "suggested_fix": ""
+    },
+    {
+      "id": "semgrep-0004",
+      "tool": "semgrep",
+      "rule": "javascript.browser.security.wildcard-postmessage-configuration.wildcard-postmessage-configuration",
+      "severity": "medium",
+      "file": "components/dev/TweakBridge.tsx",
+      "line": 112,
+      "message": "The target origin of the window.postMessage() API is set to \"*\". This could allow for information disclosure due to the possibility of any origin allowed to receive the message.",
+      "triage": "no-llm-pass",
+      "triage_reason": "triage skipped",
+      "exploit_steps": "",
+      "suggested_fix": ""
+    },
+    {
+      "id": "semgrep-0005",
+      "tool": "semgrep",
+      "rule": "javascript.browser.security.wildcard-postmessage-configuration.wildcard-postmessage-configuration",
+      "severity": "medium",
+      "file": "components/dev/TweakBridge.tsx",
+      "line": 145,
+      "message": "The target origin of the window.postMessage() API is set to \"*\". This could allow for information disclosure due to the possibility of any origin allowed to receive the message.",
+      "triage": "no-llm-pass",
+      "triage_reason": "triage skipped",
+      "exploit_steps": "",
+      "suggested_fix": ""
+    },
+    {
+      "id": "semgrep-0006",
+      "tool": "semgrep",
+      "rule": "javascript.browser.security.wildcard-postmessage-configuration.wildcard-postmessage-configuration",
+      "severity": "medium",
+      "file": "components/dev/TweakBridge.tsx",
+      "line": 157,
+      "message": "The target origin of the window.postMessage() API is set to \"*\". This could allow for information disclosure due to the possibility of any origin allowed to receive the message.",
+      "triage": "no-llm-pass",
+      "triage_reason": "triage skipped",
+      "exploit_steps": "",
+      "suggested_fix": ""
+    },
+    {
+      "id": "osv-0001",
+      "tool": "osv",
+      "rule": "GHSA-jxxr-4gwj-5jf2",
+      "severity": "medium",
+      "file": "pnpm-lock.yaml",
+      "line": 0,
+      "message": "brace-expansion@5.0.5 (npm) \u2014 brace-expansion: Large numeric range defeats documented `max` DoS protection",
+      "triage": "no-llm-pass",
+      "triage_reason": "triage skipped",
+      "exploit_steps": "",
+      "suggested_fix": ""
+    },
+    {
+      "id": "osv-0002",
+      "tool": "osv",
+      "rule": "GHSA-qx2v-qp2m-jg93",
+      "severity": "medium",
+      "file": "pnpm-lock.yaml",
+      "line": 0,
+      "message": "postcss@8.4.31 (npm) \u2014 PostCSS has XSS via Unescaped </style> in its CSS Stringify Output",
+      "triage": "no-llm-pass",
+      "triage_reason": "triage skipped",
+      "exploit_steps": "",
+      "suggested_fix": ""
+    }
+  ],
+  "summary": {
+    "total_raw": 8,
+    "kept": 0,
+    "dropped": 0,
+    "no_llm_pass": 8,
+    "by_severity": {
+      "critical": 0,
+      "high": 0,
+      "medium": 8,
+      "low": 0
+    }
+  }
+}
