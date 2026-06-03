@@ -1,0 +1,83 @@
+---
+title: "Trellis 1.0-rc: making the process enforce itself"
+dek: The last gap was not a missing rule. It was no guarantee the rules ran the same way in every harness, on every layer, on every project. Here is how I closed it.
+date: 2026-06-03
+---
+
+# Trellis 1.0-rc: making the process enforce itself
+
+> The last gap was not a missing rule. It was no guarantee the rules ran the same way in every harness, on every layer, on every project. Here is how I closed it.
+
+I have written about [Trellis](/writing/trellis) twice before. The first post laid out the shape: one control plane, project inheritance through symlinks, three tiers of hooks, a fleet of weekly audits. The second was a [gap analysis](/writing/best-practices-into-trellis) against Anthropic's large-codebase guide and the ten changes I shipped to close the gaps.
+
+This one is about a different kind of gap, and about tagging the first release candidate after I closed it.
+
+For a while Trellis had a quiet inconsistency at its center. The rules existed, the hooks existed, the merge gates existed, and every week the audits told me when one of them drifted. But if you had asked me to prove that a given rule was actually enforced for a given project, in whichever agent happened to be driving, at the moment it mattered, I could not have given you a straight answer. I could point you at the written rule, and probably at a hook for it somewhere. What I could not promise was that it bit the same way no matter which agent was driving or which project was on the receiving end.
+
+That is the gap the last few weeks of work closed. The result is feature-complete enough to call a release candidate, so I tagged `1.0.0-rc`.
+
+---
+
+## The enforcement matrix
+
+The clearest way to explain the work is as a grid.
+
+Down one axis are the three layers where enforcement can happen. **Skills** are the on-demand capabilities an agent loads to do a job the right way: the spec pipeline, the process gate, the builder skill that turns a plan into commits. **Hooks** are turn-level. They fire while the agent is working, before and after edits, and at the Stop boundary where "done" gets adjudicated. **Gates** are the git boundary: pre-commit, commit-msg, and the pre-push that decides whether a branch is allowed to leave the machine.
+
+Across the other axis are the two harnesses I actually run, Claude Code and Codex. They use different hook envelopes and different directory conventions, so the same policy has to exist twice, in two shapes, kept in lockstep.
+
+Six cells. The honest state a month ago was that some were solid, some were half-wired, and a couple were enforced in one harness but not the other. A rule that blocks an edit to an unread file might exist for Claude Code and be missing for Codex. A merge gate might run the full check suite under husky and a weaker version under native git hooks. None of these were dramatic holes. They were exactly the kind of small asymmetry an audit flags as drift and that you keep meaning to fix.
+
+The program I just finished was a systematic pass over every cell, thirteen phases, each one taking a single capability and making it identical across both harnesses and enforced at the right layer. Not new features. Closing the distance between a rule that exists and a rule that fires, in every cell of the grid.
+
+---
+
+## What actually shipped
+
+Four of the thirteen phases are worth describing, because they show where the cross-harness work actually bites.
+
+**The re-read guard.** A PreToolUse hook, `reread-guard`, that blocks an edit to any file the agent has not read in the current session. Agents edit stale files more than you would like: the file changed under them, or they are working from a mental model two turns out of date, and the edit lands on the wrong lines. The Claude Code version was the easy half. The phase was building the Codex mirror so the same block fires whichever agent is driving, and proving both behave the same.
+
+**The builder skill.** Trellis already had the spec pipeline for planning work. What it lacked was a single load-bearing skill for the build step itself, the one that turns an approved plan into commits without stepping outside the process. Making that skill canonical, and making it resolve identically in both harnesses, was its own phase.
+
+**The cross-harness merge gate.** The phase I care about most. The pre-push hook is the durable backstop I described in the first post, the thing that catches a problem even when every earlier layer was bypassed. What changed is that it stopped meaning three different things depending on how a project wired its hooks. Husky for the Node projects, native git hooks under `.githooks/` for the ones without a `package.json`, and a couple of clones, clusterbid-console among them, where the wiring had quietly drifted. The phase put all of it behind one canonical gate that runs the same process-gate check regardless of plumbing, plus a tool that re-points each project at it safely, skipping anything with a custom pre-push it does not recognize instead of stomping on it.
+
+**The doctor.** All of this needs something that can answer the question I could not answer a month ago, so the program leaned on the doctor, the two-tier health check I shipped back in 0.7 and pointed at the whole registry. Tier zero checks the control plane itself: on main, clean, synced with origin. If the source of truth is dirty, every project downstream is inheriting unversioned rules, so that check fails loud. Tier one then walks every registered project and verifies the inheritance end to end: rules resolve to canonical, the hook copies match, the settings wiring is present, the Codex parity artifacts exist, the pre-push points at the real gate.
+
+---
+
+## The part that was actually hard: rolling it out
+
+Building the capabilities was the bounded part. Landing them on seven projects that were all in mid-flight is where the schedule actually went.
+
+The clean version of a rollout assumes every project is a blank slate you can overwrite. Mine are not. Of the seven projects in the registry, five were not sitting on a clean main when I went to deploy. Four were on feature branches, one had a dirty main, and three of them carried uncommitted working-tree changes. Some had settings files with their own customizations, or hook configurations hand-tuned for a polyglot monorepo. You cannot drop a canonical settings file on top of that. You would erase the project's own additions, and on neev, which carries a hand-tuned module-boundary hook that exists nowhere else in the fleet, that erasure would be unrecoverable.
+
+So the rollout needed a merge, not a copy. The settings reconciliation reads the canonical hook wiring, applies it, then re-appends any hook entry the project added that the canonical set does not have. The project's customizations survive and the baseline lands on top. Run it twice and the second pass changes nothing. When I deployed to neev, its module-boundary hook came through untouched, sitting alongside the four new canonical entries, which is the one case where a wrong merge would have cost real work.
+
+I learned to distrust my own tests here. Every piece of the merge had unit coverage against fixtures, and all of it was green. But a settings file that is structurally valid is not the same as a settings file a real agent will load without complaint. The check that actually mattered was deploying to one real project, then starting a real agent session in it and confirming the merged configuration loaded and the turn completed. I ran one project as a canary, confirmed it end to end including a live session, and only then fanned out to the rest.
+
+For the projects with active work in progress, the rule was strict. Stage only the infrastructure paths, diff the staged set before committing to confirm not one line of feature work crept in, commit locally, and never push. The enforcement infrastructure lands without touching the project's own branch. Whoever owns that branch finds the hooks updated and their feature work exactly where they left it.
+
+---
+
+## What I got wrong along the way
+
+Three things worth saying out loud, in the spirit of receipts over self-congratulation.
+
+A test that passes is not the same as a thing that works. I shipped a rollout tool whose tests were green while the tool itself had a logic error that only surfaced on a real merge. The tests were asserting against the shape I assumed the behavior would have, not the behavior. The fix was not the bug. It was rewriting the tests to check what the tool actually did to a real settings file.
+
+The second one cost me a red main branch. I let a pull request merge automatically, on the assumption that branch protection would hold it until the checks passed. It merged immediately, red, because the protection had no required status checks configured. The automation did exactly what I told it to, which was nothing. Now I merge by hand after confirming green, and adding required checks is on the list.
+
+The third was portability. A shell idiom that works on the macOS system bash, version 3.2, is a hard error on the bash 5 that the cross-platform check runs under. One harmless-looking array expression, repeated across eleven scripts, turned the whole fleet's check suite red the moment it ran somewhere other than my laptop.
+
+---
+
+## What "release candidate" means here, and what it does not
+
+The matrix is complete. Every cell is enforced, in both harnesses, at the right layer. The doctor reports green across all seven projects and the canonical control plane. The rollout tooling has been run against every project in the registry, and the public template carries the same code the private control plane runs.
+
+That is enough to call a candidate. It is not enough to call it 1.0.
+
+A release candidate buys soak time. Enforcement code looks correct right up until the day it blocks something it should have allowed, or waves through something it should have caught, on a project shape I did not test against. Surfacing exactly that, week after week, is the whole point of the audit fleet. So `1.0.0-rc` goes out, the audits keep running, and 1.0 is what I tag when a few weeks of real use across all seven projects produce no enforcement surprise the matrix did not predict.
+
+The template is public and forkable at [github.com/Zireael26/trellis](https://github.com/Zireael26/trellis). If you run Claude Code or Codex at any scale, the question the last month answered for me is worth asking about your own setup. Not "do I have a rule for this," but "is that rule actually enforced, the same way, everywhere it claims to be." Writing that answer down honestly was most of the work. I will know in a few weeks of audits whether I got the rest right.
