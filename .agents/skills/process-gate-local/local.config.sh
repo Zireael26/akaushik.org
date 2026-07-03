@@ -5,6 +5,7 @@
 #  Local config lives alongside in process-gate-local/.)
 
 PROCESS_GATE_STACK_PROFILE="web-next"
+PROCESS_GATE_CHANGELOG_FILE="docs/CHANGELOG.md"
 
 # Test commands — adjust to match your project. Auto-detected if blank.
 PROCESS_GATE_TYPECHECK_CMD=""
