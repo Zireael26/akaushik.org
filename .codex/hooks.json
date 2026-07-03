@@ -106,6 +106,12 @@
           },
           {
             "type": "command",
+            "command": "${CODEX_PROJECT_DIR:-${CLAUDE_PROJECT_DIR:-$PWD}}/.codex/hooks/propose-rules.sh",
+            "timeout": 60,
+            "statusMessage": "Proposing rules..."
+          },
+          {
+            "type": "command",
             "command": "${CODEX_PROJECT_DIR:-${CLAUDE_PROJECT_DIR:-$PWD}}/.codex/hooks/ui-verify.sh",
             "timeout": 120,
             "statusMessage": "UI verification..."
