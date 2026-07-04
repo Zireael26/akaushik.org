@@ -14,6 +14,7 @@ build/
 .DS_Store
 *.pem
 Thumbs.db
+/_tmp_*
 
 # debug
 npm-debug.log*
@@ -115,8 +116,17 @@ coverage/
 .agents/commands/autonomy.md
 
 # --- Trellis per-session state (autonomy slider) ---
-# Single-integer file written by /autonomy N slash command. Per-developer,
-# per-session — NOT shared across machines. See core-rules/autonomy.md.
+# Per-developer, per-session state written by Trellis commands and hooks.
+# NOT shared across machines. See core-rules/autonomy.md and hooks.md.
 .claude/session-autonomy
+.claude/.fail-counter
+.codex/.fail-counter
+.claude/.reread-state/
+.codex/.reread-state/
+.claude/.review-done-*
+.codex/.review-done-*
+.claude/screenshots/
+.codex/screenshots/
+.claude/scheduled_tasks.lock
 # --- end Trellis per-session state ---
 # --- end Trellis fragment ---
