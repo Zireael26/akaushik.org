@@ -1,10 +1,10 @@
 import { ImageResponse } from 'next/og';
 
 // Home-page OG image. Parchment background + forest-accent tagline A,
-// rendered at 1200×630 (Open Graph default). Edge runtime for fast
-// regeneration when frontmatter or copy changes.
+// rendered at 1200×630 (Open Graph default). Node runtime matches the dynamic
+// OG routes and avoids the Next edge/static-generation warning during builds.
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 export const alt = 'Abhishek Kaushik — AI systems for businesses that haven\'t met AI yet';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';

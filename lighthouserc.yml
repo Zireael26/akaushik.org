@@ -6,9 +6,8 @@
 # BP ≥ 0.95 / SEO 1.0. PR-3 of the gap-analysis plan promotes the
 # assertions that current measurements clear to `error` severity, leaving
 # the rest at `warn`. The bundle-budget assertion stays at `warn` because
-# the post-Phase-5 measurement (377 KiB) exceeds the 200 KiB target; a
-# follow-up perf PR brings it back down toward 150 KiB. See
-# docs/BUNDLE_BUDGET.md + docs/bundle-snapshots/2026-05-19-bundle.md.
+# the post-ADR-0012 measurement remains above the 150 KiB aspiration. See
+# docs/BUNDLE_BUDGET.md + docs/bundle-snapshots/2026-07-04-bundle.md.
 
 ci:
   collect:
@@ -27,11 +26,10 @@ ci:
       categories:best-practices: ['error', { minScore: 0.95 }]
       categories:seo: ['warn', { minScore: 0.9 }]
 
-      # Initial-JS budget. Aspirational 150 KiB; current measurement
-      # 386 KiB (377 KiB). 400 KiB warn ceiling suppresses per-PR noise
-      # without erasing the obligation — the follow-up perf/budget-overrun
-      # ROADMAP item tracks the reduction back toward 150 KiB. Promote to
-      # error only after the next measurement clears 200 KiB.
+      # Initial-JS budget. Aspirational 150 KiB; 2026-07-04 local audit
+      # measured ~299 KiB. 400 KiB warn ceiling suppresses per-PR noise
+      # without erasing the obligation. Promote to error only after the
+      # measurement clears 200 KiB.
       resource-summary:script:size:
         - 'warn'
         - maxNumericValue: 409600 # 400 KiB

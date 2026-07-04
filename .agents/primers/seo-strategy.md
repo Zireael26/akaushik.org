@@ -1,0 +1,1 @@
+../../.claude/primers/seo-strategy.md

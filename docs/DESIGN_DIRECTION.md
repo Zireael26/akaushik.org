@@ -43,7 +43,7 @@ Lean on editorial design conventions — serif for a carefully chosen hero or pu
 
 The visual motif is **nodes, edges, and flowing information.** It appears in three places, and only three:
 
-1. **The hero** — a live react-three-fiber scene with a small number of agents-as-nodes and information flowing along edges.
+1. **The hero** — a live raw-Three.js scene with a small number of agents-as-nodes and information flowing along edges.
 2. **Case study intros** — each case study gets a HyperFrames-rendered motion reel that reuses the same node-and-edge vocabulary, tuned to that project's palette.
 3. **Section dividers and the section-header micro-graphic** — a still variant of the same language, flat and small.
 
@@ -81,7 +81,7 @@ This is the opposite of the dark-mode-electric-blue AI-portfolio cliché. Warm n
 - **Base dark:** a deep neutral slate around `#121417` — not pure black, not blue.
 - **Ink:** a near-black with warmth, e.g. `#1A1A1E` on light; warm off-white on dark.
 - **Primary accent (brand signal):** a single considered hue — candidates: Neev's `#13423d` deep forest (ties the portfolio to Neev without being derivative), or a muted terracotta `#C44D2E`, or an opinionated golden-ochre. To be chosen after typography is locked.
-- **Motion accent (used only in r3f/reel nodes):** a higher-chroma secondary that reads on both bases — tentatively a soft signal-green picked to harmonize with whichever primary we choose.
+- **Motion accent (used only in scene/reel nodes):** a higher-chroma secondary that reads on both bases — tentatively a soft signal-green picked to harmonize with whichever primary we choose.
 
 Principle: **one accent does the work.** Two accents starts looking like a template.
 
@@ -93,16 +93,16 @@ Dark mode is supported because the existing site does it and the technical audie
 
 ### 7.1 Global rules
 
-- Every animation has a definition of "done" (settles at rest; no infinite idle motion unless deliberately part of the r3f hero).
-- `prefers-reduced-motion: reduce` is respected everywhere; all reels become static posters, the r3f scene falls back to a still.
+- Every animation has a definition of "done" (settles at rest; no infinite idle motion unless deliberately part of the live Three.js hero).
+- `prefers-reduced-motion: reduce` is respected everywhere; all reels become static posters, the Three.js scene falls back to a still.
 - Layout-level transitions stay under 300ms. Section-entry animations stay under 600ms.
 - No parallax outside of a narrow, deliberate set of case-study hero beats.
 
 ### 7.2 The three motion pipelines
 
-- **react-three-fiber (live)** — the hero scene. Low-poly, soft lighting, node-edge-information language. Lightweight enough to ship with a performance budget (see §9). One idea executed well; not an environment to wander around in.
+- **raw Three.js (live)** — the hero scene. Low-poly, soft lighting, node-edge-information language. Lightweight enough to ship with a performance budget (see §9). One idea executed well; not an environment to wander around in.
 - **HyperFrames (pre-rendered reels)** — case-study intro loops and, optionally, writing-hero art. Served as `<video>` with a static poster; never block content paint. Use HyperFrames when determinism, cinematic quality, or a specific framing matters more than interactivity.
-- **Framer Motion / GSAP (micro-interactions)** — list-item reveals, nav state transitions, card hover states. Micro, not macro.
+- **CSS / platform motion (micro-interactions)** — list-item reveals, nav state transitions, card hover states. Micro, not macro. Add a runtime motion library only with an ADR.
 
 ### 7.3 Explicit motion no-nos
 
@@ -126,8 +126,8 @@ The site has a performance budget because a portfolio that brags about systems e
 - **LCP** < 2.5s on slow-4G.
 - **CLS** < 0.1.
 - **INP** < 200ms.
-- **JS on initial route** — aim for < 150KB gzipped excluding the r3f scene bundle, which is code-split and lazy-loaded.
-- **r3f hero** — streams in after first paint; static poster holds the space so there is no layout shift.
+- **JS on initial route** — aim for < 150KB gzipped; current raw-Three.js scene remains above that aspiration and is tracked in `docs/BUNDLE_BUDGET.md`.
+- **Three.js hero** — static SVG fallback holds the space so there is no layout shift; reduced-motion users keep the still surface.
 - **Fonts** — at most two variable fonts + one monospace, self-hosted, `font-display: swap`, preloaded for the above-the-fold weight only.
 - **Video reels** — AV1/H.265 where supported, with an H.264 fallback. `preload="metadata"`. Never autoplay with sound.
 - **Images** — Next.js `<Image>`, responsive `sizes`, AVIF/WebP, no unnecessary blur-up work.
@@ -136,11 +136,11 @@ The site has a performance budget because a portfolio that brags about systems e
 
 - WCAG 2.2 AA target, not aspirational.
 - Every color pair audited against its background; primary accent passes AA on both base modes.
-- Keyboard navigation works end-to-end, including closing modals and moving focus into/out of the r3f scene sensibly.
+- Keyboard navigation works end-to-end, including closing modals and moving focus around the Three.js scene sensibly.
 - Every decorative motion respects `prefers-reduced-motion: reduce`.
 - All videos have a visible static poster and a `<track>` fallback where spoken content exists.
 - Screen-reader landmarks match the visual IA; section headings are real headings.
-- The r3f scene has a non-visual description (for the curious screen-reader user) and does not trap focus.
+- The Three.js scene has a non-visual description (for the curious screen-reader user) and does not trap focus.
 
 ## 11. Iconography & imagery
 
@@ -161,7 +161,7 @@ The site has a performance budget because a portfolio that brags about systems e
 
 - **Q1. Primary accent hue.** Neev-forest for family resonance, terracotta for warmth, or golden-ochre? Decide after typography test on real copy.
 - **Q2. Default color mode.** Light lead with dark toggle (current recommendation) — confirm Abhishek is okay with this given the existing site defaults to dark.
-- **Q3. Hero r3f scene — fidelity vs. cost.** How much CPU/GPU are we willing to spend on a hero that most visitors view once? Propose a "pretty-but-cheap" baseline with an optional high-fidelity toggle.
+- **Q3. Hero Three.js scene — fidelity vs. cost.** How much CPU/GPU are we willing to spend on a hero that most visitors view once? Propose a "pretty-but-cheap" baseline with an optional high-fidelity toggle.
 - **Q4. Literal node labels in the hero.** Do the nodes carry labels ("agent", "tool", "memory") or stay abstract? Labels are on-thesis but risk looking literal.
 - **Q5. Vernacular-language rendering.** If Hindi/Devanagari is in play for v1.1, do both primary families render well? Serif especially. Validate early.
 

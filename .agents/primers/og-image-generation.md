@@ -1,0 +1,1 @@
+../../.claude/primers/og-image-generation.md

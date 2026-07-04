@@ -1,0 +1,3 @@
+# `_reference/` is a frozen design/archive source, not active app code.
+# Project rules treat it as read-only in normal work; scan active sources instead.
+_reference/

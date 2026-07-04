@@ -339,19 +339,19 @@ Minimum bar; we iterate the skill once the site content is in place.
 
 | Requirement | File / code location |
 | --- | --- |
-| `robots.txt` | `app/robots.txt/route.ts` (Route Handler — pivoted from the original `app/robots.ts` MetadataRoute approach to keep the Content-Signal directive emission under direct control) |
+| `robots.txt` | `app/robots.txt/route.ts` (Route Handler with direct `Content-Signal` directive control) |
 | `sitemap.xml` | `app/sitemap.ts` |
-| `Link` headers on all HTML responses | `middleware.ts` |
+| `Link` headers on all HTML responses | `proxy.ts` |
 | `/llms.txt` | `app/llms.txt/route.ts` |
 | `/llms-full.txt` | `app/llms-full.txt/route.ts` (built from MDX at request time with caching, or prebuilt at `build` step) |
-| `.md` alternates for pages | `app/case-studies/[slug]/route.md.ts`, `app/writing/[slug]/route.md.ts`, `app/[page].md/route.ts` for static pages |
-| `Accept: text/markdown` negotiation | `middleware.ts` rewrites to `.md` endpoint when `Accept` matches |
+| `.md` alternates for pages | `app/work/[slug]/md/route.ts` and `app/writing/[slug]/md/route.ts` |
+| `Accept: text/markdown` negotiation | `proxy.ts` rewrites to `.md` endpoint when `Accept` matches |
 | `/.well-known/api-catalog` | `app/.well-known/api-catalog/route.ts` |
 | `/api/openapi.json` | `app/api/openapi.json/route.ts` (generated from a schema file committed in repo) |
 | `/api/docs` | `app/api/docs/page.tsx` (server-rendered React; reads `lib/openapi-spec.ts`; no client JS — Redoc/Swagger UI dropped on bundle-budget grounds) |
 | `/.well-known/agent-skills/index.json` | `app/.well-known/agent-skills/index.json/route.ts` (emits v0.2.0 schema; `digest` computed at build) |
 | `content/agent-skills/portfolio-content/SKILL.md` | Skill artifact itself, served at `/agent-skills/portfolio-content/SKILL.md` |
-| Content Signals | embedded in `app/robots.ts` output |
+| Content Signals | embedded in `app/robots.txt/route.ts` output |
 
 All of the above is implementable in under a day of focused work once the scaffold is up.
 
@@ -375,9 +375,9 @@ Also cross-check with the **Cloudflare URL Scanner's Agent Readiness tab** as an
 
 Add to the PRD's process-gate script (`scripts/check-docs.sh` or equivalent):
 
-- Reject a release candidate if `app/robots.ts` doesn't contain a `Content-Signal` directive.
+- Reject a release candidate if `app/robots.txt/route.ts` doesn't emit a `Content-Signal` directive.
 - Reject if `app/llms.txt/route.ts` output fails the llmstxt.org format check (has H1, has blockquote, has at least one H2 section with link list).
-- Reject if `middleware.ts` doesn't emit the four required `Link` headers.
+- Reject if `proxy.ts` doesn't emit the required `Link` headers.
 - Reject if `app/sitemap.ts` is missing.
 
 This keeps agent-readiness regressions from merging unnoticed.

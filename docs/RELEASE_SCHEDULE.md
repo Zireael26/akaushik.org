@@ -1,23 +1,23 @@
-# Release schedule — drafts batch 1
+# Editorial backlog — drafts batch 1
 
-Planned publication cadence for the four drafts that landed in PR [#81](https://github.com/Zireael26/akaushik.org/pull/81) (`feat/drafts-batch-1`). All four ship with `draft: true` frontmatter (writing) or `draft: true` field (case-study row) and are invisible to production today. Releasing each one is a one-line frontmatter flip + commit + push.
+The original May 2026 publication cadence for PR [#81](https://github.com/Zireael26/akaushik.org/pull/81) has elapsed. Treat this file as the current backlog, not a calendar. All four pieces still ship with `draft: true` frontmatter (writing) or draft-only metadata and remain invisible to production.
 
-This file is disposable — delete it once every row below is shipped.
+This file is disposable — delete it once every row below is shipped or dropped.
 
-## Cadence
+## Current backlog
 
-| Date | Slot | Piece | Action |
+| Status | Slot | Piece | Next action |
 |---|---|---|---|
-| 2026-05-20 (Wed) | infra | [PR #80](https://github.com/Zireael26/akaushik.org/pull/80) — commits widget fix + draft system | Merge PR A |
-| 2026-05-22 (Thu) | writing | `content/writing/process-gate-stack-profiles.mdx` | Flip `draft: true` → `draft: false`, commit, push |
-| 2026-05-24 (Sat) | writing | `content/writing/native-git-hooks-for-non-node.mdx` | Same |
-| 2026-05-26 (Mon) | writing | `content/writing/renaming-projects.mdx` | Same |
-| 2026-05-26 (Mon) | case study | `content/case-studies/clusterbid.mdx` + `components/sections/Work.tsx` | Flip MDX draft; finish prose; **also add the `CASE_STUDIES` row** (currently a TODO comment because `ReelSlug` is closed) and ship the matching reel component under `components/work/reels.tsx` |
+| done | infra | [PR #80](https://github.com/Zireael26/akaushik.org/pull/80) — commits widget fix + draft system | No action |
+| editorial review | writing | `content/writing/process-gate-stack-profiles.mdx` | Review, update `date:`, then flip `draft: true` to `draft: false` |
+| editorial review | writing | `content/writing/native-git-hooks-for-non-node.mdx` | Review, update `date:`, then flip `draft: true` to `draft: false` |
+| editorial review | writing | `content/writing/renaming-projects.mdx` | Review, update `date:`, then flip `draft: true` to `draft: false` |
+| needs prose | case study | `content/case-studies/clusterbid.mdx` + `components/sections/Work.tsx` | Finish prose, fill role, add Work row, and ship the matching reel entry |
 
 ## Per-piece flip checklist (writing)
 
 1. `cd content/writing && $EDITOR <slug>.mdx`
-2. Change `draft: true` → `draft: false`. Tweak the `date:` to the actual ship date if it has drifted.
+2. Change `draft: true` → `draft: false`. Update the `date:` to the actual ship date.
 3. `pnpm typecheck && pnpm test`
 4. `git add content/writing/<slug>.mdx docs/CHANGELOG.md`
 5. Add a `### Added` line to `docs/CHANGELOG.md` under `[Unreleased]`.
