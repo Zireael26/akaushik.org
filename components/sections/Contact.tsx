@@ -58,7 +58,10 @@ export function Contact() {
               →
             </span>
           </a>
-          <a className="btn btn-ghost" href="#">
+          <a
+            className="btn btn-ghost"
+            href="mailto:hello@akaushik.org?subject=20-minute%20call"
+          >
             Book a 20-minute call
           </a>
         </div>

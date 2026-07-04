@@ -7,8 +7,8 @@
 # Launch target (PRD §5 + AGENT_READINESS §2): same as desktop. PR-3 of
 # the gap-analysis plan flips the categories that the current mobile
 # measurement clears to `error`. Mobile performance is intentionally
-# allowed to sit lower than desktop (0.9 vs. 0.95) until the post-Phase-5
-# bundle reduction lands and the mobile image LCP profile is audited.
+# allowed to sit lower than desktop until the remaining bundle/LCP overrun
+# is closed.
 
 ci:
   collect:

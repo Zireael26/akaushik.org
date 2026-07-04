@@ -1,0 +1,1 @@
+../../.claude/primers/agent-readiness-contract.md

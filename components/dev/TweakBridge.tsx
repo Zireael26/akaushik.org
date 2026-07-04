@@ -9,6 +9,11 @@ const SHOULD_RENDER =
   process.env.NODE_ENV !== 'production' ||
   process.env.NEXT_PUBLIC_EDIT_MODE === '1';
 
+const CONFIGURED_PARENT_ORIGINS =
+  process.env.NEXT_PUBLIC_EDIT_MODE_PARENT_ORIGINS?.split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean) ?? [];
+
 /**
  * TweakBridge — dev / Claude Design iframe edit-mode protocol.
  *
@@ -22,11 +27,17 @@ const SHOULD_RENDER =
  *      `process.env.NODE_ENV !== 'production'` OR
  *      `process.env.NEXT_PUBLIC_EDIT_MODE === '1'`.
  *    Production visitors never ship the bundle.
+ *  - Cross-origin iframe hosts must be listed in
+ *      `NEXT_PUBLIC_EDIT_MODE_PARENT_ORIGINS` (comma-separated).
  */
 
 const TWEAK_KEYS = ['tagline', 'accent', 'mode', 'density', 'motion'] as const;
 type TweakKey = (typeof TWEAK_KEYS)[number];
 type TweakState = Record<TweakKey, string>;
+type ParentMessage =
+  | { type: '__edit_mode_available' }
+  | { type: '__edit_mode_set_keys'; edits: Partial<TweakState> }
+  | { type: '__edit_mode_close' };
 
 const DEFAULTS: TweakState = {
   tagline: 'a',
@@ -79,6 +90,30 @@ function persist(state: TweakState): void {
   }
 }
 
+function allowedMessageOrigins(): Set<string> {
+  return new Set([window.location.origin, ...CONFIGURED_PARENT_ORIGINS]);
+}
+
+function parentTargetOrigin(): string | null {
+  if (window.parent === window) return window.location.origin;
+  return CONFIGURED_PARENT_ORIGINS[0] ?? null;
+}
+
+function postToParent(message: ParentMessage): void {
+  const targetOrigin = parentTargetOrigin();
+  if (!targetOrigin) return;
+  try {
+    window.parent.postMessage(message, targetOrigin);
+  } catch {
+    /* standalone */
+  }
+}
+
+function isTrustedHostMessage(ev: MessageEvent): boolean {
+  if (ev.source !== window.parent && ev.source !== window) return false;
+  return allowedMessageOrigins().has(ev.origin);
+}
+
 export function TweakBridge() {
   if (!SHOULD_RENDER) return null;
   return <TweakBridgeImpl />;
@@ -108,16 +143,13 @@ function TweakBridgeImpl() {
     setState(next);
     TWEAK_KEYS.forEach((k) => apply(k, next[k]));
 
-    try {
-      window.parent.postMessage({ type: '__edit_mode_available' }, '*');
-    } catch {
-      /* standalone */
-    }
+    postToParent({ type: '__edit_mode_available' });
   }, []);
 
   // Host protocol: accept activate / deactivate from the Claude Design iframe.
   useEffect(() => {
     function onMessage(ev: MessageEvent) {
+      if (!isTrustedHostMessage(ev)) return;
       const data = ev.data as { type?: string } | null;
       if (!data?.type) return;
       if (data.type === '__activate_edit_mode') setOpen(true);
@@ -141,23 +173,12 @@ function TweakBridgeImpl() {
     setState(next);
     persist(next);
     apply(key, value);
-    try {
-      window.parent.postMessage(
-        { type: '__edit_mode_set_keys', edits: { [key]: value } },
-        '*',
-      );
-    } catch {
-      /* standalone */
-    }
+    postToParent({ type: '__edit_mode_set_keys', edits: { [key]: value } });
   }
 
   function handleClose() {
     setOpen(false);
-    try {
-      window.parent.postMessage({ type: '__edit_mode_close' }, '*');
-    } catch {
-      /* standalone */
-    }
+    postToParent({ type: '__edit_mode_close' });
   }
 
   return (

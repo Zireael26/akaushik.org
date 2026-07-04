@@ -1,9 +1,9 @@
 ---
 slug: wanderer-crane-scene
 purpose: Single-instance paper-crane Three.js companion driven by document scroll and IntersectionObserver pose anchors, with SVG fallback for reduced-motion users. Currently disabled in app/layout.tsx; code preserved.
-pinned_to: e73ab4026fe93e8f216d4c3fea227ca26a1fdbac
+pinned_to: 903ccde
 created: 2026-05-15
-last_refreshed: 2026-05-19
+last_refreshed: 2026-07-04
 related_primers: []
 ---
 
@@ -19,7 +19,7 @@ A single paper-crane Three.js scene that floats alongside the home composite, re
 
 - `components/scene/Wanderer.tsx` — server component. Renders the `#companion` host div + inline SVG fallback; mounts `<WandererCraneClient />`.
 - `components/scene/WandererCraneClient.tsx` — client wrapper. Reads `prefers-reduced-motion` + `[data-motion]` via `useSyncExternalStore`, lazy-imports the scene through `next/dynamic({ ssr: false })`, unmounts when motion is toggled off.
-- `components/scene/WandererCrane.tsx` — the scene. Direct `useEffect`-driven Three.js (not R3F): geometry, lighting, RAF loop, `IntersectionObserver` on pose anchors, scroll-velocity damping, MutationObserver for accent swaps.
+- `components/scene/WandererCrane.tsx` — the scene. Direct `useEffect`-driven Three.js: geometry, lighting, RAF loop, `IntersectionObserver` on pose anchors, scroll-velocity damping, MutationObserver for accent swaps.
 
 ## Data flow
 
@@ -36,7 +36,7 @@ A scroll past the `[data-companion-pose="work"]` section:
 
 ## Dependencies
 
-- `three` (`^0.169.0`) — direct API, no R3F. R3F is in the dep tree for the AgentGraph scene but not used here.
+- `three` — direct API shared with the AgentGraph scene. Wrapper libraries are not installed.
 - `next/dynamic` — `ssr: false` lazy import of the crane bundle.
 - `_reference/portfolio/companion.js` — historical 221-LOC source the crane is ported from. Geometry coords + pose tables match line-for-line; refer to it when a "why does it look this way" question comes up.
 - DOM contracts: every section that drives a pose change must carry `data-companion-pose="<name>"` matching a key in `POSES`. Unknown keys are silently ignored.
@@ -71,11 +71,11 @@ There are no Vitest tests for the scene; the closest thing to a fixture is the S
 
 ## Out of scope
 
-- The AgentGraph hero scene (`components/scene/AgentGraph.tsx` + `AgentGraphClient.tsx`) — separate R3F scene, separate decisions.
+- The AgentGraph hero scene (`components/scene/AgentGraph.tsx` + `AgentGraphClient.tsx`) — separate raw Three.js scene, separate decisions.
 - The TweakBridge / accent + motion control panel — sets `data-motion` and `data-accent` on `<html>`; this primer only consumes those attributes.
 - HyperFrames reels (`components/work/reels.tsx`) — separate motion surface for the case-study cards/hero bands.
 
 ## Notes
 
-- ADR-0007 (`docs/adr/0007-r3f-9-bump.md`) covers the R3F bump that the AgentGraph scene depends on. The crane intentionally stays out of R3F — the comment block at `components/scene/WandererCrane.tsx:6–13` explains why.
+- ADR-0012 records the wrapper-library removal. Both AgentGraph and Wanderer now use raw Three.js.
 - If a redesign demands a different pose set, edit `POSES` _and_ every section's `data-companion-pose` attribute together; mismatches fail open (no pose change) rather than error.

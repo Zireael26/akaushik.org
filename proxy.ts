@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 /**
- * Agent-readiness middleware.
+ * Agent-readiness proxy.
  *
  *   1. Attaches RFC 8288 Link headers to every response so crawlers
  *      discover llms.txt / llms-full.txt / sitemap / agent-skills / mcp /
@@ -113,7 +113,7 @@ function applyHeaders(response: NextResponse, pathname: string): NextResponse {
   return response;
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const patternB = rewritePatternB(pathname);

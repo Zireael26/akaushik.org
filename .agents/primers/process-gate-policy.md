@@ -1,0 +1,1 @@
+../../.claude/primers/process-gate-policy.md

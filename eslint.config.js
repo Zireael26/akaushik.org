@@ -12,6 +12,7 @@ const config = [
       '.claude/worktrees/**',
       '_reference/**',
       '.next/**',
+      'coverage/**',
       'node_modules/**',
     ],
   },

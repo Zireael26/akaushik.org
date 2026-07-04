@@ -88,6 +88,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       data-density="airy"
       data-motion="on"
       data-tagline="a"
+      data-scroll-behavior="smooth"
       className={`${newsreader.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
     >
@@ -100,7 +101,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script src="/init-theme.js" />
         {/* RFC 8288 Link header duplicates — for crawlers that skip HTTP
-            headers. Same rels as middleware.ts; types match AGENT_READINESS §3.3. */}
+            headers. Same rels as proxy.ts; types match AGENT_READINESS §3.3. */}
         <link rel="describedby" type="text/markdown" href="/llms.txt" />
         <link rel="describedby" type="text/markdown" href="/llms-full.txt" />
         <link rel="sitemap" type="application/xml" href="/sitemap.xml" />

@@ -14,12 +14,12 @@ The portfolio is itself a case study in the engineering process it advertises. T
 | Language | TypeScript 6.0 (strict, `noUncheckedIndexedAccess`) | Catches every shape drift |
 | UI | React 19.2 | Server components + Actions |
 | Styling | Tailwind 4 (CSS-first, tokens under `@theme` in `app/globals.css`) | No `tailwind.config.ts` |
-| 3D | three + `@react-three/fiber` + drei | Hero `AgentGraph` scene |
+| 3D | raw `three` | Hero `AgentGraph` scene; wrapper libraries were removed after ADR-0012 |
 | Content | MDX via `next-mdx-remote@6` | Case studies + writing |
 | Motion (case study cards / writing loops) | HyperFrames-rendered MP4 + webp | Deterministic cinema-grade output |
-| Package manager | pnpm 11 | Corepack-pinned |
+| Package manager | pnpm 11.9 | Corepack-pinned with explicit release-age policy |
 | Runtime | Node 22 LTS | `.nvmrc` |
-| Host | Vercel | Edge middleware for Link headers + content negotiation |
+| Host | Vercel | Next.js `proxy.ts` for Link headers + content negotiation |
 
 ## Local development
 
@@ -33,7 +33,7 @@ pnpm dev          # http://localhost:3000 (Turbopack)
 pnpm typecheck
 pnpm lint
 pnpm test         # vitest unit tests
-pnpm test:e2e     # Playwright e2e (needs pnpm start running)
+pnpm test:e2e     # Playwright e2e (auto-starts pnpm dev locally)
 pnpm build && pnpm start
 ```
 
@@ -41,7 +41,7 @@ pnpm build && pnpm start
 
 ```
 /app                  App Router (layout, pages, route handlers, .well-known/, api/, sitemap)
-/components           Section components, scene (R3F + Three.js), media, SEO islands
+/components           Section components, raw Three.js scene, media, SEO islands
 /content              MDX case studies + writing posts
 /lib                  Content loader, structured-data builders, canonical helper, stats reader
 /public               Static assets, agent-skills, mcp.json, init-theme.js
@@ -49,7 +49,8 @@ pnpm build && pnpm start
 /docs                 PRD, ROADMAP, AGENT_READINESS, CHANGELOG, ADRs (10+), bundle budget, SEO program
 /e2e                  Playwright specs (home, work, theme, canvas, reduced-motion, content-negotiation)
 /_reference           Frozen Claude Design prototype (read-only)
-/.claude/primers      Feature primers for stable subsystems
+/.claude/primers      Claude feature primers for stable subsystems
+/.agents/primers      Codex feature-primer mirror
 ```
 
 ## Process gates

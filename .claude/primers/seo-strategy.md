@@ -1,9 +1,9 @@
 ---
 slug: seo-strategy
 purpose: SEO + AIO program for akaushik.org — three-goal plan, per-page canonical + JSON-LD wiring, five Cowork scheduled tasks, live status doc, human-required handoff queue.
-pinned_to: 12473b5d639a994ad9a880c706d5b8e9aab0fc49
+pinned_to: 903ccde
 created: 2026-05-18
-last_refreshed: 2026-05-19
+last_refreshed: 2026-07-04
 related_primers: [agent-readiness-contract, mdx-content-pipeline, og-image-generation]
 ---
 
@@ -32,7 +32,7 @@ Plan written 2026-05-18 after the canonical-host rename (`developerabhishek.live
 How discovery + automation thread together:
 
 1. Crawler hits `akaushik.org/<any-page>`. Receives canonical link (per-page via `alternates.canonical`), `Person` + `Organization` + `WebSite` JSON-LD `@graph` (root), `Article` JSON-LD (on content pages). `Link:` headers advertise `llms.txt`, `llms-full.txt`, sitemap, agent-skills, `.md` alternates (per `agent-readiness-contract` primer). `BreadcrumbList` is planned but not yet wired in `lib/structured-data.ts`.
-2. Legacy alias `akaushik.dev` **must** 308-redirect to canonical at the Vercel layer. Daily verification by `seo-redirect-health` scheduled task; on failure appends to `STATUS.md > Alerts` and opens a PR with the failure transcript. (`developerabhishek.live` registration lapsed 2026-05-19 — see ADR-0003 Outcome addendum; no longer in the redirect-health check list.)
+2. Legacy alias `akaushik.dev` 308-redirects to canonical at the Vercel layer. Daily verification by `seo-redirect-health` scheduled task; on failure appends to `STATUS.md > Alerts` and opens a PR with the failure transcript. (`developerabhishek.live` registration lapsed 2026-05-19 — see ADR-0003 Outcome addendum; no longer in the redirect-health check list.)
 3. Editorial calendar drives content. `seo-weekly-draft` runs Monday 06:00, picks next `status: pending` slot, drafts MDX, opens draft PR labeled `seo:draft`. Abhishek edits + merges.
 4. Monthly: `seo-monthly-health` runs validator.schema.org + lighthouse + sitemap checks, refreshes `STATUS.md > Metrics` row for the current month. `seo-monthly-profile-drift` reads canonical NAP block from `STATUS.md`, fetches public profile data from each `sameAs` URL, diffs, appends to `STATUS.md > Drift log` on mismatch.
 5. Quarterly: `seo-quarterly-flagship` proposes a flagship-post topic and opens an issue / PR with the brief.
@@ -41,7 +41,7 @@ How discovery + automation thread together:
 ## Dependencies
 
 - **External (account-bound, Abhishek-only):** Vercel project domains config; Google Search Console + Bing Webmaster Tools verification; GSC Change-of-Address; Wikidata entry; LinkedIn / GitHub / X / Bluesky / dev.to / Hashnode profile editing. Status tracked in `STATUS.md > Human handoff queue`.
-- **Internal code:** `lib/canonical.ts`, `lib/structured-data.ts`, `components/seo/JsonLdScript.tsx`, `app/sitemap.ts` (existing), `middleware.ts` (existing, already emits Link headers).
+- **Internal code:** `lib/canonical.ts`, `lib/structured-data.ts`, `components/seo/JsonLdScript.tsx`, `app/sitemap.ts`, `app/robots.txt/route.ts`, and `proxy.ts` for Link headers plus Markdown negotiation.
 - **Tooling (used by scheduled tasks):** `gh` CLI for PR creation; `curl` for redirect health; `linkinator` or equivalent for internal-link audit; `validator.schema.org` HTTP API; Lighthouse (npm package or pnpm script).
 - **Cowork scheduled-tasks MCP:** `mcp__scheduled-tasks__create_scheduled_task` / `list` / `update`. Task storage at `/Users/abhishek/.claude/scheduled-tasks/<task-id>/SKILL.md`. Tasks fire only while Cowork app is open (or on next launch for deferred runs).
 - **Related primers:** `agent-readiness-contract` (LLM/agent surfaces already shipped), `og-image-generation` (per-page OG images; extend per spec §4.7), `mdx-content-pipeline` (drives content + listing endpoints feeding `llms-full.txt`).
@@ -49,7 +49,7 @@ How discovery + automation thread together:
 ## Test commands
 
 ```bash
-# Redirect health (Phase 0 exit criterion — should chain 308 after Vercel config)
+# Redirect health (current canonical behavior)
 curl -sIL https://akaushik.dev/                                          | head -8
 curl -sIL https://akaushik.dev/work/neev                                 | head -8
 curl -sIL https://akaushik.org/                                          | head -8   # should be 200, no chain

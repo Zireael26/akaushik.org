@@ -31,7 +31,7 @@ The site is not a CV. It is a sales artifact. The success condition is stated in
 
 - **NG1. Not an Awwwards maximalist showcase.** No scroll-jacking, no unreadable typography, no motion for its own sake. Motion serves meaning or it doesn't ship.
 - **NG2. Not a crypto-speculation portfolio.** Crypto-adjacent work (Evia as prior employer; curat.money as an ongoing product side of the portfolio) gets surfaced as product engineering, not as DeFi hype. No price charts, no trading narrative. curat.money's framing stays at "fair-comparison product for a niche consumer category," per `docs/CASE_STUDIES_OUTLINE.md §4.7`.
-- **NG3. Not a feature showcase for third-party libraries.** react-three-fiber, HyperFrames, GSAP — these are tools. The portfolio does not lead with "look at what the library can do."
+- **NG3. Not a feature showcase for third-party libraries.** raw Three.js and HyperFrames are tools. The portfolio does not lead with "look at what the library can do."
 - **NG4. Not a recruiter-targeted job-seeking site.** This is aimed at prospective clients and collaborators. There's no "download resume" as the primary CTA. A resume is available on request; the hero CTA is "let's talk about your project."
 - **NG5. Not a rebuild of the v1 site at `developerabhishek.live`.** That site was a portfolio. This is a client-acquisition product. Different job, different content architecture. The legacy host is sunset per `docs/adr/0003-domain-and-canonical-url.md`; canonical is `akaushik.org`.
 
@@ -60,7 +60,7 @@ The site is one navigable surface with a primary top-nav and a deliberate scroll
 ### 5.1 Hero + About (home)
 
 - Hero tagline (warm, plain-language, business-outcome-oriented; not "AI engineer" — something that says *what he does for you*).
-- Live react-three-fiber centerpiece — the agent/graph motif, executed with restraint. One idea, well.
+- Live raw-Three.js centerpiece — the agent/graph motif, executed with restraint. One idea, well.
 - Short About paragraph up top; longer About further down the page with the Karpathy-origin beat and the MSME thesis.
 - Single primary CTA: "Let's talk about your project" → contact.
 
@@ -101,19 +101,19 @@ Primary conversion surface. Low-friction. Email-first, calendar link optional, n
 ## 7. Engineering Principles
 
 - **Process as proof.** PRD (this doc), ROADMAP, ADRs, EPM progress log, CHANGELOG — all public on the site (or linked from a `/process` page). Process-gate scripts enforce doc hygiene (matching tgsc and VeriCite conventions).
-- **Stack pin.** Match tgsc: Next.js 16.2 LTS, React 19.2, TypeScript 6.0, Tailwind 4.2, shadcn/ui v4, pnpm 10, Node 22 LTS, Vercel. Any divergence goes through ADR-0001.
+- **Stack pin.** Current stack: Next.js 16.2 LTS, React 19.2, TypeScript 6.0, Tailwind 4, raw Three.js, pnpm 11, Node 22 LTS, Vercel. Any architectural divergence goes through ADR.
 - **Accessibility is a gate.** WCAG 2.2 AA. Motion respects `prefers-reduced-motion`. Contrast audited. Keyboard-navigable. The 3D scene has a static fallback.
-- **Performance budget.** LCP < 2.5s on 4G, CLS < 0.1, INP < 200ms. The r3f scene is budgeted separately — it does not hold the rest of the page hostage.
-- **SEO as a first-class concern.** Proper metadata, OG images, sitemap, JSON-LD for the Person entity, MDX posts indexed. Canonical is `akaushik.org`; `akaushik.dev` and `developerabhishek.live` 308-redirect to it (see ADR-0003). No competing canonicals.
+- **Performance budget.** LCP < 2.5s on 4G, CLS < 0.1, INP < 200ms. The raw Three.js scene must stay measured in the bundle budget and never silently redefine the 150 KiB aspiration.
+- **SEO as a first-class concern.** Proper metadata, OG images, sitemap, JSON-LD for the Person entity, MDX posts indexed. Canonical is `akaushik.org`; `akaushik.dev` 308-redirects to it and `developerabhishek.live` has lapsed (see ADR-0003). No competing canonicals.
 - **Agent readiness as a first-class concern, equal to SEO and a11y.** The site must score high on Cloudflare's `isitagentready.com` across all four dimensions: Discoverability (`robots.txt`, `sitemap.xml`, HTTP `Link` headers, `/.well-known/`), Content (Markdown content negotiation via `Accept: text/markdown`, `/llms.txt`, `/llms-full.txt`, `.md` URL alternates), Bot Access Control (Content Signals policy in `robots.txt`), and Capabilities (API Catalog at `/.well-known/api-catalog`, OpenAPI spec, at least one Agent Skill). A failed check is a ship-blocker. Full implementation contract in `AGENT_READINESS.md`.
 
 ## 8. Motion & 3D Strategy
 
 Two pipelines, one aesthetic.
 
-- **Live react-three-fiber scene** (hero). One idea: agents as nodes, edges as message passing, data flowing along the edges. Executed with deliberate restraint — low-poly, soft motion, responsive to cursor but never frantic. Static fallback for reduced-motion and low-power devices.
+- **Live raw-Three.js scene** (hero). One idea: agents as nodes, edges as message passing, data flowing along the edges. Executed with deliberate restraint — low-poly, soft motion, responsive to cursor but never frantic. Static fallback for reduced-motion and low-power devices.
 - **HyperFrames-rendered reels** (case study intros, background loops, writing hero art). Pre-rendered video via HyperFrames' HTML-to-video pipeline. Used where deterministic, cinema-like quality beats real-time. Served as `<video>` with a static poster fallback.
-- **Framer Motion / GSAP** for layout micro-interactions. Micro, not macro. Under 300ms where possible.
+- **CSS and pre-rendered motion** for layout/media micro-interactions. Add a runtime motion library only with an ADR.
 
 The motif is *graphs and agents* — nodes, edges, information flow. It is the same motif everywhere the site uses motion, so it reads as a language, not as decoration.
 

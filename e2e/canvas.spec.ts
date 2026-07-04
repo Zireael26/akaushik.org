@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-// Smoke test for the Phase-5 scene work: the hero agent-graph R3F canvas
+// Smoke test for the Phase-5 scene work: the hero agent-graph Three.js canvas
 // + the Wanderer Three.js crane. Visual parity against the reference
 // design is Abhishek's eyes (per plan §Final state + ADR-0005 follow-up);
 // what this spec proves is that the canvas mounts, the SVG fallback is
@@ -17,14 +17,14 @@ test.describe.configure({ mode: 'serial' });
 test.describe('hero canvas + wanderer', () => {
   test.skip(
     ({ browserName }) => browserName !== 'chromium',
-    'R3F + Three.js stability varies by engine; chromium-desktop is the canonical surface for this spec.',
+    'Three.js stability varies by engine; chromium-desktop is the canonical surface for this spec.',
   );
 
   test('scene frame renders both SVG fallback and canvas host', async ({
     page,
   }) => {
     await page.goto('/');
-    // SVG fallback ships on SSR, always attached. Once the R3F canvas mounts,
+    // SVG fallback ships on SSR, always attached. Once the Three.js canvas mounts,
     // AgentGraphClient flags the scene-frame with `data-canvas-active="true"`
     // and the SVG is hidden (display: none) so the two layers don't composite
     // through the transparent WebGL canvas — so assert presence, not paint.
@@ -96,7 +96,7 @@ test.describe('hero canvas + wanderer', () => {
     });
     await page.goto('/');
     await page.waitForLoadState('networkidle');
-    // Allow a stabilisation window for R3F + Wanderer to run at least one
+    // Allow a stabilisation window for AgentGraph + Wanderer to run at least one
     // frame before we sample console state.
     await page.waitForTimeout(1500);
     expect(errors, errors.join('\n')).toEqual([]);

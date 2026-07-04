@@ -20,6 +20,6 @@ PROCESS_GATE_TEST_CMD=""
 # PROCESS_GATE_PROJECT_EPM="docs/EPM.md"
 
 # Stack-profile validators (project-local scripts)
-PROCESS_GATE_STACK_VALIDATORS=()
+PROCESS_GATE_STACK_VALIDATORS=("validate-web-next.sh")
 
 # After review, commit with: chore: rollout SE Core process-gate skill

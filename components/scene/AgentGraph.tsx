@@ -283,10 +283,10 @@ export default function AgentGraph() {
     host.addEventListener('pointerleave', onLeave);
 
     // RAF loop.
-    const clock = new THREE.Clock();
+    const startedAt = performance.now();
     let raf = 0;
     const tick = () => {
-      const t = clock.getElapsedTime();
+      const t = (performance.now() - startedAt) / 1000;
       const p = pointerRef.current;
       p.x += (p.tx - p.x) * 0.06;
       p.y += (p.ty - p.y) * 0.06;

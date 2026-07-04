@@ -1,9 +1,9 @@
 ---
 slug: process-gate-policy
 purpose: Pre-commit hook enforcing CHANGELOG / ADR / ROADMAP coupling for code, structural, and EPM changes; bypassed only via SKIP_PROCESS_GATE.
-pinned_to: 12473b5d639a994ad9a880c706d5b8e9aab0fc49
+pinned_to: 903ccde
 created: 2026-05-15
-last_refreshed: 2026-05-19
+last_refreshed: 2026-07-04
 related_primers: []
 ---
 
@@ -20,6 +20,7 @@ Block commits that change code, project structure, or EPM docs without the paire
 - `package.json` — registers `"process:check": "node scripts/process-gate.mjs"`. Pre-push and CI hooks reuse the same script with `PROCESS_GATE_DIFF_BASE=origin/main`.
 - `docs/adr/0002-process-gate-policy.md` — the canonical policy spec. Read this before changing rule semantics.
 - `docs/adr/0009-se-core-onboarding-husky-vitest.md` — context on Husky + Trellis inheritance for this gate.
+- `.agents/skills/process-gate-local/validate-web-next.sh` and `.claude/skills/process-gate-local/validate-web-next.sh` — Trellis-local web validator for this repo's dependency, security, proxy, and doc-contract drift checks.
 
 ## Data flow
 
@@ -31,7 +32,7 @@ A representative `git commit` invocation:
 4. The script collects staged file paths. `PROCESS_GATE_DIFF_BASE` (set in CI) swaps the staged diff for `${base}..HEAD`, so the same policy runs on PR branches without changing the rule code.
 5. Rules evaluate against the path list:
    - **R1:** any path under `app/`, `components/`, `lib/`, `scripts/`, or `content/` requires `docs/CHANGELOG.md` to also be staged.
-   - **R2:** changes to `next.config.*`, `middleware.ts`, `proxy.ts`, `package.json`, `tsconfig.json`, or `eslint.config.*` require either a new ADR (`docs/adr/####-…md`) or a CHANGELOG entry.
+   - **R2:** changes to `next.config.*`, `proxy.ts`, `package.json`, `tsconfig.json`, or `eslint.config.*` require either a new ADR (`docs/adr/####-…md`) or a CHANGELOG entry.
    - **R3:** changes under `docs/epm/` require `docs/ROADMAP.md` to be staged.
 6. Violations print `R<n>: …` messages and exit 1; otherwise the script logs `process-gate: N staged file(s) — OK.` and exits 0. The hook propagates the exit code to git, which aborts or completes the commit accordingly.
 
@@ -51,6 +52,9 @@ pnpm run process:check
 
 # Simulate CI mode (diff a branch against main rather than the index)
 PROCESS_GATE_DIFF_BASE=origin/main pnpm run process:check
+
+# Project-local Trellis validator
+bash .agents/skills/process-gate-local/validate-web-next.sh --range=origin/main..HEAD
 
 # Emergency bypass — logs a warning, exits 0
 SKIP_PROCESS_GATE=1 pnpm run process:check

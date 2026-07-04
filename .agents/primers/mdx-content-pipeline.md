@@ -1,0 +1,1 @@
+../../.claude/primers/mdx-content-pipeline.md

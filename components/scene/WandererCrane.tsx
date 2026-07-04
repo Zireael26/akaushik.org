@@ -273,12 +273,14 @@ export default function WandererCrane() {
       attributeFilter: ['data-accent', 'data-mode'],
     });
 
-    const clock = new THREE.Clock();
+    let lastFrame = performance.now();
     let t = 0;
     let rafId = 0;
 
     const frame = () => {
-      const dt = Math.min(clock.getDelta(), 0.05);
+      const now = performance.now();
+      const dt = Math.min((now - lastFrame) / 1000, 0.05);
+      lastFrame = now;
       t += dt;
       const damp = 1 - Math.exp(-dt * 3.2);
 
