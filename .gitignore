@@ -78,8 +78,9 @@ coverage/
 #
 # This block is GENERATED — it lists only machine-absolute symlinks and is rewritten
 # in full on every onboard run (no skill-count sentinel; no stacking). Everything else
-# Trellis seeds (hooks, settings.json, primers/INDEX.md, skill-local configs, the
-# relative AGENTS.md symlink) is project-state and IS tracked in git.
+# Trellis seeds (hooks, settings.json, primers/INDEX.md, skill-local configs,
+# tracked workflow copies, the relative AGENTS.md symlink) is project-state and
+# IS tracked in git.
 .claude/rules/trellis.md
 .claude/skills/process-gate
 .claude/skills/security-gate
