@@ -14,7 +14,7 @@
 #   - Pure chat / no edits: exit 0 (skip).
 #   - Edit-heavy gate: skip unless ≥3 files OR ≥200 lines changed (same threshold
 #     as code-review) so it does not stack a second per-Stop `claude -p` every turn.
-#   - Returns proposed updates as additionalContext, never blocks.
+#   - Returns proposed updates as Stop-safe systemMessage, never blocks.
 #   - Budget: 30s soft cap (perl-alarm shim — bare `timeout` is a no-op on macOS).
 #
 # Cost note: this hook calls a subagent and reads the session transcript. Both
@@ -221,6 +221,6 @@ case "$OUT" in
   ""|"NONE"|*"NONE"*"NONE"*) exit 0 ;;
 esac
 
-# Emit the proposal as additionalContext. Never blocks.
-jq -nc --arg ctx "propose-rules: candidate gotchas.md entry below — review and append if useful.\n\n$OUT" '{additionalContext: $ctx}'
+# Emit the proposal as a Stop-safe advisory. Never blocks.
+_se_emit_system_message "propose-rules: candidate gotchas.md entry below — review and append if useful.\n\n$OUT"
 exit 0
