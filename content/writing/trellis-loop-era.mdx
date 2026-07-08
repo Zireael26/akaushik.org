@@ -1,0 +1,87 @@
+---
+title: "Loops need brakes: five Trellis release candidates in five weeks"
+dek: Everyone spent this summer telling you to stop prompting and start designing loops. I agree, and I got there backwards. The brakes came first, then the map, then the gate, then a second engine.
+date: 2026-07-08
+---
+
+# Loops need brakes: five Trellis release candidates in five weeks
+
+> Everyone spent this summer telling you to stop prompting and start designing loops. I agree, and I got there backwards. The brakes came first, then the map, then the gate, then a second engine.
+
+In early June, Peter Steinberger wrote that you shouldn't be prompting coding agents anymore, you should be designing loops that prompt your agents. The same week, Boris Cherny said the same thing on stage about Claude Code: he doesn't prompt anymore, he has loops running. Latent Space stitched the two together with Karpathy into a piece about loop craft, and for a month my feeds have been full of people discovering that the unit of agentic work is not the prompt, it is the loop.
+
+I believe all of it. I also think the conversation is missing its most boring and most important half.
+
+Since [tagging 1.0-rc](/writing/trellis-1-0-rc) five weeks ago, [Trellis](/writing/trellis) has gone through five more release candidates, rc.4 through rc.8, and in hindsight they form an arc I did not plan: a loop safety contract, a loop selection doctrine, a deterministic process gate, and finally a second engine to run units of the loop on. This post is that arc, receipts included, because the loop hype is real but the failure modes are too, and I have hit most of them on my own machine.
+
+---
+
+## The brakes came before the engine
+
+The thing nobody puts in the loop threads: a loop that cannot stop is not automation, it is a liability with a token bill. My first loops-adjacent work was not about making loops smarter. It was a halting contract.
+
+Every Trellis loop, whether it is a cron audit, a fan-out workflow, or an agent chewing on a goal overnight, declares three ceilings and halts on whichever trips first: a maximum iteration count, a no-progress count, and a dollar budget. The dollar ceiling converts to tokens at the rate of whichever engine is actually billing, which mattered later in ways I did not anticipate. On a trip, the loop hard-stops and emits a structured halt report. It never auto-continues past its own ceiling.
+
+The no-progress ceiling earns its keep the most. Iteration caps catch runaways. Budget caps catch expensive runaways. But the common failure is a loop that is technically making calls and practically doing nothing, retrying a fix that will never land, and "three iterations without a progress signal" catches that shape days before the other two ceilings would.
+
+None of this is clever. It is the seatbelt code you write before the highway, and it is the reason everything after it was safe to build.
+
+---
+
+## The map: which loop, not just how to stop one
+
+When the Claude team published their loops piece, I did the same exercise I did with their large-codebase guide last month: ground every claim against what Trellis already ships and be honest about the gaps.
+
+The honest answer surprised me in both directions. On loop safety, Trellis was ahead of the blog. Ceilings, progress signals, halt reports, adversarial review of loop output, none of that appears in the published guidance in comparable depth. But on loop selection, the blog had something I simply did not: a taxonomy. Four loop types, each with a trigger, a stop signal, and the primitive you should reach for. Trellis had every primitive on that list and no map from situation to primitive. An agent deciding between a goal loop, a scheduled task, and a fan-out workflow was navigating on vibes.
+
+So rc.6 shipped the map as doctrine: turn-based, goal-based, time-based, and proactive loops, each pointing at the Trellis primitive that implements it and each deferring to the existing halting contract rather than restating it. Selection says which loop. Safety says how it stops. Two documents, cross-linked, deliberately not merged.
+
+It also shipped the restraint line I keep having to relearn: not every task needs a loop. Start with the simplest primitive that has a real stop condition. The orchestration-heavy default is a bias, and the counterweight has to be written down or it loses.
+
+---
+
+## The gate: loops are only as trustworthy as the process under them
+
+rc.7 was the unglamorous one. A deterministic pre-push gate: any branch whose gated diff exceeds a size floor cannot leave the machine without a spec, a plan, and a task list committed alongside it, or an explicit surgical declaration that caps the diff instead. It is a pure function of git state. No model judgment anywhere in the verdict.
+
+The reason this belongs in the loop story is the word deterministic. I run two harnesses, Claude Code and Codex, and the gate's verdict engine is byte-identical between them. When a loop is pushing branches at two in the morning, the question "would this have been allowed if the other agent were driving" has to have exactly one answer. A gate that depends on which model reads the rule is not a gate, it is a suggestion with extra steps.
+
+The control plane runs with the gate live on itself, which is how most of what follows got tested.
+
+---
+
+## The second engine
+
+rc.8 shipped this week, and it started with a skill someone else wrote. Steinberger published `codex-first`, his personal routing policy: Codex types, Claude thinks and verifies. Given that he now works for OpenAI, I wanted the neutral version, so I did the grounding before adopting anything.
+
+Two of his load-bearing claims did not survive contact with the data. "GPT is usually better at writing code" is an overclaim; on the benchmarks I can actually check, implementation quality is near parity, one engine leads the harder reasoning suite and blind review comparisons by a wide margin, the other leads slightly on the broad suite. And "Claude is metered while Codex is flat-rate" was simply stale by July; both vendors moved automation to metered pools this spring. What survives is the interesting part: per task, one leg is several times cheaper in tokens, and if you hold two subscriptions you have two quota pools, so routing the token-heavy bulk to the cheaper pool while the quality-sensitive minority stays home is just structural sense.
+
+Then Anthropic published numbers that settled the argument from the other direction. An orchestrator on the expensive model delegating to cheap workers hit 96 percent of the expensive model's benchmark performance at 46 percent of the price. A cheap executor with the expensive model as a rarely-called advisor: 92 percent at 63. The lesson has nothing to do with vendor allegiance: call the expensive model rarely and decisively, run the bulk somewhere cheap. The cheap leg can be Codex. It can just as well be a smaller Claude worker. The topology is the point.
+
+So the doctrine that shipped is delegation, not allegiance: a bounded work order, meaning a frozen spec, a known repro, a mechanical refactor, can route to a cheap executor from any turn. Design stays home. Review of the executor's output stays home, always, and the executor's claims are treated as advisory until I have read the diff like a contributor PR. There is a floor below which delegation overhead loses, around twenty changed lines. And for now every delegation is a proposal I approve, with a ledger and explicit criteria for when it flips to automatic, because a routing predicate I have not watched work for a week is a guess, not a policy.
+
+One detail I fought myself on: the sandbox. The tempting move is to run the executor with everything bypassed, and half the internet will tell you that is fine. It mostly is, until the day a prompt-injected work order is holding a process with write access to your SSH keys. The version that shipped keeps approvals off, because the wrapper never prompted anyway, keeps the workspace sandbox on, enables network access in config since that is the friction that actually pushes people to disable sandboxes, and reserves the fully-unsandboxed path for disposable worktrees only. Written down in the ADR with the honest framing: sandboxless is a host-wide privilege no matter what directory you point it at.
+
+The first real delegation under the new doctrine was the build itself. Codex wrote the sync-script guard described below, eighty lines, one round, proof attached. Ledger row one.
+
+---
+
+## What I got wrong along the way
+
+Same section as last time, same reason. Receipts over self-congratulation.
+
+The public mirror shipped dangling references for weeks and I did not notice. The loop safety contract lives in a file the sync allowlist never included, while thirteen files that did sync referenced it. Every public fork had doctrine pointing at a document that did not exist. I found out because an agent on my own work laptop, running against the fork, flagged the missing file. Second occurrence of exactly this bug class, so the fix is a class fix: the sync now greps every published file for references and fails if any target is not itself published. The check went red on the pre-fix state, which is the only proof of a guard worth having.
+
+I taught the wrong resume command in my own plan. The delegation doctrine originally documented iterating on an executor's work by resuming a specific task id. The wrapper has no id-valued resume; the flag I documented is a boolean that resumes whatever ran last, which under two concurrent units would silently continue the wrong one and corrupt the takeover accounting. The cross-model adversarial review caught it before merge, by actually reading the wrapper's argument parser rather than trusting my plan. The doctrine now captures the real thread id at dispatch and resumes that. The reviewer being a different model family than the author is the reason this shipped correct.
+
+And the near-miss: I almost hand-edited the strength table the day a new model preview started trending. The published claims about which engine leads what are dated and sourced, and the only update path is re-running the research after a launch settles, precisely because launch-week numbers come with contamination flags and I have a bias toward whichever model I read about most recently. The table survived the week untouched. The re-grounding run is scheduled.
+
+---
+
+## Where this leaves the loop
+
+Five candidates in five weeks sounds like velocity. It is mostly convergence. Brakes, map, gate, second engine: each one existed because the previous one made its absence obvious, and the loop hype cycle happened to arrive while I was in the middle of it.
+
+If you are building loops right now, the fashionable question is which loop pattern to use, and it is a good question. The unfashionable ones that decided every release above: what stops this loop, would the verdict be identical if the other agent were driving, and when the executor says it is done, who checks. My answers are in the public template at [github.com/Zireael26/trellis](https://github.com/Zireael26/trellis), dangling references now included, then fixed, with the guard to prove it.
+
+The delegation pilot has a week of ledger rows to accumulate before it earns automatic routing. I will know by then whether the predicate is a policy or a guess, and if the ledger says guess, that goes in the next post too.
