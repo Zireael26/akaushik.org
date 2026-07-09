@@ -5,6 +5,7 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 ## [Unreleased]
 
 ### Added
+- 2026-07-09 — New `docs/voice.md`: per-repo voice file for the Trellis writing skill (spec 010 voice-file convention) — identity/audience, register, sentence rhythm, vocabulary yes/no lists, structural habits, and verbatim exemplars derived from the three published Trellis posts (`trellis`, `trellis-1-0-rc`, `trellis-loop-era`). Docs-only; no component or route changes.
 - 2026-07-08 — New writing post `trellis-loop-era` ("Loops need brakes: five Trellis release candidates in five weeks"): the rc.4→rc.8 arc (loop-safety ceilings, loop-selection doctrine, deterministic spec gate, interactive executor delegation), with the public-mirror dangling-ref and resume-mechanics postmortems. Content-only; no component or route changes. No HyperFrames loop yet (same open state as `trellis` and `best-practices-into-trellis`, ADR-0011).
 
 ### Fixed
