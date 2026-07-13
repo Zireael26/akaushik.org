@@ -15,6 +15,10 @@
  * update the REPOS list below.
  */
 
+import { writeFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 const USERNAME = 'Zireael26';
 const REPOS = [
   { name: 'neev',        label: 'Neev',        repo: 'msme-neev/neev' },
@@ -24,15 +28,6 @@ const REPOS = [
 ];
 
 const TOKEN = process.env.GITHUB_TOKEN;
-if (!TOKEN) {
-  console.error('GITHUB_TOKEN is required');
-  process.exit(1);
-}
-
-import { writeFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(__dirname, '..', 'public', 'data', 'stats.json');
 
@@ -49,6 +44,27 @@ const contribQuery = `query($login:String!, $from:DateTime!, $to:DateTime!) {
     }
   }
 }`;
+
+/**
+ * @param {string | null} xOAuthScopesHeader
+ */
+export function scopesIncludePrivate(xOAuthScopesHeader) {
+  return (xOAuthScopesHeader ?? '')
+    .split(',')
+    .map((scope) => scope.trim())
+    .includes('repo');
+}
+
+async function tokenIncludesPrivate() {
+  const res = await fetch('https://api.github.com/user', {
+    headers: {
+      authorization: `bearer ${TOKEN}`,
+      accept: 'application/vnd.github+json',
+    },
+  });
+  if (!res.ok) throw new Error(`REST /user ${res.status}: ${await res.text()}`);
+  return scopesIncludePrivate(res.headers.get('x-oauth-scopes'));
+}
 
 async function gql(query, variables) {
   const res = await fetch('https://api.github.com/graphql', {
@@ -99,7 +115,13 @@ async function repoStats(repo) {
   return { commits12mo: count, lastCommit };
 }
 
-(async () => {
+async function main() {
+  if (!TOKEN) {
+    console.error('GITHUB_TOKEN is required');
+    process.exit(1);
+  }
+
+  const includesPrivate = await tokenIncludesPrivate();
   const { user } = await gql(contribQuery, {
     login: USERNAME,
     from: from.toISOString(),
@@ -140,7 +162,7 @@ async function repoStats(repo) {
     generatedAt: now.toISOString(),
     username: USERNAME,
     window: 'last-365-days',
-    includesPrivate: true,
+    includesPrivate,
     totalContributions: cal.totalContributions,
     weeks,
     repos,
@@ -149,4 +171,8 @@ async function repoStats(repo) {
   console.log(
     `wrote ${OUT}: ${cal.totalContributions} contributions, ${weeks.length} weeks, ${repos.length} repos`,
   );
-})();
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  await main();
+}

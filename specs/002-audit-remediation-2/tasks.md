@@ -4,7 +4,7 @@
 **Date:** 2026-07-13
 **Spec:** `specs/002-audit-remediation-2/spec.md`
 **Plan:** `specs/002-audit-remediation-2/plan.md`
-**Status:** in-progress
+**Status:** done
 
 ---
 
@@ -25,7 +25,7 @@
 | T6 | Fix `lib/dates.ts` invalid-date rollover, `lib/reading-time.ts` hyphen + bare-`<` stripping, `lib/content.ts` inline-array comma parsing; add fail-before/pass-after tests. | P3 | lib edges handled | [x] |
 | T7 | Add CSP + `X-Frame-Options` + HSTS to `proxy.ts` `buildResponseHeaders()`; add header e2e assertion. | P3 | Security headers present | [x] |
 | T8 | Add `renderer.forceContextLoss()` on unmount + re-apply device-pixel-ratio in `AgentGraph.tsx`. | P3 | WebGL context + DPR | [x] |
-| T9 | Remove unused `clsx`/`tailwind-merge` deps; make `stats.json` `includesPrivate` reflect the token used; update stale `middleware.ts` comments in `next.config.ts`. | P3 | No unused dep / false claim / stale comment | [ ] |
+| T9 | Remove unused `clsx`/`tailwind-merge` deps; make `stats.json` `includesPrivate` reflect the token used; update stale `middleware.ts` comments in `next.config.ts`. | P3 | No unused dep / false claim / stale comment | [x] |
 
 ## Coverage map
 
@@ -56,3 +56,4 @@
 ## Status updates
 
 - 2026-07-13: created from `plan.md`, 0/9 tasks complete.
+- 2026-07-13: 9/9 tasks complete; T2/T4/T6/T7/T9 implemented by codex (gpt-5.6-sol xhigh), T1/T3/T5/T8 by orchestrator; each verified fail-before/pass-after + committed. Ready for process-gate + PR.

@@ -1,6 +1,6 @@
 // llms.txt — short-form site digest per llmstxt.org. Served as a Route
 // Handler (not a static file) so the Content-Type is consistently
-// `text/markdown; charset=utf-8` regardless of request path (middleware
+// `text/markdown; charset=utf-8` regardless of request path (the proxy
 // rewrites `/` + `Accept: text/markdown` → `/llms.txt`; static file
 // serving sets extension-based `text/plain` which defeats AGENT_READINESS
 // §4.2's MIME contract).

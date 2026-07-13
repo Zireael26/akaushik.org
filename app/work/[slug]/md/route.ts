@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { getAllPosts, getPost, isDraftHidden } from '@/lib/content';
 
 // Pattern B (suffix route) for AGENT_READINESS §4.1 content negotiation.
-// Externally reachable as `/work/<slug>.md` via the middleware rewrite;
+// Externally reachable as `/work/<slug>.md` via the proxy rewrite;
 // this handler lives at the canonical internal path `/work/<slug>/md`.
 //
 // The MDX body already leads with `# <title>` + `> <dek>` per §4.4, so the

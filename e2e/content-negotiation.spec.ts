@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-// Guard against a future middleware edit (matcher regex, prefersMarkdown
+// Guard against a future proxy.ts edit (matcher regex, prefersMarkdown
 // check, rewrite URL construction) silently breaking either content
 // negotiation pattern. AGENT_READINESS §4.1 is the contract. The
 // isitagentready.com scan hits both patterns; losing either drops the
