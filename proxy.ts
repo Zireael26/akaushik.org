@@ -42,6 +42,29 @@ const LINK_HEADER = [
 // an entry means the path must also have an `/md/route.ts` handler.
 const MD_ALTERNATE_PREFIXES = ['/work/', '/writing/'] as const;
 
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self'",
+  "connect-src 'self' https://cloudflareinsights.com https://static.cloudflareinsights.com",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+].join('; ');
+
+export function securityHeaders(): Record<string, string> {
+  if (process.env.NODE_ENV !== 'production') return {};
+
+  return {
+    'content-security-policy': CONTENT_SECURITY_POLICY,
+    'x-frame-options': 'DENY',
+    'strict-transport-security': 'max-age=63072000; includeSubDomains; preload',
+  };
+}
+
 function rewritePatternB(pathname: string): string | null {
   if (!pathname.endsWith('.md')) return null;
   if (!MD_ALTERNATE_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return null;
@@ -76,6 +99,9 @@ function buildResponseHeaders(pathname: string): Headers {
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   headers.set('X-Robots-Tag', 'index, follow');
+  Object.entries(securityHeaders()).forEach(([name, value]) => {
+    headers.set(name, value);
+  });
   // Advertise the sibling `.md` alternate for HTML content pages that have
   // one. Do not advertise on the `.md` path itself (would produce
   // `.md.md` self-reference) or on the internal `/md` subpath.

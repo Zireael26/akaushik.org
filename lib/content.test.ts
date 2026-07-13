@@ -1,9 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import {
   getPost,
   getPostSlugs,
   getAllPosts,
   getAllPostsWithReadingTime,
+  isDraftHidden,
 } from './content';
 
 const DRAFT_FIXTURE_SLUG = '_test-draft';
@@ -61,6 +65,28 @@ describe('content — getPost', () => {
     expect(post.frontmatter.stack.length).toBeGreaterThan(0);
   });
 
+  it('keeps commas inside quoted inline-array values', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'akaushik-content-'));
+    const caseStudies = join(root, 'content', 'case-studies');
+    mkdirSync(caseStudies, { recursive: true });
+    writeFileSync(
+      join(caseStudies, 'inline-array.mdx'),
+      '---\nstack: ["a, b", c]\n---\nBody\n',
+    );
+
+    const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(root);
+    vi.resetModules();
+    try {
+      const { getPost: getIsolatedPost } = await import('./content');
+      const post = getIsolatedPost('case-studies', 'inline-array');
+      expect(post?.frontmatter.stack).toEqual(['a, b', 'c']);
+    } finally {
+      cwdSpy.mockRestore();
+      vi.resetModules();
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it('parses writing frontmatter', () => {
     const post = getPost('writing', 'micrograd-makemore');
     expect(post).not.toBeNull();
@@ -75,6 +101,32 @@ describe('content — getPost', () => {
     if (!post) throw new Error('expected micrograd post');
     expect(post.content).not.toContain('---\ntitle:');
     expect(post.content.trim().length).toBeGreaterThan(0);
+  });
+});
+
+describe('content — getPost slug sanitization', () => {
+  it('rejects a traversal slug that escapes the content-type directory (../case-studies/clusterbid)', () => {
+    // Regression check: prior to sanitization this slug resolved into the
+    // case-studies directory and returned the clusterbid post.
+    expect(getPost('writing', '../case-studies/clusterbid')).toBeNull();
+  });
+
+  it('rejects slugs containing a path separator', () => {
+    expect(getPost('writing', 'foo/bar')).toBeNull();
+    expect(getPost('case-studies', 'foo/bar')).toBeNull();
+  });
+
+  it('rejects slugs containing ".."', () => {
+    expect(getPost('writing', '..')).toBeNull();
+    expect(getPost('writing', '../../etc/passwd')).toBeNull();
+  });
+
+  it('still returns a real post for a valid slug', () => {
+    // micrograd-makemore is confirmed present in content/writing/ (also used
+    // by the parsing tests above).
+    expect(getPostSlugs('writing')).toContain('micrograd-makemore');
+    const post = getPost('writing', 'micrograd-makemore');
+    expect(post).not.toBeNull();
   });
 });
 
@@ -129,6 +181,31 @@ describe('content — drafts', () => {
     if (!post) throw new Error('expected draft fixture');
     expect((post.frontmatter as { draft?: unknown }).draft).toBe(true);
     expect(typeof (post.frontmatter as { draft?: unknown }).draft).toBe('boolean');
+  });
+});
+
+describe('content — isDraftHidden', () => {
+  // NODE_ENV is typed read-only (Next.js narrows it to a literal union), so
+  // tests go through vi.stubEnv rather than direct assignment. unstubAllEnvs
+  // in afterEach restores the original value for every other test file.
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('hides drafts in production', () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    expect(isDraftHidden({ draft: true })).toBe(true);
+  });
+
+  it('does not hide published posts in production', () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    expect(isDraftHidden({ draft: false })).toBe(false);
+    expect(isDraftHidden({})).toBe(false);
+  });
+
+  it('does not hide drafts outside production', () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    expect(isDraftHidden({ draft: true })).toBe(false);
   });
 });
 

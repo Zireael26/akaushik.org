@@ -45,6 +45,16 @@ describe('getReadingTime', () => {
     expect(getReadingTime(text)).toBe('1 min read');
   });
 
+  it('counts an intra-word hyphenated compound as one word', () => {
+    const text = 'word '.repeat(297) + 'state-of-the-art';
+    expect(getReadingTime(text)).toBe('1 min read');
+  });
+
+  it('preserves prose containing a bare less-than comparison', () => {
+    const text = 'word '.repeat(293) + 'if a < b then c > d end';
+    expect(getReadingTime(text)).toBe('2 min read');
+  });
+
   it('handles multi-paragraph text', () => {
     const text = 'word '.repeat(150) + '\n\n' + 'word '.repeat(150);
     expect(getReadingTime(text)).toBe('2 min read');

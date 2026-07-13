@@ -74,10 +74,10 @@ jobs:
       - name: Install axe-core CLI
         run: npm install -g @axe-core/cli@4
 
-      # Axe-core gate gets armed (`continue-on-error` removed) in PR-4 of
-      # the gap-analysis plan, after home.spec.ts un-fixmes the WCAG block.
-      - name: Axe-core scan (reporting only)
-        continue-on-error: true
+      # Gate armed: home.spec.ts's WCAG axe test passes with 0 violations
+      # (verified T5 audit remediation), so this step now fails the build
+      # on regression instead of only reporting.
+      - name: Axe-core scan
         run: |
           axe http://localhost:3000/ http://localhost:3000/work/neev http://localhost:3000/writing \
             --exit \

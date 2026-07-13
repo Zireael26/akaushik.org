@@ -1,6 +1,15 @@
 import { defineConfig } from 'vitest/config';
+import path from 'node:path';
 
 export default defineConfig({
+  resolve: {
+    // Mirrors tsconfig.json's `@/*` -> `./*` so app/ + lib/ modules that
+    // import via the `@/` alias (e.g. app/sitemap.ts -> @/lib/content)
+    // resolve under vitest the same way they do under Next's bundler.
+    alias: {
+      '@': path.resolve(__dirname),
+    },
+  },
   test: {
     include: ['**/*.test.{ts,tsx}'],
     exclude: [

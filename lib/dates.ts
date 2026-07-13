@@ -11,5 +11,14 @@ const MONTH_YEAR = new Intl.DateTimeFormat('en-US', {
 export function formatMonthYear(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
+  const isoDate = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (
+    isoDate &&
+    (d.getUTCFullYear() !== Number(isoDate[1]) ||
+      d.getUTCMonth() + 1 !== Number(isoDate[2]) ||
+      d.getUTCDate() !== Number(isoDate[3]))
+  ) {
+    return iso;
+  }
   return MONTH_YEAR.format(d);
 }

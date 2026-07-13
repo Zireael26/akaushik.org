@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getAllPosts, getPost, type CaseStudyFrontmatter } from '@/lib/content';
+import { getAllPosts, getPost, isDraftHidden, type CaseStudyFrontmatter } from '@/lib/content';
 import { CASE_STUDIES } from '@/components/sections/Work';
 import { CaseStudyStub } from '@/components/sections/CaseStudyStub';
 import { CaseStudyPage } from '@/components/work/CaseStudyPage';
 import { caseStudyGraph, jsonLdString } from '@/lib/structured-data';
 import { JsonLdScript } from '@/components/seo/JsonLdScript';
 import type { ReelSlug } from '@/components/work/reels';
+import { canonical } from '@/lib/canonical';
 
 const CARD_SLUGS = CASE_STUDIES.map((c) => c.slug) as ReelSlug[];
 
@@ -33,6 +34,19 @@ export async function generateMetadata({
       title: `${fm.title} · Case study`,
       description: fm.dek,
       alternates: { canonical: `/work/${slug}` },
+      openGraph: {
+        url: canonical(`/work/${slug}`),
+        type: 'website',
+        siteName: 'akaushik.org',
+        title: `${fm.title} · Case study`,
+        description: fm.dek,
+      },
+      twitter: {
+        card: 'summary_large_image',
+        creator: '@abhi2601k',
+        title: `${fm.title} · Case study`,
+        description: fm.dek,
+      },
     };
   }
   const card = CASE_STUDIES.find((c) => c.slug === slug);
@@ -41,6 +55,19 @@ export async function generateMetadata({
       title: `${card.title} · Case study`,
       description: card.dek,
       alternates: { canonical: `/work/${slug}` },
+      openGraph: {
+        url: canonical(`/work/${slug}`),
+        type: 'website',
+        siteName: 'akaushik.org',
+        title: `${card.title} · Case study`,
+        description: card.dek,
+      },
+      twitter: {
+        card: 'summary_large_image',
+        creator: '@abhi2601k',
+        title: `${card.title} · Case study`,
+        description: card.dek,
+      },
     };
   }
   return {};
@@ -54,11 +81,7 @@ export default async function WorkDetail({
   const { slug } = await params;
 
   const mdx = getPost('case-studies', slug);
-  if (
-    mdx &&
-    (mdx.frontmatter as CaseStudyFrontmatter).draft === true &&
-    process.env.NODE_ENV === 'production'
-  ) {
+  if (mdx && isDraftHidden(mdx.frontmatter as CaseStudyFrontmatter)) {
     notFound();
   }
   // Pre-compute the JSON-LD island. Synthesise a minimal frontmatter shape

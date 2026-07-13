@@ -58,14 +58,12 @@ test.describe('hero canvas + wanderer', () => {
   }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/');
+    // AgentGraphClient's getSnapshot() reads `prefers-reduced-motion` and
+    // returns false, so `{render ? <AgentGraph /> : null}` never renders
+    // AgentGraph — `.scene-canvas-host` is AgentGraph's only DOM node, so
+    // it never mounts at all (not merely CSS-hidden). Assert absence.
     const canvasHost = page.locator('.scene-canvas-host');
-    // CSS rule `@media (prefers-reduced-motion: reduce) .scene-canvas-host
-    // { display: none }` — either the element never mounts or it's
-    // display:none. Both assertions here.
-    const hostCount = await canvasHost.count();
-    if (hostCount > 0) {
-      await expect(canvasHost).toBeHidden();
-    }
+    await expect(canvasHost).toHaveCount(0);
     // Wanderer crane bails early when reduceMotion is true, so no canvas
     // should be inside #companion. With Wanderer disabled site-wide (PR #58)
     // #companion is not in the DOM at all — the count check still holds
@@ -81,11 +79,12 @@ test.describe('hero canvas + wanderer', () => {
     await page.evaluate(() => {
       document.documentElement.setAttribute('data-motion', 'off');
     });
+    // Same JS gate as the reduced-motion test: the `data-motion="off"`
+    // MutationObserver flips AgentGraphClient's getSnapshot() to false,
+    // unmounting AgentGraph entirely — `.scene-canvas-host` never exists
+    // in the DOM once the attribute flips. Assert absence, not visibility.
     const canvasHost = page.locator('.scene-canvas-host');
-    const hostCount = await canvasHost.count();
-    if (hostCount > 0) {
-      await expect(canvasHost).toBeHidden();
-    }
+    await expect(canvasHost).toHaveCount(0);
   });
 
   test('no console errors on home page load', async ({ page }) => {

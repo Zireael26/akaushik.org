@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import { getReadingTime } from './reading-time';
 
 export type ContentType = 'case-studies' | 'writing';
@@ -80,7 +80,7 @@ function parseFrontmatter(raw: string): {
     if (value.startsWith('[') && value.endsWith(']')) {
       const inner = value.slice(1, -1).trim();
       data[key] = inner.length
-        ? inner.split(',').map((s) => stripQuotes(s.trim()))
+        ? splitInlineArray(inner).map((s) => stripQuotes(s.trim()))
         : [];
       i += 1;
       continue;
@@ -121,6 +121,31 @@ function parseFrontmatter(raw: string): {
   return { data, content: body };
 }
 
+function splitInlineArray(inner: string): string[] {
+  const items: string[] = [];
+  let start = 0;
+  let quote: '"' | "'" | null = null;
+
+  for (let i = 0; i < inner.length; i += 1) {
+    const char = inner[i];
+    if (quote !== null) {
+      if (char === quote && inner[i - 1] !== '\\') quote = null;
+      continue;
+    }
+    if ((char === '"' || char === "'") && inner.slice(start, i).trim() === '') {
+      quote = char;
+      continue;
+    }
+    if (char === ',') {
+      items.push(inner.slice(start, i));
+      start = i + 1;
+    }
+  }
+
+  items.push(inner.slice(start));
+  return items;
+}
+
 function stripQuotes(s: string): string {
   if (
     (s.startsWith('"') && s.endsWith('"')) ||
@@ -129,6 +154,10 @@ function stripQuotes(s: string): string {
     return s.slice(1, -1);
   }
   return s;
+}
+
+export function isDraftHidden(fm: { draft?: boolean }): boolean {
+  return fm.draft === true && process.env.NODE_ENV === 'production';
 }
 
 export function getPostSlugs(type: ContentType): string[] {
@@ -144,7 +173,10 @@ export function getPost<T extends ContentType>(
   type: T,
   slug: string,
 ): Post<T> | null {
-  const path = join(contentDir(type), `${slug}.mdx`);
+  if (!/^[a-z0-9_-]+$/.test(slug)) return null;
+  const dir = resolve(contentDir(type));
+  const path = resolve(join(dir, `${slug}.mdx`));
+  if (!path.startsWith(dir + sep)) return null;
   if (!existsSync(path)) return null;
   const raw = readFileSync(path, 'utf8');
   const { data, content } = parseFrontmatter(raw);

@@ -2,12 +2,28 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getAllPosts } from '@/lib/content';
 import { formatMonthYear } from '@/lib/dates';
+import { canonical } from '@/lib/canonical';
+
+const DESCRIPTION =
+  'First-principles notes on agent systems and AI for traditional businesses.';
 
 export const metadata: Metadata = {
   title: 'Writing',
-  description:
-    'First-principles notes on agent systems and AI for traditional businesses.',
+  description: DESCRIPTION,
   alternates: { canonical: '/writing' },
+  openGraph: {
+    url: canonical('/writing'),
+    type: 'website',
+    siteName: 'akaushik.org',
+    title: 'Writing',
+    description: DESCRIPTION,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    creator: '@abhi2601k',
+    title: 'Writing',
+    description: DESCRIPTION,
+  },
 };
 
 export default function WritingIndex() {

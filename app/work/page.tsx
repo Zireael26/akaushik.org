@@ -1,12 +1,28 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CASE_STUDIES } from '@/components/sections/Work';
+import { canonical } from '@/lib/canonical';
+
+const DESCRIPTION =
+  'Four case studies — Neev, VeriCite, Bluehost agents framework, curat.money — ordered by strategic weight.';
 
 export const metadata: Metadata = {
   title: 'Selected work',
-  description:
-    'Four case studies — Neev, VeriCite, Bluehost agents framework, curat.money — ordered by strategic weight.',
+  description: DESCRIPTION,
   alternates: { canonical: '/work' },
+  openGraph: {
+    url: canonical('/work'),
+    type: 'website',
+    siteName: 'akaushik.org',
+    title: 'Selected work',
+    description: DESCRIPTION,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    creator: '@abhi2601k',
+    title: 'Selected work',
+    description: DESCRIPTION,
+  },
 };
 
 export default function WorkIndex() {

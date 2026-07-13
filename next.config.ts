@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
   },
-  // Agent-readiness: set discoverability headers in middleware.ts; this is the build-time
+  // Agent-readiness: set discoverability headers in proxy.ts; this is the build-time
   // declaration for the static .well-known/* routes that are served from /public.
   async headers() {
     return [

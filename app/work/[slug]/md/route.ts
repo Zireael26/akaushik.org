@@ -1,8 +1,8 @@
 import { notFound } from 'next/navigation';
-import { getAllPosts, getPost } from '@/lib/content';
+import { getAllPosts, getPost, isDraftHidden } from '@/lib/content';
 
 // Pattern B (suffix route) for AGENT_READINESS §4.1 content negotiation.
-// Externally reachable as `/work/<slug>.md` via the middleware rewrite;
+// Externally reachable as `/work/<slug>.md` via the proxy rewrite;
 // this handler lives at the canonical internal path `/work/<slug>/md`.
 //
 // The MDX body already leads with `# <title>` + `> <dek>` per §4.4, so the
@@ -12,6 +12,7 @@ import { getAllPosts, getPost } from '@/lib/content';
 
 export const dynamic = 'force-static';
 export const revalidate = 300;
+export const dynamicParams = false;
 
 export function generateStaticParams() {
   return getAllPosts('case-studies').map((post) => ({ slug: post.slug }));
@@ -24,6 +25,7 @@ export async function GET(
   const { slug } = await params;
   const post = getPost('case-studies', slug);
   if (!post) notFound();
+  if (isDraftHidden(post.frontmatter)) notFound();
 
   const fm = post.frontmatter;
   const stack = fm.stack?.length ? fm.stack.join(', ') : '—';
