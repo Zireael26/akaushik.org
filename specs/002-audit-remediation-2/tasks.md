@@ -21,7 +21,7 @@
 | T2 | Sanitize `getPost()` slug (allowlist + resolved-path containment) in `lib/content.ts`; add traversal unit test. | P1 | Slug can't escape content dir | [x] |
 | T3 | Add `pnpm test:coverage` step to `.github/workflows/ci.yml` verify job. | P2 | CI enforces tests+coverage | [x] |
 | T4 | Add per-page `openGraph` to work/writing `[slug]` + index metadata; use `frontmatter.date` for sitemap `lastModified`. | P2 | Per-page OG; sitemap date | [x] |
-| T5 | Make canvas reduced-motion/motion-off e2e assertions deterministic; remove armed `continue-on-error` on Axe; delete stale WCAG "fixme" comment. | P2 | Gates fail on inverted requirement | [ ] |
+| T5 | Make canvas reduced-motion/motion-off e2e assertions deterministic; remove armed `continue-on-error` on Axe; delete stale WCAG "fixme" comment. | P2 | Gates fail on inverted requirement | [x] |
 | T6 | Fix `lib/dates.ts` invalid-date rollover, `lib/reading-time.ts` hyphen + bare-`<` stripping, `lib/content.ts` inline-array comma parsing; add fail-before/pass-after tests. | P3 | lib edges handled | [ ] |
 | T7 | Add CSP + `X-Frame-Options` + HSTS to `proxy.ts` `buildResponseHeaders()`; add header e2e assertion. | P3 | Security headers present | [ ] |
 | T8 | Add `renderer.forceContextLoss()` on unmount + re-apply device-pixel-ratio in `AgentGraph.tsx`. | P3 | WebGL context + DPR | [ ] |

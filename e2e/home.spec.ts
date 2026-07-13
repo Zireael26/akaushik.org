@@ -45,13 +45,10 @@ test.describe('Home page', () => {
     await expect(work).toBeInViewport({ ratio: 0.1 });
   });
 
-  // PR-4 of the gap-analysis plan un-fixmed this gate and immediately
-  // surfaced ~30 contrast violations across the home page (every
-  // expectedContrastRatio: "4.5:1" finding). Per the plan §1.6 risks
-  // ("axe violations cascade"), the residue exceeds the 30-min inline
-  // budget, so the fixme is restored and the work moves to a follow-up
-  // `fix(a11y)` PR tracked in ROADMAP. Re-arm by deleting the fixme line
-  // once the contrast pass lands.
+  // Live gate: 0 violations against wcag2a/wcag2aa/wcag21a/wcag21aa as of
+  // the T5 audit remediation pass. The `continue-on-error` on the
+  // corresponding Axe-core step in .github/workflows/lighthouse.yml has
+  // been removed to match — this test failing now fails CI.
   test('axe-core reports no WCAG A/AA violations on the landing page', async ({
     page,
   }) => {
