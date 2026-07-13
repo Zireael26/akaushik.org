@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Newsreader, Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
+import { headers } from 'next/headers';
 import Script from 'next/script';
 import SiteNav from '@/components/site/SiteNav';
 import SiteFooter from '@/components/site/SiteFooter';
@@ -79,7 +80,9 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
+
   return (
     <html
       lang="en"
@@ -99,7 +102,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             would paint first, then flip theme, causing FOUC for dark-preference
             users. Matches components/site/ThemeToggle.tsx (storage key + fallback). */}
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
-        <script src="/init-theme.js" />
+        <script nonce={nonce} src="/init-theme.js" />
         {/* RFC 8288 Link header duplicates — for crawlers that skip HTTP
             headers. Same rels as proxy.ts; types match AGENT_READINESS §3.3. */}
         <link rel="describedby" type="text/markdown" href="/llms.txt" />
@@ -126,6 +129,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <TweakBridge />
         {CF_BEACON_TOKEN ? (
           <Script
+            nonce={nonce}
             strategy="afterInteractive"
             src="https://static.cloudflareinsights.com/beacon.min.js"
             data-cf-beacon={`{"token": "${CF_BEACON_TOKEN}"}`}
