@@ -39,6 +39,13 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      # Unit suite + coverage floor (75/55/75 lines/branches/functions from
+      # vitest.config.ts). Previously enforced only by the local pre-push hook,
+      # which never fires on PRs merged via the GitHub UI/API — a green CI could
+      # ship a broken lib/*.test.ts or a coverage regression.
+      - name: Test
+        run: pnpm test:coverage
+
       - name: Build
         run: pnpm build
 
