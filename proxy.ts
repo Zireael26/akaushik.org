@@ -42,24 +42,22 @@ const LINK_HEADER = [
 // an entry means the path must also have an `/md/route.ts` handler.
 const MD_ALTERNATE_PREFIXES = ['/work/', '/writing/'] as const;
 
-const CONTENT_SECURITY_POLICY = [
-  "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
-  "font-src 'self'",
-  "connect-src 'self' https://cloudflareinsights.com https://static.cloudflareinsights.com",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "object-src 'none'",
-  "frame-ancestors 'none'",
-].join('; ');
-
-export function securityHeaders(): Record<string, string> {
+export function securityHeaders(nonce: string): Record<string, string> {
   if (process.env.NODE_ENV !== 'production') return {};
 
   return {
-    'content-security-policy': CONTENT_SECURITY_POLICY,
+    'content-security-policy': [
+      "default-src 'self'",
+      `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://static.cloudflareinsights.com`,
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob:",
+      "font-src 'self'",
+      "connect-src 'self' https://cloudflareinsights.com https://static.cloudflareinsights.com",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "object-src 'none'",
+      "frame-ancestors 'none'",
+    ].join('; '),
     'x-frame-options': 'DENY',
     'strict-transport-security': 'max-age=63072000; includeSubDomains; preload',
   };
@@ -93,13 +91,16 @@ function rewritePatternA(pathname: string): string | null {
   return `${pathname}/md`;
 }
 
-function buildResponseHeaders(pathname: string): Headers {
+function buildResponseHeaders(
+  pathname: string,
+  productionSecurityHeaders: Record<string, string>,
+): Headers {
   const headers = new Headers();
   headers.set('Link', LINK_HEADER);
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   headers.set('X-Robots-Tag', 'index, follow');
-  Object.entries(securityHeaders()).forEach(([name, value]) => {
+  Object.entries(productionSecurityHeaders).forEach(([name, value]) => {
     headers.set(name, value);
   });
   // Advertise the sibling `.md` alternate for HTML content pages that have
@@ -120,8 +121,12 @@ function buildResponseHeaders(pathname: string): Headers {
   return headers;
 }
 
-function applyHeaders(response: NextResponse, pathname: string): NextResponse {
-  const defaults = buildResponseHeaders(pathname);
+function applyHeaders(
+  response: NextResponse,
+  pathname: string,
+  productionSecurityHeaders: Record<string, string>,
+): NextResponse {
+  const defaults = buildResponseHeaders(pathname, productionSecurityHeaders);
   defaults.forEach((value, key) => {
     // Do not clobber headers the route handler has already set (e.g. the
     // `/md` handlers set their own Cache-Control + canonical Link). But the
@@ -141,12 +146,15 @@ function applyHeaders(response: NextResponse, pathname: string): NextResponse {
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const nonce = btoa(crypto.randomUUID());
+  const productionSecurityHeaders = securityHeaders(nonce);
 
   const patternB = rewritePatternB(pathname);
   if (patternB) {
     return applyHeaders(
       NextResponse.rewrite(new URL(patternB, request.url)),
       pathname,
+      productionSecurityHeaders,
     );
   }
 
@@ -156,11 +164,25 @@ export function proxy(request: NextRequest) {
       return applyHeaders(
         NextResponse.rewrite(new URL(patternA, request.url)),
         pathname,
+        productionSecurityHeaders,
       );
     }
   }
 
-  return applyHeaders(NextResponse.next(), pathname);
+  const contentSecurityPolicy = productionSecurityHeaders['content-security-policy'];
+  if (!contentSecurityPolicy) {
+    return applyHeaders(NextResponse.next(), pathname, productionSecurityHeaders);
+  }
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('content-security-policy', contentSecurityPolicy);
+
+  return applyHeaders(
+    NextResponse.next({ request: { headers: requestHeaders } }),
+    pathname,
+    productionSecurityHeaders,
+  );
 }
 
 export const config = {
