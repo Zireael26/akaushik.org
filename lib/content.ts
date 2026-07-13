@@ -131,6 +131,10 @@ function stripQuotes(s: string): string {
   return s;
 }
 
+export function isDraftHidden(fm: { draft?: boolean }): boolean {
+  return fm.draft === true && process.env.NODE_ENV === 'production';
+}
+
 export function getPostSlugs(type: ContentType): string[] {
   const dir = contentDir(type);
   if (!existsSync(dir)) return [];

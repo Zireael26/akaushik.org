@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getAllPosts, getPost, type CaseStudyFrontmatter } from '@/lib/content';
+import { getAllPosts, getPost, isDraftHidden, type CaseStudyFrontmatter } from '@/lib/content';
 import { CASE_STUDIES } from '@/components/sections/Work';
 import { CaseStudyStub } from '@/components/sections/CaseStudyStub';
 import { CaseStudyPage } from '@/components/work/CaseStudyPage';
@@ -54,11 +54,7 @@ export default async function WorkDetail({
   const { slug } = await params;
 
   const mdx = getPost('case-studies', slug);
-  if (
-    mdx &&
-    (mdx.frontmatter as CaseStudyFrontmatter).draft === true &&
-    process.env.NODE_ENV === 'production'
-  ) {
+  if (mdx && isDraftHidden(mdx.frontmatter as CaseStudyFrontmatter)) {
     notFound();
   }
   // Pre-compute the JSON-LD island. Synthesise a minimal frontmatter shape

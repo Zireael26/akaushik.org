@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   getPost,
   getPostSlugs,
   getAllPosts,
   getAllPostsWithReadingTime,
+  isDraftHidden,
 } from './content';
 
 const DRAFT_FIXTURE_SLUG = '_test-draft';
@@ -129,6 +130,31 @@ describe('content — drafts', () => {
     if (!post) throw new Error('expected draft fixture');
     expect((post.frontmatter as { draft?: unknown }).draft).toBe(true);
     expect(typeof (post.frontmatter as { draft?: unknown }).draft).toBe('boolean');
+  });
+});
+
+describe('content — isDraftHidden', () => {
+  // NODE_ENV is typed read-only (Next.js narrows it to a literal union), so
+  // tests go through vi.stubEnv rather than direct assignment. unstubAllEnvs
+  // in afterEach restores the original value for every other test file.
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('hides drafts in production', () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    expect(isDraftHidden({ draft: true })).toBe(true);
+  });
+
+  it('does not hide published posts in production', () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    expect(isDraftHidden({ draft: false })).toBe(false);
+    expect(isDraftHidden({})).toBe(false);
+  });
+
+  it('does not hide drafts outside production', () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    expect(isDraftHidden({ draft: true })).toBe(false);
   });
 });
 

@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getAllPosts, getPost } from '@/lib/content';
+import { getAllPosts, getPost, isDraftHidden } from '@/lib/content';
 
 // Pattern B (suffix route) for AGENT_READINESS §4.1 content negotiation.
 // Externally reachable as `/writing/<slug>.md` via the middleware rewrite;
@@ -8,6 +8,7 @@ import { getAllPosts, getPost } from '@/lib/content';
 
 export const dynamic = 'force-static';
 export const revalidate = 300;
+export const dynamicParams = false;
 
 export function generateStaticParams() {
   return getAllPosts('writing').map((post) => ({ slug: post.slug }));
@@ -20,6 +21,7 @@ export async function GET(
   const { slug } = await params;
   const post = getPost('writing', slug);
   if (!post) notFound();
+  if (isDraftHidden(post.frontmatter)) notFound();
 
   const fm = post.frontmatter;
   const body = [

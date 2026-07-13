@@ -17,7 +17,7 @@
 
 | ID | Task | Pri | Covers (spec §3) | Status |
 |----|------|-----|------|--------|
-| T1 | Add production draft gate (`draft===true && NODE_ENV==='production' → notFound()`) to both `.md` route handlers and both `opengraph-image.tsx`; add regression e2e. | P1 | Drafts 404 on all surfaces | [ ] |
+| T1 | Add production draft gate (`draft===true && NODE_ENV==='production' → notFound()`) to both `.md` route handlers and both `opengraph-image.tsx`; add regression e2e. | P1 | Drafts 404 on all surfaces | [x] |
 | T2 | Sanitize `getPost()` slug (allowlist + resolved-path containment) in `lib/content.ts`; add traversal unit test. | P1 | Slug can't escape content dir | [ ] |
 | T3 | Add `pnpm test:coverage` step to `.github/workflows/ci.yml` verify job. | P2 | CI enforces tests+coverage | [ ] |
 | T4 | Add per-page `openGraph` to work/writing `[slug]` + index metadata; use `frontmatter.date` for sitemap `lastModified`. | P2 | Per-page OG; sitemap date | [ ] |
