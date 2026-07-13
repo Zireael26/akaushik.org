@@ -79,6 +79,32 @@ describe('content — getPost', () => {
   });
 });
 
+describe('content — getPost slug sanitization', () => {
+  it('rejects a traversal slug that escapes the content-type directory (../case-studies/clusterbid)', () => {
+    // Regression check: prior to sanitization this slug resolved into the
+    // case-studies directory and returned the clusterbid post.
+    expect(getPost('writing', '../case-studies/clusterbid')).toBeNull();
+  });
+
+  it('rejects slugs containing a path separator', () => {
+    expect(getPost('writing', 'foo/bar')).toBeNull();
+    expect(getPost('case-studies', 'foo/bar')).toBeNull();
+  });
+
+  it('rejects slugs containing ".."', () => {
+    expect(getPost('writing', '..')).toBeNull();
+    expect(getPost('writing', '../../etc/passwd')).toBeNull();
+  });
+
+  it('still returns a real post for a valid slug', () => {
+    // micrograd-makemore is confirmed present in content/writing/ (also used
+    // by the parsing tests above).
+    expect(getPostSlugs('writing')).toContain('micrograd-makemore');
+    const post = getPost('writing', 'micrograd-makemore');
+    expect(post).not.toBeNull();
+  });
+});
+
 describe('content — getAllPosts', () => {
   it('returns one entry per slug, frontmatter only', () => {
     const posts = getAllPosts('case-studies');

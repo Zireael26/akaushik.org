@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import { getReadingTime } from './reading-time';
 
 export type ContentType = 'case-studies' | 'writing';
@@ -148,7 +148,10 @@ export function getPost<T extends ContentType>(
   type: T,
   slug: string,
 ): Post<T> | null {
-  const path = join(contentDir(type), `${slug}.mdx`);
+  if (!/^[a-z0-9_-]+$/.test(slug)) return null;
+  const dir = resolve(contentDir(type));
+  const path = resolve(join(dir, `${slug}.mdx`));
+  if (!path.startsWith(dir + sep)) return null;
   if (!existsSync(path)) return null;
   const raw = readFileSync(path, 'utf8');
   const { data, content } = parseFrontmatter(raw);
