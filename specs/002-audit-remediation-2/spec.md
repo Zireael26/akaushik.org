@@ -57,7 +57,7 @@ None. Operator set scope (all P1–P3) and delivery (spec triad, one PR) on 2026
 ## 8. Out of scope (intentional)
 
 - PR merge or deployment. This pass stops at process-gate readiness + an opened PR.
-- A new ADR; existing ADRs govern. This spec records audit closure.
+- ~~A new ADR; existing ADRs govern.~~ Superseded during process-gate: the bundle changes ADR-trigger paths (`package.json`, `next.config.ts`) and exceeds the 800-line size cap, so `docs/adr/0013-audit-remediation-2.md` records the cross-cutting decisions (draft-gating, security headers, CI/quality gates).
 
 ---
 
