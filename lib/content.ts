@@ -80,7 +80,7 @@ function parseFrontmatter(raw: string): {
     if (value.startsWith('[') && value.endsWith(']')) {
       const inner = value.slice(1, -1).trim();
       data[key] = inner.length
-        ? inner.split(',').map((s) => stripQuotes(s.trim()))
+        ? splitInlineArray(inner).map((s) => stripQuotes(s.trim()))
         : [];
       i += 1;
       continue;
@@ -119,6 +119,31 @@ function parseFrontmatter(raw: string): {
   }
 
   return { data, content: body };
+}
+
+function splitInlineArray(inner: string): string[] {
+  const items: string[] = [];
+  let start = 0;
+  let quote: '"' | "'" | null = null;
+
+  for (let i = 0; i < inner.length; i += 1) {
+    const char = inner[i];
+    if (quote !== null) {
+      if (char === quote && inner[i - 1] !== '\\') quote = null;
+      continue;
+    }
+    if ((char === '"' || char === "'") && inner.slice(start, i).trim() === '') {
+      quote = char;
+      continue;
+    }
+    if (char === ',') {
+      items.push(inner.slice(start, i));
+      start = i + 1;
+    }
+  }
+
+  items.push(inner.slice(start));
+  return items;
 }
 
 function stripQuotes(s: string): string {

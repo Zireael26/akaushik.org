@@ -9,8 +9,9 @@ export function getReadingTime(content: string): string {
   const words = content
     .replace(/```[\s\S]*?```/g, ' ')
     .replace(/`[^`]*`/g, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/[#*_>`\-]/g, ' ')
+    .replace(/<\/?[a-zA-Z][^>]*>/g, ' ')
+    .replace(/^[ \t]*[-*]\s+/gm, ' ')
+    .replace(/[#*_>`]/g, ' ')
     .split(/\s+/)
     .filter((w) => w.length > 0).length;
   const minutes = Math.max(1, Math.round(words / WPM));

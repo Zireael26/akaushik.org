@@ -25,6 +25,11 @@ describe('formatMonthYear', () => {
     expect(formatMonthYear('2024-02-29')).toBe('Feb 2024');
   });
 
+  it('rejects rolled-over calendar dates without changing valid ISO dates', () => {
+    expect(formatMonthYear('2026-02-30')).toBe('2026-02-30');
+    expect(formatMonthYear('2026-04-01')).toBe('Apr 2026');
+  });
+
   it('returns the input unchanged when the date cannot be parsed', () => {
     expect(formatMonthYear('not-a-date')).toBe('not-a-date');
     expect(formatMonthYear('')).toBe('');
