@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import { getAllPosts, getPost, isDraftHidden, type WritingFrontmatter } from '@/lib/content';
+import { canonical } from '@/lib/canonical';
 import { getReadingTime } from '@/lib/reading-time';
 import { MDX_OPTIONS } from '@/lib/mdx-options';
 import { formatMonthYear } from '@/lib/dates';
@@ -34,6 +35,19 @@ export async function generateMetadata({
     title: fm.title,
     description: fm.dek,
     alternates: { canonical: `/writing/${slug}` },
+    openGraph: {
+      url: canonical(`/writing/${slug}`),
+      type: 'website',
+      siteName: 'akaushik.org',
+      title: fm.title,
+      description: fm.dek,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      creator: '@abhi2601k',
+      title: fm.title,
+      description: fm.dek,
+    },
   };
 }
 
