@@ -1,6 +1,6 @@
 # Editorial backlog — drafts batch 1
 
-The original May 2026 publication cadence for PR [#81](https://github.com/Zireael26/akaushik.org/pull/81) has elapsed. Treat this file as the current backlog, not a calendar. All four pieces still ship with `draft: true` frontmatter (writing) or draft-only metadata and remain invisible to production.
+The original May 2026 publication cadence for PR [#81](https://github.com/Zireael26/akaushik.org/pull/81) has elapsed. Treat this file as the current backlog, not a calendar. The three writing pieces have shipped; the ClusterBid case study remains draft-only and invisible to production.
 
 This file is disposable — delete it once every row below is shipped or dropped.
 
@@ -9,20 +9,7 @@ This file is disposable — delete it once every row below is shipped or dropped
 | Status | Slot | Piece | Next action |
 |---|---|---|---|
 | done | infra | [PR #80](https://github.com/Zireael26/akaushik.org/pull/80) — commits widget fix + draft system | No action |
-| editorial review | writing | `content/writing/process-gate-stack-profiles.mdx` | Review, update `date:`, then flip `draft: true` to `draft: false` |
-| editorial review | writing | `content/writing/native-git-hooks-for-non-node.mdx` | Review, update `date:`, then flip `draft: true` to `draft: false` |
-| editorial review | writing | `content/writing/renaming-projects.mdx` | Review, update `date:`, then flip `draft: true` to `draft: false` |
 | needs prose | case study | `content/case-studies/clusterbid.mdx` + `components/sections/Work.tsx` | Finish prose, fill role, add Work row, and ship the matching reel entry |
-
-## Per-piece flip checklist (writing)
-
-1. `cd content/writing && $EDITOR <slug>.mdx`
-2. Change `draft: true` → `draft: false`. Update the `date:` to the actual ship date.
-3. `pnpm typecheck && pnpm test`
-4. `git add content/writing/<slug>.mdx docs/CHANGELOG.md`
-5. Add a `### Added` line to `docs/CHANGELOG.md` under `[Unreleased]`.
-6. `git commit -m "feat(content): publish '<title>'"`
-7. `git push`
 
 The `Refresh GitHub stats` workflow daily cron is on the same calendar; no action needed there.
 

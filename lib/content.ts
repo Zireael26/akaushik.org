@@ -13,7 +13,6 @@ export type CaseStudyFrontmatter = {
   role: string;
   stack: string[];
   evidenceOf: string;
-  reel?: string;
   draft?: boolean;
 };
 
