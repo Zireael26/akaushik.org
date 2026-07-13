@@ -265,6 +265,10 @@ export default function AgentGraph() {
       const rect = host.getBoundingClientRect();
       camera.aspect = rect.width / Math.max(rect.height, 1);
       camera.updateProjectionMatrix();
+      // Re-read DPR so moving the window between a standard and a HiDPI
+      // display mid-session keeps the canvas sharp rather than stuck at the
+      // pixel ratio captured at mount.
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       renderer.setSize(rect.width, rect.height, false);
     });
     ro.observe(host);
@@ -359,6 +363,11 @@ export default function AgentGraph() {
       packetGeo.dispose();
       packetMat.dispose();
       renderer.dispose();
+      // dispose() releases GL objects but not the drawing context itself;
+      // forceContextLoss() frees the underlying WebGL context so repeated
+      // mount/unmount (Fast Refresh, edit-mode motion toggles) can't leak
+      // contexts toward the browser's per-page cap.
+      renderer.forceContextLoss();
       if (renderer.domElement.parentNode === host) {
         host.removeChild(renderer.domElement);
       }
