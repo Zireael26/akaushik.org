@@ -93,11 +93,14 @@ coverage/
 .claude/skills/brainstorming
 .claude/skills/orchestrate
 .claude/skills/debrief
+.claude/skills/writing
 .claude/commands/primer.md
 .claude/commands/primer-refresh.md
 .claude/commands/primer-check.md
 .claude/commands/explore.md
 .claude/commands/autonomy.md
+.claude/commands/surgical.md
+.claude/agents/codex-worker.md
 .agents/rules/trellis.md
 .agents/skills/process-gate
 .agents/skills/security-gate
@@ -110,16 +113,20 @@ coverage/
 .agents/skills/brainstorming
 .agents/skills/orchestrate
 .agents/skills/debrief
+.agents/skills/writing
 .agents/commands/primer.md
 .agents/commands/primer-refresh.md
 .agents/commands/primer-check.md
 .agents/commands/explore.md
 .agents/commands/autonomy.md
+.agents/commands/surgical.md
 
 # --- Trellis per-session state (autonomy slider) ---
 # Per-developer, per-session state written by Trellis commands and hooks.
 # NOT shared across machines. See core-rules/autonomy.md and hooks.md.
 .claude/session-autonomy
+.claude/session-surgical
+.claude/spec-gate-audit.log
 .claude/.fail-counter
 .codex/.fail-counter
 .claude/.reread-state/
@@ -129,5 +136,6 @@ coverage/
 .claude/screenshots/
 .codex/screenshots/
 .claude/scheduled_tasks.lock
+.claude/codex-thread-pool.json
 # --- end Trellis per-session state ---
 # --- end Trellis fragment ---
