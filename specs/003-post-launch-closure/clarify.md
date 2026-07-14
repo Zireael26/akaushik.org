@@ -1,48 +1,55 @@
 # Clarify: Post-launch follow-up closure
 
 **Date:** 2026-07-14
-**Operator request (verbatim):** “Take up all of the follow-ups and finish them. Use multiple sub-agents, workflows, loops, whatever you need to get maximum parallelization for this work, and wrap it all up.”
+**Operator interview evidence (verbatim):**
+
+- “Design a loop to wrap up all this work, use codex wherever possible.”
+- “Merge all PRs in the correct order and take any follow ups with codex agents.”
+- “Take up all of the follow-ups and finish them. Use multiple sub-agents, workflows, loops, whatever you need to get maximum parallelization for this work, and wrap it all up.”
+- After the spec/implementation loop had started: “Continue.”
+
+This record distinguishes operator statements from implementation decisions. Nothing marked as an operator answer below is self-authored; details the operator did not specify are identified as orchestrator constraints rather than attributed to the operator.
 
 ## 1. Intent
 
 **Question:** What problem are we solving and why now?
 
-**Hypothesis (0.95):** The portfolio has accumulated a mixed set of post-launch follow-ups: some are shipped-but-stale bookkeeping, some are executable engineering work, and some are owner-only/editorial tasks. The goal is to close every executable follow-up now, produce honest dispositions for the rest, and leave no ambiguous “pending” engineering residue.
+**Operator answer:** “Take up all of the follow-ups and finish them” and “wrap it all up.” The requested mechanism is a parallel Codex-heavy loop, followed by ordered PR merges and any review follow-ups.
 
-**Answer:** Operator delegated the full current follow-up backlog for autonomous closure. “Finish” means implement and verify the engineering work, reconcile stale artifacts, and explicitly classify anything that cannot safely be completed without external credentials or unrecorded facts. It does not authorize invented client outcomes or silent external-account changes.
+**Implementation boundary derived from the repository rules:** “All follow-ups” includes repository work for the already-recorded Cloudflare email-obfuscation, GitHub branch-protection, and MCP rate-limit controls, but the broad directive does not by itself authorize those exact account mutations. Repository safeguards and probes may ship now; each control-plane write remains held until explicitly confirmed, then requires captured pre-state, a reversal procedure, and post-change proof.
 
 ## 2. Users affected
 
 **Question:** Who triggers this, depends on it, or notices failure?
 
-**Hypothesis (0.9):** Abhishek, portfolio visitors, agent/crawler consumers, and future coding agents.
+**Operator answer:** Deferred: the operator did not separately enumerate affected users; derive them from the existing portfolio surfaces without changing product audience.
 
-**Answer:** Abhishek depends on a truthful, low-maintenance portfolio. Human visitors depend on accurate case-study and availability claims. Agents and crawlers depend on working MCP/Markdown/discovery contracts. Future coding agents depend on ROADMAP, primers, specs, and follow-up ledgers matching the implementation.
+**Repository-derived affected set:** Abhishek depends on a truthful, low-maintenance portfolio. Human visitors depend on accurate case-study and availability claims. Agents and crawlers depend on working MCP/Markdown/discovery contracts. Future coding agents depend on ROADMAP, primers, specs, and follow-up ledgers matching the implementation.
 
 ## 3. Success metric
 
 **Question:** How will we know this worked?
 
-**Hypothesis (0.95):** All actionable follow-ups are either shipped with tests and production evidence or closed with a named, evidence-backed disposition; project gates pass and `main` is clean after ordered PR merges.
+**Operator answer:** “Finish them,” “merge all PRs in the correct order,” and “wrap it all up.”
 
-**Answer:** Success is falsifiable: MCP initialize/tools/list/tools/call works; Wanderer mounts only under the decided policy and passes motion/accessibility checks; ClusterBid surfaces contain no placeholders and expose only corroborated claims; the full Playwright matrix runs locally or has a concrete environment receipt; live agent-readiness/CSP/SEO/bundle evidence is refreshed; stale checkboxes and primers are reconciled; typecheck, lint, coverage, build, E2E, security gate, and process gate pass; PRs merge in dependency order and `main` ends clean.
+**Falsifiable repository acceptance translation:** MCP initialize/tools/list/tools/call works under a current stable protocol contract; Wanderer follows the decided route/motion/accessibility policy; ClusterBid contains only corroborated claims; the CI Playwright matrix completes; local agent-readiness/CSP/bundle evidence is refreshed; stale bookkeeping is reconciled; repository gates pass; PRs merge in dependency order; and deployed `main` ends clean. Live rate-limit, Cloudflare, and protected-branch verification remain separately falsifiable held follow-ups until their exact mutations are authorized.
 
 ## 4. Edge cases
 
 **Question:** What inputs, states, or timings make this hard?
 
-**Hypothesis (0.9):** Draft leakage, unknown MCP methods, nonce-CSP dynamic rendering, reduced-motion/mobile scene policy, unavailable browsers, missing media, and unverified editorial facts.
+**Operator answer:** Deferred: the operator did not separately enumerate edge cases; apply existing repository safety, accessibility, and editorial constraints.
 
-**Answer:** Preserve production draft gates; MCP must reject malformed/unknown requests without exposing drafts; nonce CSP must continue to hydrate; Wanderer must not run on mobile or reduced motion; browser installers may hang; reel renders may be expensive or unavailable; ClusterBid claims must be checked against the owner-authored historical draft and the current ClusterBid repository, with no invented outcomes; owner-only SEO/dashboard/social actions stay explicitly external.
+**Conservative implementation constraints surfaced for review:** Preserve production draft gates; MCP must handle malformed/unknown requests without exposing drafts; nonce CSP must continue to hydrate; Wanderer must not run on mobile or reduced motion; browser installers may fail; ClusterBid claims require corroboration; and unrelated SEO/dashboard/social actions remain external. The operator's later “Continue” retained these already-surfaced boundaries.
 
 ## 5. Rollback plan
 
 **Question:** How do we undo a bad result?
 
-**Hypothesis (0.95):** Separate commits/PRs by subsystem and ordinary git revert; keep drafts gated until the last verified step.
+**Operator answer:** “Merge all PRs in the correct order.” Rollback preference is deferred: none was separately supplied, so every repository/control-plane change must remain independently reversible.
 
-**Answer:** Use isolated, subsystem-scoped commits and dependency-ordered PRs. MCP can be withdrawn by reverting its route/card commit. Wanderer can be disabled by reverting its mount commit while preserving source. ClusterBid remains `draft: true` until every surface and claim is verified, so rollback before publication is a no-op; after publication, revert the publication commit. Documentation/evidence changes are ordinary reverts. No migrations or external data writes are introduced.
+**Required safe-default constraint:** Use subsystem-scoped commits and dependency-ordered PRs. Repository changes roll back by merge-commit revert. Before any scoped control-plane write, capture exact pre-state and the reversal command/UI path: restore Cloudflare Email Address Obfuscation to its prior value, delete the newly created MCP WAF rule, or restore the prior GitHub protection payload (currently an unprotected/404 state). Verify both the mutation and any reversal if rollback is needed. No migration or external data write is introduced.
 
 ## Convergence
 
-The five answers align: this is a bounded post-launch closure bundle, not an invitation to execute long-horizon SEO campaigns or mutate owner accounts. The operator explicitly delegated implementation and requested maximum parallelization; proceed to spec without further interview.
+The operator's repeated directives answer repository intent, success, execution shape, and merge authority. Users, edge handling, and rollback mechanics were not attributed to the operator; they are conservative repository/process constraints. The bounded Cloudflare, Vercel-WAF, and GitHub protection changes remain recorded and reversible but are explicitly held pending confirmation; that hold does not block dependency-ordered repository PRs. Unrelated owner-account work remains out of scope.
