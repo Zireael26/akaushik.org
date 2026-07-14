@@ -6,6 +6,10 @@
  *   - read:user
  *   - repo         (so private-repo contributions are counted)
  *
+ * The classic `repo` scope is not read-only. The scheduled workflow therefore
+ * treats this as a privileged automation credential and exposes it only after
+ * resetting the worktree to the reviewed default-branch commit.
+ *
  * Contributions returned by contributionsCollection include private
  * commits as long as the token can see them. The official profile
  * "Include private contributions" toggle mirrors the same data.
@@ -21,10 +25,10 @@ import { fileURLToPath } from 'node:url';
 
 const USERNAME = 'Zireael26';
 const REPOS = [
-  { name: 'neev',        label: 'Neev',        repo: 'msme-neev/neev' },
-  { name: 'vericite',    label: 'VeriCite',    repo: 'vericite-ai/vericite' },
+  { name: 'neev', label: 'Neev', repo: 'msme-neev/neev' },
+  { name: 'vericite', label: 'VeriCite', repo: 'vericite-ai/vericite' },
   { name: 'curat-money', label: 'curat.money', repo: 'curat-money/curat' },
-  { name: 'clusterbid',  label: 'ClusterBid',  repo: 'ClusterBid/console' },
+  { name: 'clusterbid', label: 'ClusterBid', repo: 'ClusterBid/console' },
 ];
 
 const TOKEN = process.env.GITHUB_TOKEN;

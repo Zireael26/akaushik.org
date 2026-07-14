@@ -14,6 +14,8 @@ const config = [
       '.next/**',
       'coverage/**',
       'node_modules/**',
+      'playwright-report/**',
+      'test-results/**',
     ],
   },
   ...next,
