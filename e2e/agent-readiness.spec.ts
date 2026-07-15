@@ -155,7 +155,7 @@ test.describe('agent readiness', () => {
     );
     expect(batchSchema).toMatchObject({ minItems: 1, maxItems: 32 });
     expect(post.responses).toHaveProperty('406');
-    expect(post.responses).toHaveProperty('204');
+    expect(post.responses).toHaveProperty('202');
     for (const method of ['get', 'delete', 'options']) {
       expect(body.paths['/api/mcp'][method].responses).toHaveProperty('400');
       expect(body.paths['/api/mcp'][method].responses).toHaveProperty('403');
