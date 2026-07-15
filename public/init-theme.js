@@ -13,10 +13,26 @@
 
   try {
     var tweaks = JSON.parse(localStorage.getItem('dl-tweaks-v1') || '{}');
-    var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var motion = reduce ? 'off' : tweaks.motion;
-    if (motion === 'on' || motion === 'off') {
-      document.documentElement.setAttribute('data-motion', motion);
+    var storedMotion = tweaks.motion;
+    if (storedMotion === 'on' || storedMotion === 'off') {
+      document.documentElement.setAttribute('data-motion', storedMotion);
+    } else {
+      var motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
+      var syncMotion = function () {
+        var currentMotion;
+        try {
+          currentMotion = JSON.parse(localStorage.getItem('dl-tweaks-v1') || '{}').motion;
+        } catch (e) {}
+        var motion =
+          currentMotion === 'on' || currentMotion === 'off'
+            ? currentMotion
+            : motionQuery.matches
+              ? 'off'
+              : 'on';
+        document.documentElement.setAttribute('data-motion', motion);
+      };
+      motionQuery.addEventListener('change', syncMotion);
+      syncMotion();
     }
   } catch (e) {}
 })();

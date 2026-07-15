@@ -39,22 +39,29 @@ type Pose = {
   spin: number;
 };
 
-type VisiblePoseEntry = Pick<
-  IntersectionObserverEntry,
-  'target' | 'isIntersecting' | 'intersectionRatio'
->;
+type PoseRect = Pick<DOMRectReadOnly, 'top' | 'right' | 'bottom' | 'left' | 'width' | 'height'>;
+type Viewport = { width: number; height: number };
 
-export function updateVisiblePoseRatios(
-  ratios: Map<Element, number>,
-  entries: ReadonlyArray<VisiblePoseEntry>,
-): void {
-  for (const entry of entries) {
-    if (entry.isIntersecting && entry.intersectionRatio > 0) {
-      ratios.set(entry.target, entry.intersectionRatio);
-    } else {
-      ratios.delete(entry.target);
-    }
+export function calculateVisiblePoseRatios(
+  geometries: ReadonlyArray<readonly [Element, PoseRect]>,
+  viewport: Viewport,
+): Map<Element, number> {
+  const ratios = new Map<Element, number>();
+
+  for (const [target, rect] of geometries) {
+    const targetArea = rect.width * rect.height;
+    if (targetArea <= 0) continue;
+
+    const visibleWidth = Math.max(0, Math.min(rect.right, viewport.width) - Math.max(rect.left, 0));
+    const visibleHeight = Math.max(
+      0,
+      Math.min(rect.bottom, viewport.height) - Math.max(rect.top, 0),
+    );
+    const ratio = Math.min(1, (visibleWidth * visibleHeight) / targetArea);
+    if (ratio > 0) ratios.set(target, ratio);
   }
+
+  return ratios;
 }
 
 export function selectDominantPose(ratios: ReadonlyMap<Element, number>): Element | null {
@@ -244,11 +251,13 @@ export default function WandererCrane() {
     const target: Pose = { ...(POSES.hero as Pose) };
 
     const sections = Array.from(document.querySelectorAll('[data-companion-pose]'));
-    const visiblePoseRatios = new Map<Element, number>();
     host.setAttribute(POSE_ATTRIBUTE, 'hero');
     const observer = new IntersectionObserver(
-      (entries) => {
-        updateVisiblePoseRatios(visiblePoseRatios, entries);
+      () => {
+        const visiblePoseRatios = calculateVisiblePoseRatios(
+          sections.map((section) => [section, section.getBoundingClientRect()] as const),
+          { width: window.innerWidth, height: window.innerHeight },
+        );
         const dominant = selectDominantPose(visiblePoseRatios);
         const key = dominant?.getAttribute('data-companion-pose');
         if (!key || !POSES[key]) return;
