@@ -244,7 +244,7 @@ test.describe('MCP Streamable HTTP endpoint', () => {
       },
       data: [
         rpc('ping', undefined, 'fallback-ping'),
-        { jsonrpc: '2.0', method: 'notifications/vendor-event' },
+        { jsonrpc: '2.0', method: 'tools/list' },
         rpc('tools/list', {}, 'fallback-tools'),
       ],
     });
@@ -255,6 +255,29 @@ test.describe('MCP Streamable HTTP endpoint', () => {
       'fallback-ping',
       'fallback-tools',
     ]);
+
+    const notificationOnly = await request.post('/api/mcp', {
+      headers: {
+        Accept: 'application/json, text/event-stream',
+        'Content-Type': 'application/json',
+      },
+      data: [
+        { jsonrpc: '2.0', method: 'notifications/initialized' },
+        { jsonrpc: '2.0', method: 'tools/list' },
+      ],
+    });
+    expect(notificationOnly.status()).toBe(204);
+    expect((await notificationOnly.body()).byteLength).toBe(0);
+
+    const oversized = await request.post('/api/mcp', {
+      headers: {
+        Accept: 'application/json, text/event-stream',
+        'Content-Type': 'application/json',
+      },
+      data: Array.from({ length: 33 }, (_, index) => rpc('ping', undefined, index)),
+    });
+    expect(oversized.status()).toBe(400);
+    expect((await oversized.json()).error.code).toBe(-32600);
 
     const explicitCurrent = await postRpc(request, [rpc('ping')]);
     expect(explicitCurrent.status()).toBe(400);
@@ -330,7 +353,7 @@ test.describe('MCP Streamable HTTP endpoint', () => {
     expect((await protocol.json()).error.code).toBe(-32602);
   });
 
-  test('accepts string and integer ids, rejects fractional and null ids, and acknowledges unknown notifications', async ({
+  test('accepts valid ids, rejects invalid ids, and suppresses every no-id response', async ({
     request,
   }) => {
     for (const id of ['request-1', 0, -1, 42]) {
@@ -352,6 +375,13 @@ test.describe('MCP Streamable HTTP endpoint', () => {
     });
     expect(notification.status()).toBe(202);
     expect((await notification.body()).byteLength).toBe(0);
+
+    const requestShapedNotification = await postRpc(request, {
+      jsonrpc: '2.0',
+      method: 'tools/list',
+    });
+    expect(requestShapedNotification.status()).toBe(202);
+    expect((await requestShapedNotification.body()).byteLength).toBe(0);
   });
 
   test('accepts no Origin or the canonical Origin and rejects every other Origin', async ({
@@ -375,13 +405,15 @@ test.describe('MCP Streamable HTTP endpoint', () => {
     expect(crossOrigin.headers()['access-control-allow-origin']).toBeUndefined();
   });
 
-  test('returns 405 for GET and DELETE and 204 for canonical OPTIONS', async ({ request }) => {
+  test('origin-checks every supported route method before method handling', async ({ request }) => {
     const get = await request.get('/api/mcp');
     expect(get.status()).toBe(405);
     expect(get.headers()['allow']).toBe('POST, OPTIONS');
 
-    const del = await request.fetch('/api/mcp', { method: 'DELETE' });
-    expect(del.status()).toBe(405);
+    for (const method of ['HEAD', 'PUT', 'PATCH', 'DELETE']) {
+      const response = await request.fetch('/api/mcp', { method });
+      expect(response.status()).toBe(405);
+    }
 
     const options = await request.fetch('/api/mcp', {
       method: 'OPTIONS',
@@ -392,13 +424,24 @@ test.describe('MCP Streamable HTTP endpoint', () => {
     expect(options.headers()['access-control-allow-methods']).toBe('POST, OPTIONS');
     expect((await options.body()).byteLength).toBe(0);
 
-    for (const method of ['GET', 'DELETE', 'OPTIONS']) {
+    for (const method of ['GET', 'HEAD', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']) {
+      const crossOrigin = await request.fetch('/api/mcp', {
+        method,
+        headers: { Origin: 'https://evil.example' },
+      });
+      expect(crossOrigin.status()).toBe(403);
+      if (method !== 'HEAD') {
+        expect((await crossOrigin.json()).error.code).toBe(-32600);
+      }
+
       const invalidVersion = await request.fetch('/api/mcp', {
         method,
         headers: { 'MCP-Protocol-Version': '2099-01-01' },
       });
       expect(invalidVersion.status()).toBe(400);
-      expect((await invalidVersion.json()).error.code).toBe(-32602);
+      if (method !== 'HEAD') {
+        expect((await invalidVersion.json()).error.code).toBe(-32602);
+      }
     }
   });
 });

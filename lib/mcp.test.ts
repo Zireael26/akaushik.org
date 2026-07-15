@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import mcpDiscovery from '../public/.well-known/mcp.json';
 import {
   JSON_RPC_ERROR_CODES,
   MCP_ENDPOINT,
   MCP_FALLBACK_PROTOCOL_VERSION,
+  MCP_MAX_BATCH_SIZE,
   MCP_PROTOCOL_VERSION,
   MCP_SUPPORTED_PROTOCOL_VERSIONS,
   MCP_TOOLS,
@@ -16,6 +18,7 @@ import {
   type JsonRpcSuccessResponse,
   type McpDispatchResult,
 } from './mcp';
+import { OPENAPI_SPEC } from './openapi-spec';
 
 const REQUIRED_ACCEPT = 'application/json, text/event-stream';
 
@@ -337,11 +340,11 @@ describe('MCP JSON-RPC errors', () => {
     expectError(response, JSON_RPC_ERROR_CODES.INVALID_REQUEST);
   });
 
-  it('supports 2025-03-26 batches and omits notification responses', () => {
+  it('supports 2025-03-26 batches and omits every no-id call response', () => {
     const response = handleMcpPayload(
       [
         request('ping', undefined, 'ping-batch'),
-        { jsonrpc: '2.0', method: 'notifications/vendor-event' },
+        { jsonrpc: '2.0', method: 'tools/list' },
         request('tools/list', {}, 'tools-batch'),
       ],
       MCP_FALLBACK_PROTOCOL_VERSION,
@@ -353,15 +356,41 @@ describe('MCP JSON-RPC errors', () => {
     ]);
   });
 
-  it('acknowledges an all-notification fallback batch without a body', () => {
+  it('returns 204 without a body for an all-notification fallback batch', () => {
     const response = handleMcpPayload(
       [
         { jsonrpc: '2.0', method: 'notifications/initialized' },
-        { jsonrpc: '2.0', method: 'notifications/vendor-event' },
+        { jsonrpc: '2.0', method: 'tools/list' },
       ],
       MCP_FALLBACK_PROTOCOL_VERSION,
     );
-    expect(response).toEqual({ status: 202, body: null });
+    expect(response).toEqual({ status: 204, body: null });
+  });
+
+  it('publishes one centralized 32-member fallback batch limit', () => {
+    expect(MCP_MAX_BATCH_SIZE).toBe(32);
+  });
+
+  it('rejects an oversized fallback batch before dispatching any member', () => {
+    let dispatches = 0;
+    const response = handleMcpPayload(
+      Array.from({ length: MCP_MAX_BATCH_SIZE + 1 }, (_, index) =>
+        request('tools/call', { name: 'lookup_case_study', arguments: { slug: 'neev' } }, index),
+      ),
+      MCP_FALLBACK_PROTOCOL_VERSION,
+      {
+        lookupPublishedCaseStudy() {
+          dispatches += 1;
+          return null;
+        },
+      },
+    );
+
+    expect(response).toMatchObject({
+      status: 400,
+      body: { id: null, error: { code: JSON_RPC_ERROR_CODES.INVALID_REQUEST } },
+    });
+    expect(dispatches).toBe(0);
   });
 
   it('rejects an empty fallback batch as one invalid request', () => {
@@ -376,10 +405,31 @@ describe('MCP JSON-RPC errors', () => {
     expectError(response, JSON_RPC_ERROR_CODES.METHOD_NOT_FOUND);
   });
 
-  it('requires request ids for request-only methods', () => {
-    const response = handleMcpMessage({ jsonrpc: '2.0', method: 'tools/list' });
-    expect(response.status).toBe(400);
-    expectError(response, JSON_RPC_ERROR_CODES.INVALID_REQUEST);
+  it('suppresses every no-id call response and preserves tool dispatch side effects', () => {
+    for (const message of [
+      { jsonrpc: '2.0', method: 'tools/list' },
+      { jsonrpc: '2.0', method: 'tools/list', params: [] },
+      { jsonrpc: '2.0', method: 'ping' },
+    ]) {
+      expect(handleMcpMessage(message)).toEqual({ status: 202, body: null });
+    }
+
+    let dispatches = 0;
+    const response = handleMcpMessage(
+      {
+        jsonrpc: '2.0',
+        method: 'tools/call',
+        params: { name: 'lookup_case_study', arguments: { slug: 'neev' } },
+      },
+      {
+        lookupPublishedCaseStudy() {
+          dispatches += 1;
+          return null;
+        },
+      },
+    );
+    expect(response).toEqual({ status: 202, body: null });
+    expect(dispatches).toBe(1);
   });
 
   it('accepts valid unknown notifications with HTTP 202 and no body', () => {
@@ -416,5 +466,46 @@ describe('MCP JSON-RPC errors', () => {
     expect(body.error.message).toBe('Internal error.');
     expect(JSON.stringify(body)).not.toContain('/private/content');
     expect(JSON.stringify(body)).not.toContain('secret context');
+  });
+});
+
+describe('MCP published contracts', () => {
+  it('keeps discovery tool definitions exactly equal to tools/list', () => {
+    expect(mcpDiscovery.capabilities.tools).toEqual(MCP_TOOLS);
+    expect(mcpDiscovery.protocolSupport.maxBatchSize).toBe(MCP_MAX_BATCH_SIZE);
+  });
+
+  it('documents batch and Accept negotiation without an invalid Accept parameter', () => {
+    const post = OPENAPI_SPEC.paths['/api/mcp'].post as unknown as {
+      description: string;
+      parameters: Array<{ name: string }>;
+      requestBody: {
+        content: {
+          'application/json': { schema: { oneOf: Array<Record<string, unknown>> } };
+        };
+      };
+    };
+    const batchSchema = post.requestBody.content['application/json'].schema.oneOf.find(
+      (schema) => schema['type'] === 'array',
+    );
+
+    expect(post.parameters.map((parameter) => parameter.name.toLowerCase())).not.toContain(
+      'accept',
+    );
+    expect(post.description).toContain('application/json');
+    expect(post.description).toContain('text/event-stream');
+    expect(batchSchema).toMatchObject({ minItems: 1, maxItems: MCP_MAX_BATCH_SIZE });
+  });
+
+  it('documents transport validation errors for every non-POST handler', () => {
+    const operations = OPENAPI_SPEC.paths['/api/mcp'] as unknown as Record<
+      'get' | 'delete' | 'options',
+      { responses: Record<string, unknown> }
+    >;
+
+    for (const method of ['get', 'delete', 'options'] as const) {
+      expect(operations[method].responses).toHaveProperty('400');
+      expect(operations[method].responses).toHaveProperty('403');
+    }
   });
 });

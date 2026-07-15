@@ -1,6 +1,6 @@
 # ADR-0015 — Stateless portfolio MCP server
 
-**Status:** Accepted, 2026-07-14
+**Status:** Accepted, 2026-07-14; transport clarifications amended 2026-07-15
 **Author:** Codex, for Abhishek Kaushik
 
 ## Context
@@ -28,15 +28,19 @@ the existing Next.js application.
 - POST requests require JSON content and an `Accept` header listing both
   `application/json` and `text/event-stream`. Responses use JSON; valid
   notifications receive HTTP 202 with no body.
-- GET and DELETE return 405. The server emits no unsolicited messages, opens no
-  SSE stream, and issues no session identifier.
+- GET, HEAD, PUT, PATCH, and DELETE return 405 after the same protocol and origin
+  validation. The server emits no unsolicited messages, opens no SSE stream, and
+  issues no session identifier.
 - A supplied `Origin` must equal the canonical origin. Server clients may omit
   it.
 - JSON-RPC array batches are accepted only on the `2025-03-26` compatibility
-  path, where the transport revision permits them. Empty batches remain invalid,
-  notification-only batches receive HTTP 202, and later protocol revisions reject
-  arrays. Numeric request IDs must be integers. Protocol failures use the standard
-  `-32700`, `-32600`, `-32601`, `-32602`, and `-32603` codes.
+  path, where the transport revision permits them, and are capped at 32 calls
+  before dispatch. Empty batches remain invalid, notification-only batches receive
+  HTTP 204, and later protocol revisions reject arrays. Every no-id call is
+  dispatched as a notification where applicable, including request-shaped
+  methods, and produces no JSON-RPC response. Numeric request IDs must be
+  integers. Protocol failures use the standard `-32700`, `-32600`, `-32601`,
+  `-32602`, and `-32603` codes.
 
 Expose exactly two read-only, idempotent, closed-world tools:
 

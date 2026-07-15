@@ -2,7 +2,7 @@
 
 **Status:** Implemented; production MCP WAF receipt pending (§5.3)
 **Author:** Claude (synthesis from Cloudflare's Agent Readiness score + related open standards)
-**Last updated:** 2026-07-14
+**Last updated:** 2026-07-15
 **Companion to:** `PRD.md` (this spec is a hard requirement, not a nice-to-have)
 
 ---
@@ -290,18 +290,18 @@ Skip in v1 — the site has no authenticated endpoints. Document the omission ex
 
 ### 6.3 MCP endpoint and site/scanner discovery metadata
 
-The portfolio MCP release candidate targets `https://akaushik.org/api/mcp`. It must not be promoted as live until the required production rate-limit receipt in §6.1 is complete. It is implemented in the existing Next.js application with no SDK, second deployment target, authentication, session state, or mutable capability. The document at `/.well-known/mcp.json` is explicitly labeled site/scanner-specific because MCP does not define that discovery path or its JSON shape. It advertises the endpoint, current revision `2025-11-25`, bounded compatibility support, Streamable HTTP transport, and tool names.
+The portfolio MCP release candidate targets `https://akaushik.org/api/mcp`. It must not be promoted as live until the required production rate-limit receipt in §5.3 is complete. It is implemented in the existing Next.js application with no SDK, second deployment target, authentication, session state, or mutable capability. The document at `/.well-known/mcp.json` is explicitly labeled site/scanner-specific because MCP does not define that discovery path or its JSON shape. It advertises the endpoint, current revision `2025-11-25`, bounded compatibility support, Streamable HTTP transport, and exact tool definitions.
 
 Transport contract:
 
-- `POST` accepts one JSON-RPC 2.0 object. Non-empty batches are accepted only for explicit or missing-header `2025-03-26` compatibility requests; notification members produce no response entry and an all-notification batch receives HTTP 202. `2025-06-18` and `2025-11-25` reject arrays with HTTP 400 and `-32600`.
+- `POST` accepts one JSON-RPC 2.0 object. Batches of 1–32 calls are accepted only for explicit or missing-header `2025-03-26` compatibility requests and are rejected before dispatch when oversized. No-id members produce no response entry and an all-notification batch receives HTTP 204. `2025-06-18` and `2025-11-25` reject arrays with HTTP 400 and `-32600`.
 - Supported methods are `initialize`, `ping`, `notifications/initialized`, `tools/list`, and `tools/call`.
 - Every POST requires `Content-Type: application/json` and an `Accept` header that lists **both** `application/json` and `text/event-stream`. Unsupported content types return HTTP 415; a missing or incomplete `Accept` returns HTTP 406.
 - `initialize` supports `2025-11-25`, `2025-06-18`, and the bounded `2025-03-26` compatibility subset. It echoes a supported requested version; an unsupported preference negotiates to the current `2025-11-25` revision.
 - On requests after initialization, explicit `MCP-Protocol-Version` values may be `2025-11-25`, `2025-06-18`, or `2025-03-26`. An omitted header is accepted as the protocol-defined `2025-03-26` fallback. Any other explicit value returns HTTP 400 and `-32602`.
-- Valid notifications, including unknown notification methods, return HTTP 202 with no body. Known request-only methods still require an ID. String IDs and integer numeric IDs are accepted; null, fractional, boolean, object, and array IDs are invalid requests.
+- Every valid JSON-RPC call without an `id` is a notification, including request-shaped methods such as `tools/list` and `tools/call`. Applicable methods are still dispatched, but success and error responses are suppressed. A single notification returns HTTP 202 with no body; a notification-only fallback batch returns HTTP 204. String IDs and integer numeric IDs are accepted; null, fractional, boolean, object, and array IDs are invalid requests.
 - Malformed JSON alone returns `-32700`. Parsed JSON that is not a valid request object returns `-32600`.
-- `GET` returns HTTP 405 because this server does not offer a server-initiated SSE stream. `DELETE` also returns HTTP 405; `OPTIONS` returns HTTP 204. The server is stateless and never issues `MCP-Session-Id`.
+- `GET` returns HTTP 405 because this server does not offer a server-initiated SSE stream. `PUT`, `PATCH`, and `DELETE` explicitly pass through the same transport validation before returning HTTP 405; Next.js derives `HEAD` from the guarded `GET` handler. `OPTIONS` returns HTTP 204. The server is stateless and never issues `MCP-Session-Id`.
 - Server clients may omit `Origin`. If `Origin` is present, it must equal `https://akaushik.org`; every other origin is rejected with HTTP 403 and no permissive wildcard CORS response.
 - JSON-RPC errors are `-32700` (parse error), `-32600` (invalid request), `-32601` (method not found), `-32602` (invalid params), and redacted `-32603` (internal error).
 

@@ -3,6 +3,7 @@ import { canonical } from '@/lib/canonical';
 import {
   MCP_ENDPOINT,
   MCP_FALLBACK_PROTOCOL_VERSION,
+  MCP_MAX_BATCH_SIZE,
   MCP_PROTOCOL_VERSION,
   MCP_SUPPORTED_PROTOCOL_VERSIONS,
   MCP_TOOLS,
@@ -120,14 +121,16 @@ function McpToolsBlock() {
         <code>{MCP_SUPPORTED_PROTOCOL_VERSIONS.join(', ')}</code> for this bounded tool subset;
         initialize echoes a supported requested revision and otherwise negotiates the current one. A
         later request without <code>MCP-Protocol-Version</code> is handled as{' '}
-        <code>{MCP_FALLBACK_PROTOCOL_VERSION}</code>.
+        <code>{MCP_FALLBACK_PROTOCOL_VERSION}</code>, whose batches are capped at{' '}
+        <code>{MCP_MAX_BATCH_SIZE}</code> calls.
       </p>
       <p className="api-docs-description">
         Every POST must use <code>Content-Type: application/json</code> and an <code>Accept</code>{' '}
         header listing both <code>application/json</code> and <code>text/event-stream</code>.
-        Responses use JSON; valid notifications receive 202 with no body. This server issues no{' '}
-        <code>MCP-Session-Id</code>, and GET returns 405 because there is no server-initiated SSE
-        stream.
+        Responses with bodies use JSON. Every no-id call is dispatched as a notification without a
+        response: a single notification receives 202, while an all-notification batch receives 204.
+        This server issues no <code>MCP-Session-Id</code>; GET, HEAD, PUT, PATCH, and DELETE return
+        405, and OPTIONS returns 204.
       </p>
       <p className="api-docs-description">
         JSON-RPC errors are <code>-32700</code> parse error, <code>-32600</code> invalid request,{' '}

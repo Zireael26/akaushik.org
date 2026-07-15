@@ -69,8 +69,8 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const result = handleMcpPayload(message, protocolVersion);
-  if (result.status === 202) {
-    return new Response(null, { status: 202, headers: responseHeaders(origin) });
+  if (result.body === null) {
+    return new Response(null, { status: result.status, headers: responseHeaders(origin) });
   }
   return jsonResponse(result.body, result.status, origin);
 }
@@ -90,6 +90,14 @@ export function GET(request: Request): Response {
 }
 
 export function DELETE(request: Request): Response {
+  return GET(request);
+}
+
+export function PUT(request: Request): Response {
+  return GET(request);
+}
+
+export function PATCH(request: Request): Response {
   return GET(request);
 }
 

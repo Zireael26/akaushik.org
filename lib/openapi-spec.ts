@@ -7,6 +7,7 @@
 
 import {
   MCP_FALLBACK_PROTOCOL_VERSION,
+  MCP_MAX_BATCH_SIZE,
   MCP_PROTOCOL_VERSION,
   MCP_SUPPORTED_PROTOCOL_VERSIONS,
 } from './mcp';
@@ -85,17 +86,8 @@ export const OPENAPI_SPEC = {
     '/api/mcp': {
       post: {
         summary: 'Call the stateless MCP server over Streamable HTTP',
-        description: `Accepts one JSON-RPC 2.0 request or notification for ${MCP_PROTOCOL_VERSION} and 2025-06-18. The ${MCP_FALLBACK_PROTOCOL_VERSION} compatibility path also accepts non-empty JSON-RPC batches. Initialize echoes a supported requested revision and otherwise negotiates ${MCP_PROTOCOL_VERSION}. Later requests without MCP-Protocol-Version are handled as ${MCP_FALLBACK_PROTOCOL_VERSION}. The server is stateless and never issues MCP-Session-Id.`,
+        description: `Accepts one JSON-RPC 2.0 request or notification for ${MCP_PROTOCOL_VERSION} and 2025-06-18. The ${MCP_FALLBACK_PROTOCOL_VERSION} compatibility path also accepts batches of 1–${MCP_MAX_BATCH_SIZE} calls. Every POST uses Content-Type application/json and negotiates the transport by listing both application/json and text/event-stream in Accept; responses use application/json when a body is present. Initialize echoes a supported requested revision and otherwise negotiates ${MCP_PROTOCOL_VERSION}. Later requests without MCP-Protocol-Version are handled as ${MCP_FALLBACK_PROTOCOL_VERSION}. The server is stateless and never issues MCP-Session-Id.`,
         parameters: [
-          {
-            name: 'Accept',
-            in: 'header',
-            required: true,
-            description:
-              'Must list both application/json and text/event-stream, even though this server answers POST requests with application/json.',
-            schema: { type: 'string' },
-            example: 'application/json, text/event-stream',
-          },
           {
             name: 'MCP-Protocol-Version',
             in: 'header',
@@ -122,7 +114,8 @@ export const OPENAPI_SPEC = {
                   {
                     type: 'array',
                     minItems: 1,
-                    description: `Accepted only for ${MCP_FALLBACK_PROTOCOL_VERSION}.`,
+                    maxItems: MCP_MAX_BATCH_SIZE,
+                    description: `Accepted only for ${MCP_FALLBACK_PROTOCOL_VERSION}; no-id calls are dispatched without response entries.`,
                     items: { $ref: '#/components/schemas/McpJsonRpcRequest' },
                   },
                 ],
@@ -141,6 +134,7 @@ export const OPENAPI_SPEC = {
                     {
                       type: 'array',
                       minItems: 1,
+                      maxItems: MCP_MAX_BATCH_SIZE,
                       items: { $ref: '#/components/schemas/McpJsonRpcResponse' },
                     },
                   ],
@@ -148,7 +142,10 @@ export const OPENAPI_SPEC = {
               },
             },
           },
-          '202': { description: 'Initialized notification accepted; no response body' },
+          '202': { description: 'Single notification accepted; no response body' },
+          '204': {
+            description: 'Fallback batch contained only no-id calls; no response body',
+          },
           '400': {
             description:
               'Malformed JSON (-32700), invalid JSON-RPC envelope (-32600), or unsupported explicit protocol version (-32602)',
@@ -190,6 +187,22 @@ export const OPENAPI_SPEC = {
         description:
           'This stateless server does not expose a server-initiated SSE stream, so GET always returns HTTP 405.',
         responses: {
+          '400': {
+            description: 'Unsupported explicit MCP protocol version',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/McpJsonRpcResponse' },
+              },
+            },
+          },
+          '403': {
+            description: 'Origin is present and does not match the canonical origin',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/McpJsonRpcResponse' },
+              },
+            },
+          },
           '405': {
             description: 'Method not allowed',
             content: {
@@ -204,6 +217,22 @@ export const OPENAPI_SPEC = {
         summary: 'Session deletion is not supported',
         description: 'The MCP server is stateless and never issues session identifiers.',
         responses: {
+          '400': {
+            description: 'Unsupported explicit MCP protocol version',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/McpJsonRpcResponse' },
+              },
+            },
+          },
+          '403': {
+            description: 'Origin is present and does not match the canonical origin',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/McpJsonRpcResponse' },
+              },
+            },
+          },
           '405': {
             description: 'Method not allowed',
             content: {
@@ -218,6 +247,14 @@ export const OPENAPI_SPEC = {
         summary: 'Describe same-origin HTTP capabilities',
         responses: {
           '204': { description: 'Capability response with no body' },
+          '400': {
+            description: 'Unsupported explicit MCP protocol version',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/McpJsonRpcResponse' },
+              },
+            },
+          },
           '403': {
             description: 'Origin is present and does not match the canonical origin',
             content: {

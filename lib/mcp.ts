@@ -11,6 +11,7 @@ export const MCP_SUPPORTED_PROTOCOL_VERSIONS = [
 ] as const;
 export const MCP_ENDPOINT = `${CANONICAL_ORIGIN}/api/mcp`;
 export const MCP_SERVER_VERSION = '1.0.0';
+export const MCP_MAX_BATCH_SIZE = 32;
 
 export const JSON_RPC_ERROR_CODES = {
   PARSE_ERROR: -32700,
@@ -114,7 +115,9 @@ export type McpDispatchResult =
   | { status: 202; body: null };
 
 export type McpPayloadDispatchResult =
-  McpDispatchResult | { status: 200; body: Array<JsonRpcSuccessResponse | JsonRpcErrorResponse> };
+  | McpDispatchResult
+  | { status: 200; body: Array<JsonRpcSuccessResponse | JsonRpcErrorResponse> }
+  | { status: 204; body: null };
 
 export type McpHttpError = {
   status: 400 | 403 | 406 | 415;
@@ -332,10 +335,6 @@ function negotiateProtocolVersion(requested: string): McpProtocolVersion {
   return isSupportedProtocolVersion(requested) ? requested : MCP_PROTOCOL_VERSION;
 }
 
-function validNotificationParams(params: unknown): boolean {
-  return params === undefined || isRecord(params);
-}
-
 function validPingParams(params: unknown): boolean {
   return params === undefined || isRecord(params);
 }
@@ -433,34 +432,12 @@ function callTool(id: JsonRpcRequestId, params: unknown, services: McpServices):
   return invalidParams(id, `Unknown tool: ${name}.`);
 }
 
-export function handleMcpMessage(
-  message: unknown,
+function dispatchMcpMethod(
+  method: string,
+  params: unknown,
+  id: JsonRpcRequestId,
   services: McpServices = DEFAULT_SERVICES,
 ): McpDispatchResult {
-  if (!isRecord(message)) return invalidRequest();
-  if (message['jsonrpc'] !== '2.0' || typeof message['method'] !== 'string') {
-    return invalidRequest();
-  }
-
-  const hasId = hasOwn(message, 'id');
-  if (hasId && !isRequestId(message['id'])) return invalidRequest();
-
-  const method = message['method'];
-  const params = message['params'];
-
-  if (!hasId) {
-    if (!validNotificationParams(params)) return invalidRequest('Invalid notification.');
-    if (['initialize', 'ping', 'tools/list', 'tools/call'].includes(method)) {
-      return invalidRequest('Request id is required for this method.');
-    }
-    return { status: 202, body: null };
-  }
-
-  const id = message['id'] as JsonRpcRequestId;
-  if (method === 'notifications/initialized') {
-    return invalidRequest('notifications/initialized must not include an id.', id);
-  }
-
   try {
     if (method === 'initialize') {
       if (!validInitializeParams(params)) {
@@ -505,6 +482,36 @@ export function handleMcpMessage(
   }
 }
 
+export function handleMcpMessage(
+  message: unknown,
+  services: McpServices = DEFAULT_SERVICES,
+): McpDispatchResult {
+  if (!isRecord(message)) return invalidRequest();
+  if (message['jsonrpc'] !== '2.0' || typeof message['method'] !== 'string') {
+    return invalidRequest();
+  }
+
+  const hasId = hasOwn(message, 'id');
+  if (hasId && !isRequestId(message['id'])) return invalidRequest();
+
+  const method = message['method'];
+  const params = message['params'];
+
+  if (!hasId) {
+    if (method !== 'notifications/initialized') {
+      dispatchMcpMethod(method, params, 0, services);
+    }
+    return { status: 202, body: null };
+  }
+
+  const id = message['id'] as JsonRpcRequestId;
+  if (method === 'notifications/initialized') {
+    return invalidRequest('notifications/initialized must not include an id.', id);
+  }
+
+  return dispatchMcpMethod(method, params, id, services);
+}
+
 export function handleMcpPayload(
   payload: unknown,
   protocolVersion: McpProtocolVersion,
@@ -515,6 +522,9 @@ export function handleMcpPayload(
   }
 
   if (payload.length === 0) return invalidRequest();
+  if (payload.length > MCP_MAX_BATCH_SIZE) {
+    return invalidRequest(`Batch size must not exceed ${MCP_MAX_BATCH_SIZE}.`);
+  }
 
   const responses: Array<JsonRpcSuccessResponse | JsonRpcErrorResponse> = [];
   for (const message of payload) {
@@ -522,6 +532,6 @@ export function handleMcpPayload(
     if (result.body !== null) responses.push(result.body);
   }
 
-  if (responses.length === 0) return { status: 202, body: null };
+  if (responses.length === 0) return { status: 204, body: null };
   return { status: 200, body: responses };
 }

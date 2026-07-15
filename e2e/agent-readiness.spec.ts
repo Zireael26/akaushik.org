@@ -86,12 +86,19 @@ test.describe('agent readiness', () => {
     expect(body.protocolSupport).toMatchObject({
       current: '2025-11-25',
       missingHeaderFallback: '2025-03-26',
+      maxBatchSize: 32,
     });
     expect(body.requiredPostHeaders.Accept).toBe('application/json, text/event-stream');
-    expect(body.capabilities.tools.map((tool: { name: string }) => tool.name)).toEqual([
-      'lookup_case_study',
-      'get_availability',
-    ]);
+    const toolsList = await request.post('/api/mcp', {
+      headers: {
+        Accept: 'application/json, text/event-stream',
+        'Content-Type': 'application/json',
+        'MCP-Protocol-Version': '2025-11-25',
+      },
+      data: { jsonrpc: '2.0', id: 'discovery-parity', method: 'tools/list' },
+    });
+    expect(toolsList.status()).toBe(200);
+    expect(body.capabilities.tools).toEqual((await toolsList.json()).result.tools);
     expect(body.capabilities.resources).toEqual([]);
   });
 
@@ -139,9 +146,20 @@ test.describe('agent readiness', () => {
     const protocolHeader = post.parameters.find(
       (parameter: { name: string }) => parameter.name === 'MCP-Protocol-Version',
     );
-    expect(acceptHeader).toMatchObject({ in: 'header', required: true });
+    expect(acceptHeader).toBeUndefined();
+    expect(post.description).toContain('application/json');
+    expect(post.description).toContain('text/event-stream');
     expect(protocolHeader.schema.enum).toEqual(['2025-11-25', '2025-06-18', '2025-03-26']);
+    const batchSchema = post.requestBody.content['application/json'].schema.oneOf.find(
+      (schema: { type?: string }) => schema.type === 'array',
+    );
+    expect(batchSchema).toMatchObject({ minItems: 1, maxItems: 32 });
     expect(post.responses).toHaveProperty('406');
+    expect(post.responses).toHaveProperty('204');
+    for (const method of ['get', 'delete', 'options']) {
+      expect(body.paths['/api/mcp'][method].responses).toHaveProperty('400');
+      expect(body.paths['/api/mcp'][method].responses).toHaveProperty('403');
+    }
     expect(body.components.schemas.McpJsonRpcRequest.properties.id.oneOf).toContainEqual({
       type: 'integer',
     });
