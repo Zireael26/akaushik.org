@@ -26,11 +26,13 @@ export default function SiteNav() {
         <span className="wordmark-text">Abhishek Kaushik</span>
       </Link>
       <nav className="nav-links" aria-label="Primary">
-        {NAV_LINKS.map((link) => (
-          <Link key={link.href} href={link.href}>
-            {link.label}
-          </Link>
-        ))}
+        <ul className="nav-links-list">
+          {NAV_LINKS.map((link) => (
+            <li key={link.href}>
+              <Link href={link.href}>{link.label}</Link>
+            </li>
+          ))}
+        </ul>
       </nav>
       <div className="nav-meta">
         <span className="status-dot" aria-hidden="true" />
