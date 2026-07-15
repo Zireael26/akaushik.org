@@ -53,3 +53,37 @@ describe('proxy nonce propagation', () => {
     expect(responseCsp).toContain(`'nonce-${requestNonce}'`);
   });
 });
+
+describe('proxy Markdown canonical links', () => {
+  it('keeps the HTML canonical on suffix rewrites and appends discovery links', () => {
+    const response = proxy(new NextRequest('https://akaushik.org/work/clusterbid.md'));
+    const link = response.headers.get('link') ?? '';
+
+    expect(link).toContain(
+      '<https://akaushik.org/work/clusterbid>; rel="canonical"',
+    );
+    expect(link).toContain('</llms.txt>; rel="describedby"; type="text/markdown"');
+  });
+
+  it('keeps the HTML canonical on Accept-driven rewrites', () => {
+    const response = proxy(
+      new NextRequest('https://akaushik.org/writing/micrograd-makemore', {
+        headers: { accept: 'text/markdown' },
+      }),
+    );
+
+    expect(response.headers.get('link')).toContain(
+      '<https://akaushik.org/writing/micrograd-makemore>; rel="canonical"',
+    );
+  });
+
+  it('does not invent an HTML canonical for the home digest rewrite', () => {
+    const response = proxy(
+      new NextRequest('https://akaushik.org/', {
+        headers: { accept: 'text/markdown' },
+      }),
+    );
+
+    expect(response.headers.get('link')).not.toContain('rel="canonical"');
+  });
+});

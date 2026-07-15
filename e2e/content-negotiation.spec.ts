@@ -22,6 +22,9 @@ test.describe('content negotiation', () => {
     const response = await request.get('/work/neev.md');
     expect(response.status()).toBe(200);
     expect(response.headers()['content-type']).toContain('text/markdown');
+    expect(response.headers()['link']).toContain(
+      '<https://akaushik.org/work/neev>; rel="canonical"',
+    );
     const body = await response.text();
     // MDX body leads with `# <title>` + `> <dek>` per AGENT_READINESS §4.4.
     expect(body.startsWith('# ')).toBe(true);
@@ -32,6 +35,9 @@ test.describe('content negotiation', () => {
     const response = await request.get('/writing/micrograd-makemore.md');
     expect(response.status()).toBe(200);
     expect(response.headers()['content-type']).toContain('text/markdown');
+    expect(response.headers()['link']).toContain(
+      '<https://akaushik.org/writing/micrograd-makemore>; rel="canonical"',
+    );
     const body = await response.text();
     expect(body.startsWith('# ')).toBe(true);
   });
@@ -44,6 +50,9 @@ test.describe('content negotiation', () => {
     });
     expect(response.status()).toBe(200);
     expect(response.headers()['content-type']).toContain('text/markdown');
+    expect(response.headers()['link']).toContain(
+      '<https://akaushik.org/work/neev>; rel="canonical"',
+    );
   });
 
   test('Pattern A: Accept: text/markdown on / rewrites to llms.txt', async ({
