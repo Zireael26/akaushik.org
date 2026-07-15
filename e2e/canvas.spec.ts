@@ -2,6 +2,9 @@ import { expect, test, type Page } from '@playwright/test';
 
 const DESKTOP_MIN_WIDTH = 861;
 const RENDERER_ATTRIBUTE = 'data-wanderer-renderer';
+const MAX_RENDER_PIXELS = 1920 * 1080;
+const PIXEL_CAP_DPR = 2;
+const PIXEL_CAP_VIEWPORT = { width: 1440, height: 900 };
 
 function isDesktop(page: Page): boolean {
   return (page.viewportSize()?.width ?? 0) >= DESKTOP_MIN_WIDTH;
@@ -47,7 +50,9 @@ test.describe('hero canvas + wanderer', () => {
     });
   });
 
-  test('desktop Wanderer promotes its SVG floor to a real canvas', async ({
+  test('desktop Wanderer promotes its SVG floor and enforces the render-pixel cap', async ({
+    baseURL,
+    browser,
     browserName,
     page,
   }) => {
@@ -55,22 +60,41 @@ test.describe('hero canvas + wanderer', () => {
       browserName !== 'chromium' || !isDesktop(page),
       'The positive WebGL renderer proof is Chromium-desktop scoped.',
     );
+    if (!baseURL) throw new Error('Playwright baseURL is required for the DPR test context.');
 
     const runtimeErrors: string[] = [];
-    page.on('pageerror', (error) => runtimeErrors.push(error.message));
-    page.on('console', (message) => {
+    const renderContext = await browser.newContext({
+      baseURL,
+      deviceScaleFactor: PIXEL_CAP_DPR,
+      viewport: PIXEL_CAP_VIEWPORT,
+    });
+    const renderPage = await renderContext.newPage();
+    renderPage.on('pageerror', (error) => runtimeErrors.push(error.message));
+    renderPage.on('console', (message) => {
       if (message.type() === 'error') runtimeErrors.push(message.text());
     });
 
-    await page.goto('/');
-    await expectWandererCanvas(page);
-    const renderPixels = await page
-      .locator('#companion canvas')
-      .evaluate(
-        (canvas) => (canvas as HTMLCanvasElement).width * (canvas as HTMLCanvasElement).height,
-      );
-    expect(renderPixels).toBeLessThanOrEqual(1920 * 1080);
-    expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([]);
+    try {
+      await renderPage.goto('/');
+      await expectWandererCanvas(renderPage);
+      const renderMetrics = await renderPage.locator('#companion canvas').evaluate((element) => {
+        const canvas = element as HTMLCanvasElement;
+        const viewportPixels = window.innerWidth * window.innerHeight;
+        return {
+          actualPixels: canvas.width * canvas.height,
+          devicePixelRatio: window.devicePixelRatio,
+          theoreticalPixels: viewportPixels * window.devicePixelRatio ** 2,
+        };
+      });
+
+      expect(renderMetrics.devicePixelRatio).toBe(PIXEL_CAP_DPR);
+      expect(renderMetrics.theoreticalPixels).toBeGreaterThan(MAX_RENDER_PIXELS);
+      expect(renderMetrics.actualPixels).toBeGreaterThan(0);
+      expect(renderMetrics.actualPixels).toBeLessThanOrEqual(MAX_RENDER_PIXELS);
+      expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([]);
+    } finally {
+      await renderContext.close();
+    }
   });
 
   test('desktop Wanderer settles on its SVG fallback when WebGL is unavailable', async ({
