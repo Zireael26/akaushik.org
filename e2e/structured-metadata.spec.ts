@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+const IS_CI = process.env.CI === '1' || process.env.CI === 'true';
+
 test.describe('structured metadata', () => {
   test.skip(
     ({ browserName }) => browserName !== 'chromium',
@@ -26,7 +28,8 @@ test.describe('structured metadata', () => {
       const response = await page.goto(path, { waitUntil: 'domcontentloaded' });
       expect(response?.status()).toBe(200);
       const csp = response?.headers()['content-security-policy'];
-      test.skip(!csp, 'The nonce-bearing CSP is production-only.');
+      test.skip(!csp && !IS_CI, 'The nonce-bearing CSP is production-only.');
+      expect(csp, `${path} must return the production CSP in CI`).toBeTruthy();
       const nonce = /'nonce-([^']+)'/.exec(csp ?? '')?.[1];
       expect(nonce).toBeTruthy();
 
