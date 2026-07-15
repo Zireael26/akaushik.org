@@ -114,7 +114,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             /#organization) rather than redeclaring the author and publisher.
             Rendered as a literal <script> in the static HTML head via
             JsonLdScript (see that component for why next/script won't do). */}
-        <JsonLdScript id="ld-json-site" json={jsonLdString(siteGraph())} />
+        <JsonLdScript id="ld-json-site" json={jsonLdString(siteGraph())} nonce={nonce} />
       </head>
       <body>
         {/* Wanderer disabled per PR #58 (2026-05-11). When reinstated, this

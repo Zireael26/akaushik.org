@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
 import { getAllPosts, getPost, isDraftHidden, type CaseStudyFrontmatter } from '@/lib/content';
 import { CASE_STUDIES } from '@/components/sections/Work';
 import { CaseStudyStub } from '@/components/sections/CaseStudyStub';
 import { CaseStudyPage } from '@/components/work/CaseStudyPage';
-import { caseStudyGraph, jsonLdString } from '@/lib/structured-data';
+import { breadcrumbGraph, caseStudyGraph, jsonLdString } from '@/lib/structured-data';
 import { JsonLdScript } from '@/components/seo/JsonLdScript';
 import type { ReelSlug } from '@/components/work/reels';
 import { canonical } from '@/lib/canonical';
@@ -79,6 +80,7 @@ export default async function WorkDetail({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
 
   const mdx = getPost('case-studies', slug);
   if (mdx && isDraftHidden(mdx.frontmatter as CaseStudyFrontmatter)) {
@@ -104,11 +106,19 @@ export default async function WorkDetail({
         };
       })();
 
-  const ldScript = fm ? (
-    <JsonLdScript
-      id={`ld-json-work-${slug}`}
-      json={jsonLdString(caseStudyGraph(slug, fm))}
-    />
+  const ldScripts = fm ? (
+    <>
+      <JsonLdScript
+        id={`ld-json-work-${slug}`}
+        json={jsonLdString(caseStudyGraph(slug, fm))}
+        nonce={nonce}
+      />
+      <JsonLdScript
+        id={`ld-json-breadcrumb-work-${slug}`}
+        json={jsonLdString(breadcrumbGraph('work', slug, fm.title))}
+        nonce={nonce}
+      />
+    </>
   ) : null;
 
   if (mdx) {
@@ -118,7 +128,7 @@ export default async function WorkDetail({
     // `generateStaticParams` doesn't pre-render a route that 404s at request.
     return (
       <>
-        {ldScript}
+        {ldScripts}
         {isCardSlug(slug) ? (
           <CaseStudyPage post={mdx} slug={slug} />
         ) : (
@@ -130,7 +140,7 @@ export default async function WorkDetail({
   if (isCardSlug(slug)) {
     return (
       <>
-        {ldScript}
+        {ldScripts}
         <CaseStudyStub slug={slug} />
       </>
     );
