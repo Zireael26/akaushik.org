@@ -18,4 +18,4 @@ Format:
 - [og-image-generation](./og-image-generation.md) — Next.js ImageResponse handlers rendering parchment-and-forest Open Graph previews for home, case-study, and writing pages from MDX frontmatter.
 - [process-gate-policy](./process-gate-policy.md) — Pre-commit hook enforcing CHANGELOG / ADR / ROADMAP coupling for code, structural, and EPM changes; bypassed only via SKIP_PROCESS_GATE.
 - [seo-strategy](./seo-strategy.md) — SEO + AIO program: three-goal plan, per-page canonical + JSON-LD, 5 Cowork scheduled tasks, live STATUS.md, human-required handoff queue.
-- [wanderer-crane-scene](./wanderer-crane-scene.md) — Single-instance paper-crane Three.js companion with SVG fallback. **Currently disabled in app/layout.tsx; code preserved.**
+- [wanderer-crane-scene](./wanderer-crane-scene.md) — Home-only desktop paper-crane Three.js companion with SVG fallback and route/motion gates.
