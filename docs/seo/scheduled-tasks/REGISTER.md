@@ -2,7 +2,9 @@
 
 Cowork's `create_scheduled_task` MCP tool requires an interactive approval dialog per task — it can't be done unattended by a scheduled or autonomous agent. To register them once, paste each block below into a Cowork session and approve when prompted.
 
-Each task's *behavior* is defined by the file at `docs/seo/scheduled-tasks/<task-id>.md` (committed to the repo). The registered prompt is a short bootstrap that re-reads the file every run, so editing the file is enough — no need to re-register after a prompt change. To change a registered task's schedule or pause it, call `mcp__scheduled-tasks__update_scheduled_task`.
+Each task's _behavior_ is defined by the file at `docs/seo/scheduled-tasks/<task-id>.md` (committed to the repo). The registered prompt is a short bootstrap that re-reads the file every run, so editing the file is enough — no need to re-register after a prompt change. To change a registered task's schedule or pause it, call `mcp__scheduled-tasks__update_scheduled_task`.
+
+This file is registration source, not evidence that any task is currently registered or enabled. Confirm active state in the scheduler before relying on a cadence.
 
 **All cron times are LOCAL** (Cowork evaluates cron in the user's timezone — for Abhishek that's IST / UTC+05:30).
 
@@ -37,7 +39,7 @@ mcp__scheduled-tasks__create_scheduled_task
 
     Read the full task contract from `/Users/abhishek/projects/personal/akaushik.org/docs/seo/scheduled-tasks/seo-weekly-draft.md` and follow its "Prompt content" section verbatim.
 
-    Operate against `/Users/abhishek/projects/personal/akaushik.org/`. Create a worktree at `.claude/worktrees/seo-draft-<YYYYMMDD>` for your work; clean up stale worktrees before starting. Open a DRAFT PR (label `seo:automation,seo:draft`) for editorial review. Never push to main.
+    Operate against `/Users/abhishek/projects/personal/akaushik.org/`. Use only the exact dated branch and worktree path recorded by the source contract. Never wildcard or force-remove worktrees; refuse cleanup when that exact worktree is dirty. Open a DRAFT PR (labels `seo:automation` and `seo:draft`) for editorial review. Never push to main.
 
     If `docs/seo/editorial-calendar.md` does not exist, this is the first run: bootstrap it per the contract before drafting a post.
 ```

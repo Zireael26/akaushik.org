@@ -1,66 +1,163 @@
-# Scheduled task: `seo-weekly-draft`
+# Scheduled-task source: `seo-weekly-draft`
 
-**Cadence:** Every Monday 06:00 local time
-**Purpose:** Maintain the 1-post/week publishing cadence committed to in the SEO strategy. Each run drafts one MDX post from the editorial calendar and opens a draft PR for Abhishek to edit and merge.
+**Intended cadence:** Every Monday 06:00 local time
+**Purpose:** Maintain the 1-post/week publishing cadence committed to in the SEO strategy. Each successful run drafts one MDX post from the editorial calendar and opens a draft PR for Abhishek to edit and merge.
 
-> Source-of-truth prompt. To change behavior: edit this file, then call `mcp__scheduled-tasks__update_scheduled_task` with `taskId: "seo-weekly-draft"`.
+> Repository source of truth for task behavior. The bootstrap in [`REGISTER.md`](./REGISTER.md) re-reads this file on every registered run, so behavior changes require only an edit here; do not copy the prompt into or update a separate registered task. Registration, cadence, and enabled/paused state remain scheduler controls.
 
 ---
 
 ## Prompt content
 
-You are the `seo-weekly-draft` scheduled task for akaushik.org. Run every Monday at 06:00 local time. Fresh context — no memory of prior runs.
+You are the `seo-weekly-draft` task source for akaushik.org. When registered and enabled, run every Monday at 06:00 local time. Start with fresh context and no memory of prior runs.
 
-**Repo location:** `/Users/abhishek/projects/personal/akaushik.org/`. Create a worktree for this run via `git worktree add .claude/worktrees/seo-draft-<YYYYMMDD> -b seo-bot/weekly-draft/<YYYYMMDD>` so you don't conflict with active development. Work in the worktree.
+### Run identity and worktree safety
 
-**Authoritative docs (read first):**
-- `docs/seo/2026-05-18-seo-strategy-design.md` §3 — Phase 1 topic SEO; editorial-calendar structure.
-- `docs/seo/STATUS.md` — current phase, Pillar pages already built, Cluster-post count.
-- `docs/seo/editorial-calendar.md` — the queue. If it does not exist, create it (see "First run" below).
-- `docs/BIO_DRAFT.md` — voice guide. Match the existing tone.
-- `content/writing/*.mdx` — recent shipped posts. Match the frontmatter shape and Markdown style.
-- `lib/content.ts` — frontmatter schema (`WritingFrontmatter`).
+Use one Bash session for all command blocks below. Record one exact branch and worktree path for the run; never substitute a glob. A rerun on the same date must resume that branch rather than create another draft.
 
-**First run only — bootstrap editorial calendar:**
+```bash
+set -euo pipefail
 
-If `docs/seo/editorial-calendar.md` does not exist, generate it as a Markdown table with 50 rows. Use the keyword research in `docs/seo/keywords.json` if present; otherwise seed with these placeholder pillar + cluster slots based on the spec:
+readonly REPO_ROOT=/Users/abhishek/projects/personal/akaushik.org
+readonly GH_REPO=Zireael26/akaushik.org
+readonly RUN_DATE="$(date +%Y%m%d)"
+readonly POST_DATE="$(date +%F)"
+readonly BRANCH="seo-bot/weekly-draft/$RUN_DATE"
+readonly WORKTREE_PATH="$REPO_ROOT/.claude/worktrees/seo-draft-$RUN_DATE"
 
+git -C "$REPO_ROOT" fetch origin
+mkdir -p "$(dirname "$WORKTREE_PATH")"
+
+if git -C "$REPO_ROOT" worktree list --porcelain |
+  rg --fixed-strings --line-regexp --quiet -- "worktree $WORKTREE_PATH"
+then
+  actual_branch="$(git -C "$WORKTREE_PATH" branch --show-current)"
+  if [ "$actual_branch" != "$BRANCH" ]; then
+    echo "Refusing to reuse $WORKTREE_PATH: expected $BRANCH, found $actual_branch" >&2
+    exit 1
+  fi
+  if [ -n "$(git -C "$WORKTREE_PATH" status --porcelain)" ]; then
+    echo "Refusing to clean or reuse dirty worktree: $WORKTREE_PATH" >&2
+    exit 1
+  fi
+elif [ -e "$WORKTREE_PATH" ]; then
+  echo "Refusing to remove unregistered path: $WORKTREE_PATH" >&2
+  exit 1
+elif git -C "$REPO_ROOT" show-ref --verify --quiet "refs/heads/$BRANCH"; then
+  git -C "$REPO_ROOT" worktree add "$WORKTREE_PATH" "$BRANCH"
+elif git -C "$REPO_ROOT" show-ref --verify --quiet "refs/remotes/origin/$BRANCH"; then
+  git -C "$REPO_ROOT" worktree add --track -b "$BRANCH" "$WORKTREE_PATH" "origin/$BRANCH"
+else
+  git -C "$REPO_ROOT" worktree add -b "$BRANCH" "$WORKTREE_PATH" origin/main
+fi
+
+if git -C "$REPO_ROOT" show-ref --verify --quiet "refs/remotes/origin/$BRANCH"; then
+  git -C "$WORKTREE_PATH" merge --ff-only "origin/$BRANCH"
+fi
 ```
-| week | slug | title | cluster | status | draft-pr |
-|------|------|-------|---------|--------|----------|
-| 2026-W21 | ai-for-indian-msme-guide | AI for Indian MSME — the practical buyer's guide | pillar:msme | pending | — |
-| 2026-W22 | whatsapp-order-automation-textile | Automating WhatsApp order capture for textile distributors | cluster:msme | pending | — |
-... (48 more slots — generate plausible cluster titles for msme/agent-systems/rag pillars based on spec §3.2)
+
+If any preflight command fails, stop and report the exact branch and worktree path. Do not delete a branch, force-remove a worktree, or clean another path.
+
+### Authoritative docs
+
+Read these from `WORKTREE_PATH` before writing:
+
+- `docs/seo/2026-05-18-seo-strategy-design.md` §3 — Phase 1 topic SEO.
+- `docs/seo/STATUS.md` — current phase, published pillar pages, cluster-post count, and task registration state.
+- `docs/seo/editorial-calendar.md` — the queue. Its live schema is one fixed-width row per slot, not a Markdown table.
+- `docs/BIO_DRAFT.md` and `docs/voice.md` — voice guides.
+- `content/writing/*.mdx` — recent shipped posts and frontmatter style.
+- `lib/content.ts` — `WritingFrontmatter` schema.
+- `docs/adr/0011-writing-post-hyperframes-loops.md` — writing-post loop policy to flag in the draft PR.
+
+### First run only: bootstrap the editorial calendar
+
+If `docs/seo/editorial-calendar.md` is absent, generate 50 rows using its current fixed-width grammar:
+
+```text
+<NN>  <YYYY-MM-DD>  <status>  <pillar>  <slug>  <one-line angle>
 ```
 
-Commit this calendar file in its own first run before drafting any post. Abhishek will edit/reorder titles before the second run.
+Seed plausible `msme`, `agents`, `rag`, `eng`, and `craft` slots from the strategy and `docs/seo/keywords.json` when present. Commit and push the calendar, then create or reuse one draft PR on `BRANCH` for editorial review. Verify that local HEAD equals the remote branch, remove only the recorded clean worktree, and stop; do not draft a post in the same run.
 
-**Weekly run:**
+### Weekly run
 
-1. Open `docs/seo/editorial-calendar.md`. Find the first row whose `status` column is `pending`. If none, exit early — append a note to `docs/seo/STATUS.md` §7 (Automation health) for this task: `calendar exhausted — replenish before next run`. Commit + open PR with that note only.
-2. Draft an MDX file at `content/writing/<slug>.mdx` based on the chosen row. Frontmatter:
-   ```yaml
-   ---
-   title: <Title from calendar>
-   dek: <one-line dek, 120 chars max, in the voice of BIO_DRAFT.md>
-   date: <YYYY-MM-DD of this Monday>
-   ---
+1. **Resume before selecting.** Inspect the branch diff against `origin/main` and look for changed `content/writing/*.mdx` files. If exactly one exists, derive `SLUG` from that file and resume its calendar row. If more than one exists, or an existing PR cannot be mapped to exactly one row, stop. Only choose a new row when the branch has no draft file and no PR. Never consume a second slot on a same-date rerun.
+2. **Select one slot.** Find the first fixed-width calendar row whose status token is `pending`; record its row number, slug, pillar, and angle. If none exists, update `docs/seo/STATUS.md` §7 with `calendar exhausted — replenish before next run`, commit, push, create or reuse one PR for that status-only change, verify local/remote equality, remove only the recorded clean worktree, and stop.
+3. **Draft one MDX file.** Write `content/writing/$SLUG.mdx` with a concise title derived from the selected slug and angle, a one-line dek of at most 120 characters, and `date: $POST_DATE`.
+4. **Write the body.** Produce 1200–2000 words with:
+   - An “Executive summary” paragraph of at most 200 words at the top.
+   - 4–7 H2 subheadings phrased as search questions.
+   - At least one internal link to the relevant pillar page; for a pillar post, link to three real sibling cluster posts instead.
+   - At least one real related case study under `/work/<slug>`.
+   - Code blocks only where technically appropriate; never invent APIs, versions, metrics, or case-study claims.
+5. **Commit and push the draft before opening the PR.** Leave the calendar row `pending` until a real PR URL exists. Stage only the selected MDX file. The conditional commit makes a clean resumed run a no-op; the explicit push makes the remote branch available before PR creation.
+
+   ```bash
+   git -C "$WORKTREE_PATH" add -- "content/writing/$SLUG.mdx"
+   if ! git -C "$WORKTREE_PATH" diff --cached --quiet; then
+     git -C "$WORKTREE_PATH" commit -m "feat(content): draft $SLUG"
+   fi
+   git -C "$WORKTREE_PATH" push -u origin "$BRANCH"
    ```
-3. Body: 1200–2000 words. Must include:
-   - An "Executive summary" paragraph (≤200 words) at the top — Q&A-friendly for AIO extraction.
-   - 4–7 H2 subheadings written as questions (the queries you would type into Google).
-   - At least one internal link to the relevant pillar page (or, if this IS a pillar, internal links to 3 sibling cluster posts in the same pillar).
-   - At least one internal link to a related case study under `/work/<slug>`.
-   - Code blocks where technically appropriate; never fabricate API surfaces or library versions.
-4. Update the editorial-calendar row: `status: drafted`, `draft-pr: #<placeholder>`. The PR URL gets filled in step 6.
-5. In `STATUS.md`:
-   - §1 Phase 1: increment "Cluster posts: N/30+ published" → `N+1` (note: drafted ≠ published; only increment when Abhishek merges the PR — for now, leave count alone and just note in PR body).
-   - §7 Automation health: update `Last run`, `Status: green`, `Notes: drafted <slug>`.
-6. Commit on branch `seo-bot/weekly-draft/<YYYYMMDD>` with message `feat(content): draft <slug>`. Open PR with `gh pr create --title "seo-bot: draft <slug>" --body "<short summary, link to row in editorial-calendar.md, reminder this is a DRAFT for editorial review>" --draft --label "seo:automation,seo:draft"`.
 
-**Constraints:**
-- Never push to `main`. PR flow only.
-- Never invent technical claims. If you don't know a specific number/version/API surface, write the prose around the unknown or skip it.
-- Match the voice of existing posts. Don't introduce LLM hedging ("might be considered", "it's worth noting"). Match the directness of `content/writing/fastembed-to-tei.mdx`.
-- Stay under 30 minutes of compute. If the draft isn't converging, ship what you have as a draft PR with a `## TODO` section at the bottom noting what's missing.
-- If a git worktree from a previous failed run still exists, remove it with `git worktree remove --force .claude/worktrees/seo-draft-*` before creating a new one.
+6. **Create or reuse exactly one draft PR.** First query by head branch so a rerun cannot duplicate it:
+
+   ```bash
+   PR_URL="$(gh pr view "$BRANCH" --repo "$GH_REPO" --json url --jq .url 2>/dev/null || true)"
+   if [ -z "$PR_URL" ]; then
+     DRAFT_SHA="$(git -C "$WORKTREE_PATH" rev-parse HEAD)"
+     CALENDAR_URL="https://github.com/$GH_REPO/blob/$DRAFT_SHA/docs/seo/editorial-calendar.md"
+     gh pr create \
+       --repo "$GH_REPO" \
+       --base main \
+       --head "$BRANCH" \
+       --title "seo-bot: draft $SLUG" \
+       --body "Draft for editorial review. Calendar source: $CALENDAR_URL. Writing loop is still pending per ADR-0011." \
+       --draft \
+       --label "seo:automation" \
+       --label "seo:draft"
+     PR_URL="$(gh pr view "$BRANCH" --repo "$GH_REPO" --json url --jq .url)"
+   fi
+   test -n "$PR_URL"
+   ```
+
+7. **Persist the real PR URL in a second commit and push it.** In the selected fixed-width row, change only the status token from `pending` to `drafted` and append the trailing annotation `<!-- draft-pr: $PR_URL -->` exactly once. On a resumed run, preserve an identical annotation or replace a stale placeholder; never append duplicates. In `docs/seo/STATUS.md` §7, set this task’s last-run timestamp, `Status: green`, and `Notes: drafted $SLUG — $PR_URL`. Do not increment the published cluster count until the PR merges.
+
+   ```bash
+   git -C "$WORKTREE_PATH" add -- docs/seo/editorial-calendar.md docs/seo/STATUS.md
+   if ! git -C "$WORKTREE_PATH" diff --cached --quiet; then
+     git -C "$WORKTREE_PATH" commit -m "docs(seo): record draft PR for $SLUG"
+   fi
+   git -C "$WORKTREE_PATH" push origin "$BRANCH"
+   ```
+
+8. **Verify remote durability.** A successful run ends only after the PR URL annotation is committed and the remote branch matches local HEAD:
+
+   ```bash
+   test -z "$(git -C "$WORKTREE_PATH" status --porcelain)"
+   rg --fixed-strings --quiet -- "<!-- draft-pr: $PR_URL -->" "$WORKTREE_PATH/docs/seo/editorial-calendar.md"
+   git -C "$REPO_ROOT" fetch origin "$BRANCH:refs/remotes/origin/$BRANCH"
+   test "$(git -C "$WORKTREE_PATH" rev-parse HEAD)" = \
+     "$(git -C "$WORKTREE_PATH" rev-parse "refs/remotes/origin/$BRANCH")"
+   gh pr view "$BRANCH" --repo "$GH_REPO" --json url,isDraft,headRefName
+   ```
+
+9. **Remove only the recorded clean worktree.** Run cleanup from `REPO_ROOT`, after all commits and pushes. If the exact worktree is dirty, refuse cleanup and leave it for inspection.
+
+   ```bash
+   if [ -n "$(git -C "$WORKTREE_PATH" status --porcelain)" ]; then
+     echo "Refusing to remove dirty worktree: $WORKTREE_PATH" >&2
+     exit 1
+   fi
+   git -C "$REPO_ROOT" worktree remove "$WORKTREE_PATH"
+   ```
+
+### Constraints
+
+- Never push to `main`; use only `BRANCH` and its draft PR.
+- Never use wildcard worktree paths, `git worktree remove --force`, `git clean`, or destructive reset commands.
+- Never invent technical or biographical claims. Write around an unknown or omit it.
+- Match existing posts’ direct voice; avoid LLM hedging such as “might be considered” or “it’s worth noting.”
+- Stay under 30 minutes of compute. If the draft is incomplete, keep the MDX as a draft with a `## TODO` section, then follow the same two-commit PR durability sequence.
+- On any failure, preserve the exact worktree and report `BRANCH`, `WORKTREE_PATH`, the failed command, and whether local HEAD is pushed.

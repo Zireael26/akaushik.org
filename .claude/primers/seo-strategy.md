@@ -1,9 +1,9 @@
 ---
 slug: seo-strategy
-purpose: SEO + AIO program for akaushik.org — three-goal plan, per-page canonical + JSON-LD wiring, five Cowork scheduled tasks, live status doc, human-required handoff queue.
-pinned_to: 903ccde
+purpose: SEO + AIO program for akaushik.org — three-goal plan, per-page canonical + JSON-LD wiring, five repository task sources with separate registration, live status doc, human-required handoff queue.
+pinned_to: 12e2ddd
 created: 2026-05-18
-last_refreshed: 2026-07-04
+last_refreshed: 2026-07-15
 related_primers: [agent-readiness-contract, mdx-content-pipeline, og-image-generation]
 ---
 
@@ -19,10 +19,11 @@ Plan written 2026-05-18 after the canonical-host rename (`developerabhishek.live
 
 - `docs/seo/2026-05-18-seo-strategy-design.md` — the static plan. Goals, phases, success metrics, risks. Read this before changing program direction.
 - `docs/seo/STATUS.md` — **live status doc**. Phase progress, canonical NAP block, metrics, alerts, drift log, automation health, leads attributed, human handoff queue. Read this every session to know current state without re-exploration.
-- `docs/seo/editorial-calendar.md` — 50-slot publishing calendar (human-seeded 2026-05-19; one row per post; `status: pending|drafted|published|dropped`). The `seo-weekly-draft` cron re-reads the file at every run and flips status as PRs open / merge / close.
-- `docs/seo/scheduled-tasks/*.md` — self-contained prompts for the five Cowork scheduled tasks. Edit these files + call `mcp__scheduled-tasks__update_scheduled_task` to change task behavior.
+- `docs/seo/editorial-calendar.md` — 50-slot publishing calendar (human-seeded 2026-05-19; one fixed-width row per post; `status: pending|drafted|published|dropped`). A registered `seo-weekly-draft` run reads it fresh and records the real draft PR URL in a trailing row annotation.
+- `docs/seo/scheduled-tasks/*.md` — repository source templates for five intended Cowork tasks. Their presence does not prove active registration.
+- `docs/seo/scheduled-tasks/REGISTER.md` — one-time registration source. Each bootstrap re-reads its task file every run, so edit the source file alone for behavior changes; use scheduler controls only for registration, cadence, or enabled/paused state.
 - `lib/canonical.ts` — helper exporting `canonical(path)` for per-page `alternates.canonical` metadata.
-- `lib/structured-data.ts` — Schema.org JSON-LD builders for `Person`, `Organization`, `WebSite`, `Article`, and case-study `Article` graphs (landed 2026-05-17, supersedes the parallel `lib/seo/jsonld.ts` draft). `BreadcrumbList` not yet shipped here — see Gotchas.
+- `lib/structured-data.ts` — Schema.org JSON-LD builders for `Person`, `Organization`, `WebSite`, `Article`, case-study `Article`, and content-detail `BreadcrumbList` graphs.
 - `components/seo/JsonLdScript.tsx` — server-rendered component that emits a literal `<script type="application/ld+json">` into the static HTML head (parse-only crawlers need the tag in SSR HTML, not the RSC payload).
 - `app/layout.tsx` — `Person` + `Organization` + `WebSite` JSON-LD `@graph` injection point (root-only).
 - `app/writing/[slug]/page.tsx` + `app/work/[slug]/page.tsx` — `Article` JSON-LD per-page injection (cross-references the root `@id` URIs).
@@ -31,19 +32,20 @@ Plan written 2026-05-18 after the canonical-host rename (`developerabhishek.live
 
 How discovery + automation thread together:
 
-1. Crawler hits `akaushik.org/<any-page>`. Receives canonical link (per-page via `alternates.canonical`), `Person` + `Organization` + `WebSite` JSON-LD `@graph` (root), `Article` JSON-LD (on content pages). `Link:` headers advertise `llms.txt`, `llms-full.txt`, sitemap, agent-skills, `.md` alternates (per `agent-readiness-contract` primer). `BreadcrumbList` is planned but not yet wired in `lib/structured-data.ts`.
-2. Legacy alias `akaushik.dev` 308-redirects to canonical at the Vercel layer. Daily verification by `seo-redirect-health` scheduled task; on failure appends to `STATUS.md > Alerts` and opens a PR with the failure transcript. (`developerabhishek.live` registration lapsed 2026-05-19 — see ADR-0003 Outcome addendum; no longer in the redirect-health check list.)
-3. Editorial calendar drives content. `seo-weekly-draft` runs Monday 06:00, picks next `status: pending` slot, drafts MDX, opens draft PR labeled `seo:draft`. Abhishek edits + merges.
-4. Monthly: `seo-monthly-health` runs validator.schema.org + lighthouse + sitemap checks, refreshes `STATUS.md > Metrics` row for the current month. `seo-monthly-profile-drift` reads canonical NAP block from `STATUS.md`, fetches public profile data from each `sameAs` URL, diffs, appends to `STATUS.md > Drift log` on mismatch.
-5. Quarterly: `seo-quarterly-flagship` proposes a flagship-post topic and opens an issue / PR with the brief.
-6. Every scheduled task commits to branch `seo-bot/<task-id>/<YYYY-MM-DD>` and opens a PR. **Never push to main.**
+1. Crawler hits `akaushik.org/<any-page>`. Receives a per-page canonical, the root `Person` + `Organization` + `WebSite` JSON-LD graph, and `Article` plus `BreadcrumbList` JSON-LD on writing/case-study detail pages. `Link:` headers advertise `llms.txt`, `llms-full.txt`, sitemap, agent skills, and `.md` alternates.
+2. Legacy alias `akaushik.dev` 308-redirects to canonical at the Vercel layer. When registered and enabled, `seo-redirect-health` is intended to verify it daily; failures append to `STATUS.md > Alerts` and open a PR with the transcript. (`developerabhishek.live` registration lapsed 2026-05-19 — see ADR-0003 Outcome addendum; no longer in the redirect-health check list.)
+3. Editorial calendar drives content. When registered and enabled, `seo-weekly-draft` runs Monday 06:00, resumes its exact dated branch idempotently, drafts the next `pending` MDX, opens or reuses one draft PR, then commits and pushes the real PR URL to the selected calendar row. Abhishek edits + merges.
+4. Monthly source contracts: `seo-monthly-health` covers schema, Lighthouse, sitemap, and metrics; `seo-monthly-profile-drift` compares public profiles with the canonical NAP block and records mismatches. They run only if registered and enabled.
+5. The quarterly source contract proposes a flagship-post topic and opens an issue / PR with the brief when registered and enabled.
+6. Registered task runs use `seo-bot/...` branches and PR flow. **Never push to main.**
 
 ## Dependencies
 
 - **External (account-bound, Abhishek-only):** Vercel project domains config; Google Search Console + Bing Webmaster Tools verification; GSC Change-of-Address; Wikidata entry; LinkedIn / GitHub / X / Bluesky / dev.to / Hashnode profile editing. Status tracked in `STATUS.md > Human handoff queue`.
 - **Internal code:** `lib/canonical.ts`, `lib/structured-data.ts`, `components/seo/JsonLdScript.tsx`, `app/sitemap.ts`, `app/robots.txt/route.ts`, and `proxy.ts` for Link headers plus Markdown negotiation.
-- **Tooling (used by scheduled tasks):** `gh` CLI for PR creation; `curl` for redirect health; `linkinator` or equivalent for internal-link audit; `validator.schema.org` HTTP API; Lighthouse (npm package or pnpm script).
-- **Cowork scheduled-tasks MCP:** `mcp__scheduled-tasks__create_scheduled_task` / `list` / `update`. Task storage at `/Users/abhishek/.claude/scheduled-tasks/<task-id>/SKILL.md`. Tasks fire only while Cowork app is open (or on next launch for deferred runs).
+- **Tooling (used by task sources when registered):** `gh` CLI for PR creation; `curl` for redirect health; `linkinator` or equivalent for internal-link audit; `validator.schema.org` HTTP API; Lighthouse (npm package or pnpm script).
+- **Registration model:** `REGISTER.md` supplies one-time bootstrap prompts that re-read the committed source templates on every run. Prompt behavior is repo-driven; registration, cadence, and enabled/paused state are scheduler-driven.
+- **Observed registration state (2026-07-15):** `/Users/abhishek/.claude/scheduled-tasks/` is absent and `STATUS.md` H10 remains pending. No active Cowork registration is evidenced by the repo or expected local task store; confirm in the scheduler before relying on any cadence.
 - **Related primers:** `agent-readiness-contract` (LLM/agent surfaces already shipped), `og-image-generation` (per-page OG images; extend per spec §4.7), `mdx-content-pipeline` (drives content + listing endpoints feeding `llms-full.txt`).
 
 ## Test commands
@@ -66,15 +68,18 @@ curl -s https://akaushik.org/sitemap.xml | head -20
 curl -s https://akaushik.org/llms.txt | head -20
 curl -s https://akaushik.org/llms-full.txt | wc -c    # byte-size growth = content compounding
 
-# List + check scheduled tasks
-# (use mcp__scheduled-tasks__list_scheduled_tasks via the MCP tool — no CLI)
+# Inspect repository sources; this does not prove active registration
+rg --files docs/seo/scheduled-tasks
+test -d /Users/abhishek/.claude/scheduled-tasks && echo present || echo absent
+# Confirm active/enabled state in the scheduler itself before relying on a cadence.
 ```
 
 ## Gotchas
 
-- **Cowork-only scheduling.** Scheduled tasks fire only when the Cowork app is open. The daily `seo-redirect-health` task is the most cadence-sensitive — if Cowork is closed for days, redirect drift detection is delayed. Acceptable trade-off; if it becomes load-bearing, mirror to GitHub Actions cron.
-- **Fresh-context tasks.** Every scheduled run starts with no memory of any prior conversation, no prior session context, no prior status. Prompts at `docs/seo/scheduled-tasks/<id>.md` MUST be fully self-contained: where the repo is, which branch to work on, which files to read, what to do, where to commit, how to open the PR. Reference `STATUS.md` as the single source of state.
-- **Never push to main.** Trellis `pre-push` husky hook blocks direct-to-main anyway, but the task prompts explicitly enforce PR flow via `seo-bot/<task-id>/<date>` branches. Editorial review is the gate.
+- **Source is not registration.** Files under `docs/seo/scheduled-tasks/` are inert templates until a scheduler registration exists and is enabled. Never infer active health from source files or empty STATUS sections.
+- **Cowork-only scheduling.** If these tasks are registered in Cowork, they fire only while the app is open (or on next launch for deferred runs). The daily redirect check is the most cadence-sensitive.
+- **Fresh-context tasks.** Every registered run starts with no memory of prior conversations or runs. Source templates MUST remain self-contained: repo, exact branch/worktree policy, files to read, writes, commit/push sequence, PR behavior, and failure reporting.
+- **Never push to main.** Trellis `pre-push` also blocks direct-to-main, but every registered run must use its exact `seo-bot/...` branch and PR flow. Editorial review is the gate.
 - **Wikidata deletion risk.** First-pass entries for non-famous individuals get deleted by editors as "non-notable." Cite akaushik.org/about + LinkedIn + Bluehost team page + any external press as references. Re-submit with additional sources if deleted.
 - **GSC Change of Address from `developerabhishek.live` is no longer on the table.** Registration lapsed 2026-05-19 (ADR-0003 Outcome) — there is no source property to verify or redirect from. Equity recovery relies on `sameAs` Wikidata + sitemap re-submission + on-site signals only.
 - **Canonical NAP block.** Lives in `STATUS.md §2`. Editing it changes what the drift monitor compares against — keep deliberately current. Empty fields = "ignore this `sameAs`" (TODO until filled).
