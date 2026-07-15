@@ -13,6 +13,7 @@ import {
   validateHomepageNonce,
   validateRobotsSitemap,
 } from './check-production-lib.mjs';
+import { runProductionCheckCli, runProductionChecks } from './check-production.mjs';
 
 const repositoryRoot = new URL('../', import.meta.url);
 
@@ -51,10 +52,15 @@ describe('platform automation contracts', () => {
       'persist-credentials': false,
     });
     expect(prepare.run).toContain('git switch -C "$BRANCH_NAME" "origin/$BASE_BRANCH"');
+    expect(prepare.run).toContain(
+      `remote_sha="$(git ls-remote --heads origin "$BRANCH_NAME" | awk '{print $1}')"`,
+    );
+    expect(prepare.run).toContain('echo "remote_sha=$remote_sha" >> "$GITHUB_OUTPUT"');
     expect(prepare.run).toContain('git diff --quiet');
     expect(fetchStats.env.GITHUB_TOKEN).toBe('${{ secrets.GH_STATS_TOKEN }}');
     expect(publish.env.GH_TOKEN).toBe('${{ secrets.GH_STATS_TOKEN }}');
     expect(publish.env.REMOTE_BRANCH_SHA).toBe('${{ steps.branch.outputs.remote_sha }}');
+    expect(publish.run.match(/^\s*git push(?:\s|$)/gm) ?? []).toHaveLength(1);
     expect(publish.run).toContain('--force-with-lease="$BRANCH_NAME:$REMOTE_BRANCH_SHA"');
   });
 
@@ -85,6 +91,200 @@ describe('platform automation contracts', () => {
 });
 
 describe('production smoke safeguards', () => {
+  it('executes the complete production contract through an injected transport', async () => {
+    const discovery = [
+      '</llms.txt>; rel="describedby"; type="text/markdown"',
+      '</llms-full.txt>; rel="describedby"; type="text/markdown"',
+      '</sitemap.xml>; rel="sitemap"; type="application/xml"',
+      '</.well-known/agent-skills/index.json>; rel="describedby"; type="application/json"',
+      '</.well-known/mcp.json>; rel="describedby"; type="application/json"',
+      '</.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json"',
+      '</api/openapi.json>; rel="service-desc"; type="application/json"',
+      '</api/docs>; rel="service-doc"; type="text/html"',
+    ].join(', ');
+    const tools = [
+      {
+        name: 'lookup_case_study',
+        annotations: {
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+        },
+      },
+      {
+        name: 'get_availability',
+        annotations: {
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+        },
+      },
+    ];
+    let homepageRequestCount = 0;
+
+    function result(body, contentType, status = 200, headers = {}) {
+      return {
+        response: new Response(null, {
+          status,
+          headers: { 'content-type': contentType, ...headers },
+        }),
+        body,
+        ttfbMs: 10,
+        attempts: 1,
+        totalElapsedMs: 12,
+      };
+    }
+
+    const request = vi.fn(async (url, requestOptions = {}) => {
+      if (url.origin === 'https://akaushik.dev') {
+        return result('', 'text/plain', 308, {
+          location: `https://akaushik.org${url.pathname}`,
+        });
+      }
+
+      if (url.pathname === '/' && requestOptions.method !== 'POST') {
+        homepageRequestCount += 1;
+        const nonce = `response-nonce-${homepageRequestCount}`;
+        const html = [
+          `<script nonce="${nonce}">self.__next_f = []</script>`,
+          '<a href="mailto:hello@akaushik.org">Contact</a>',
+          '<link rel="icon" href="/favicon.svg">',
+        ].join('');
+        return result(html, 'text/html; charset=utf-8', 200, {
+          link: discovery,
+          'content-security-policy':
+            `default-src 'self'; script-src 'nonce-${nonce}' 'strict-dynamic'; ` +
+            `script-src-attr 'none'`,
+        });
+      }
+
+      if (url.pathname === '/api/mcp' && requestOptions.method === 'POST') {
+        const message = JSON.parse(requestOptions.body);
+        if (!('id' in message)) return result(new Uint8Array(), 'application/json', 202);
+
+        let rpcResult;
+        if (message.method === 'initialize') {
+          rpcResult = {
+            protocolVersion: '2025-11-25',
+            capabilities: { tools: { listChanged: false } },
+            serverInfo: { name: 'akaushik-org', version: '1.0.0' },
+          };
+        } else if (message.method === 'tools/list') {
+          rpcResult = { tools };
+        } else if (message.params.name === 'lookup_case_study') {
+          const structuredContent = {
+            slug: 'neev',
+            title: 'Neev',
+            url: 'https://akaushik.org/work/neev',
+            markdown: '# Neev\nA case study.',
+          };
+          rpcResult = {
+            structuredContent,
+            content: [{ type: 'text', text: JSON.stringify(structuredContent) }],
+          };
+        } else {
+          rpcResult = {
+            structuredContent: {
+              status: 'open',
+              capacity: 'one project this quarter',
+              contactUrl: 'https://akaushik.org/#contact',
+              email: 'hello@akaushik.org',
+            },
+          };
+        }
+
+        return result(
+          JSON.stringify({ jsonrpc: '2.0', id: message.id, result: rpcResult }),
+          'application/json',
+        );
+      }
+
+      const surfaces = {
+        '/robots.txt': [
+          'User-agent: *\nContent-Signal: search=yes\nSitemap: https://akaushik.org/sitemap.xml\n',
+          'text/plain',
+        ],
+        '/llms.txt': ['# Abhishek Kaushik\n', 'text/markdown'],
+        '/llms-full.txt': [`# Full\n<about>\n${'x'.repeat(5_100)}`, 'text/markdown'],
+        '/sitemap.xml': [
+          '<urlset><url><loc>https://akaushik.org/</loc></url></urlset>',
+          'application/xml',
+        ],
+        '/.well-known/api-catalog': [
+          JSON.stringify({ linkset: [{ anchor: 'https://akaushik.org/' }] }),
+          'application/linkset+json',
+        ],
+        '/.well-known/agent-skills/index.json': [
+          JSON.stringify({ skills: [{ name: 'hire-me' }] }),
+          'application/json',
+        ],
+        '/.well-known/agent-skills/hire-me/SKILL.md': [
+          '---\nname: hire-me\n---\n',
+          'text/markdown',
+        ],
+        '/.well-known/mcp.json': [
+          JSON.stringify({
+            name: 'akaushik.org',
+            status: 'live',
+            endpoint: 'https://akaushik.org/api/mcp',
+            protocolVersion: '2025-11-25',
+            transport: 'streamable-http',
+            capabilities: { tools },
+          }),
+          'application/json',
+        ],
+        '/api/openapi.json': [
+          JSON.stringify({ openapi: '3.1.0', paths: { '/api/mcp': { post: {} } } }),
+          'application/json',
+        ],
+        '/api/docs': ['<!doctype html><title>OpenAPI 3.1</title>', 'text/html'],
+        '/favicon.svg': ['<svg xmlns="http://www.w3.org/2000/svg"/>', 'image/svg+xml'],
+      };
+
+      if (url.pathname === '/favicon.ico') {
+        return result(
+          new Uint8Array(readFileSync(new URL('public/favicon.ico', repositoryRoot))),
+          'image/x-icon',
+        );
+      }
+      const surface = surfaces[url.pathname];
+      if (!surface) throw new Error(`Unexpected test request: ${url.href}`);
+      return result(surface[0], surface[1]);
+    });
+
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const outcome = await runProductionChecks(
+        {
+          baseUrl: new URL('https://akaushik.org/'),
+          legacyUrl: new URL('https://akaushik.dev/'),
+          ttfbThresholdMs: 2_500,
+          timeoutMs: 15_000,
+        },
+        request,
+      );
+
+      expect(outcome).toEqual({ passCount: 20, failures: [], exitCode: 0 });
+      expect(homepageRequestCount).toBe(3);
+    } finally {
+      log.mockRestore();
+      error.mockRestore();
+    }
+  });
+
+  it('returns explicit CLI outcomes for help and invalid configuration', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      await expect(runProductionCheckCli(['--help'], {})).resolves.toBe(0);
+      await expect(runProductionCheckCli(['--unknown'], {})).resolves.toBe(2);
+    } finally {
+      log.mockRestore();
+      error.mockRestore();
+    }
+  });
+
   it('enforces every effective CSP script policy on inline and external scripts', () => {
     const nonce = 'response-nonce';
     const response = new Response(null, {
@@ -145,6 +345,20 @@ describe('production smoke safeguards', () => {
         'homepage',
       ),
     ).toThrow(/script-src-elem omits 'strict-dynamic'/);
+
+    const unsafeAttributes = new Response(null, {
+      headers: {
+        'content-security-policy':
+          `default-src 'self'; script-src 'nonce-${nonce}' 'strict-dynamic'; ` +
+          `script-src-attr 'unsafe-inline'`,
+      },
+    });
+    expect(() =>
+      validateHomepageNonce(
+        { response: unsafeAttributes, body: `<script nonce="${nonce}">ok()</script>` },
+        'homepage',
+      ),
+    ).toThrow(/script-src-attr must be exactly 'none'/);
   });
 
   it('retries a transient response-body failure inside the request timeout', async () => {
@@ -192,10 +406,31 @@ describe('production smoke safeguards', () => {
         baseUrl,
         expected,
       ),
+    ).toThrow(/llms\.txt must be advertised on https:\/\/akaushik\.org/);
+    expect(() =>
+      validateDiscoveryLinks(
+        `${valid}, <https://attacker.invalid/llms.txt>; rel="describedby"; type="text/markdown"`,
+        baseUrl,
+        expected,
+      ),
     ).toThrow(/llms\.txt must be advertised exactly once/);
     expect(() =>
       validateDiscoveryLinks(valid.replace('rel="sitemap"', 'rel="alternate"'), baseUrl, expected),
     ).toThrow(/sitemap\.xml must be advertised exactly once/);
+    expect(() =>
+      validateDiscoveryLinks(
+        valid.replace('type="text/markdown"', 'type="text/markdown"; broken'),
+        baseUrl,
+        expected,
+      ),
+    ).toThrow(/malformed parameters/);
+    expect(() =>
+      validateDiscoveryLinks(
+        valid.replace('rel="describedby"', 'title="rel=describedby"'),
+        baseUrl,
+        expected,
+      ),
+    ).toThrow(/llms\.txt must be advertised exactly once/);
 
     expect(() =>
       validateRobotsSitemap('User-agent: *\nSitemap: https://akaushik.org/sitemap.xml\n', baseUrl),

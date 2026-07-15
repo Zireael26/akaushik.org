@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { pathToFileURL } from 'node:url';
 import {
   assertOptionalFalse,
   assertSingleAttempt,
@@ -69,12 +70,12 @@ function productionOrigin(value, label) {
   return new URL('/', url.origin);
 }
 
-function parseOptions(args) {
+function parseOptions(args, env = process.env) {
   const values = {
-    baseUrl: process.env.PRODUCTION_BASE_URL ?? DEFAULT_BASE_URL,
-    legacyUrl: process.env.PRODUCTION_LEGACY_URL ?? DEFAULT_LEGACY_URL,
-    ttfbThresholdMs: process.env.PRODUCTION_TTFB_THRESHOLD_MS ?? String(DEFAULT_TTFB_THRESHOLD_MS),
-    timeoutMs: process.env.PRODUCTION_TIMEOUT_MS ?? String(DEFAULT_TIMEOUT_MS),
+    baseUrl: env.PRODUCTION_BASE_URL ?? DEFAULT_BASE_URL,
+    legacyUrl: env.PRODUCTION_LEGACY_URL ?? DEFAULT_LEGACY_URL,
+    ttfbThresholdMs: env.PRODUCTION_TTFB_THRESHOLD_MS ?? String(DEFAULT_TTFB_THRESHOLD_MS),
+    timeoutMs: env.PRODUCTION_TIMEOUT_MS ?? String(DEFAULT_TIMEOUT_MS),
   };
   const flags = {
     '--base-url': 'baseUrl',
@@ -85,10 +86,6 @@ function parseOptions(args) {
 
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
-    if (argument === '--help') {
-      console.log(HELP);
-      process.exit(0);
-    }
     const key = flags[argument];
     if (!key) throw new Error(`Unknown option: ${argument}`);
     const value = args[index + 1];
@@ -106,18 +103,9 @@ function parseOptions(args) {
 }
 
 let options;
-try {
-  options = parseOptions(process.argv.slice(2));
-} catch (error) {
-  console.error(`Configuration error: ${errorMessage(error)}`);
-  console.error('Run with --help for usage.');
-  process.exit(2);
-}
-
-const request = createRequester({ timeoutMs: options.timeoutMs });
-
+let request;
 let passCount = 0;
-const failures = [];
+let failures = [];
 
 async function check(name, assertion) {
   try {
@@ -243,422 +231,460 @@ function validateDibIcon(view, imageOffset, imageSize, width, height, label) {
   return 'DIB';
 }
 
-let homepage;
-let homepageSamples = [];
+export async function runProductionChecks(runOptions, requestImpl) {
+  options = runOptions;
+  request = requestImpl ?? createRequester({ timeoutMs: options.timeoutMs });
+  passCount = 0;
+  failures = [];
 
-console.log(
-  `Production smoke: ${options.baseUrl.origin} (${HOMEPAGE_SAMPLE_COUNT}-sample median TTFB ceiling ${options.ttfbThresholdMs} ms; one transient retry)`,
-);
+  let homepage;
+  let homepageSamples = [];
 
-await check(
-  `canonical homepage routing (${HOMEPAGE_SAMPLE_COUNT} sequential samples)`,
-  async () => {
-    const url = new URL('/', options.baseUrl);
-    const samples = [];
+  console.log(
+    `Production smoke: ${options.baseUrl.origin} (${HOMEPAGE_SAMPLE_COUNT}-sample median TTFB ceiling ${options.ttfbThresholdMs} ms; one transient retry)`,
+  );
 
-    for (let index = 0; index < HOMEPAGE_SAMPLE_COUNT; index += 1) {
-      const sample = await request(url, {
-        accept: 'text/html',
-        bodyType: 'text',
-      });
-      const { response, body, ttfbMs } = sample;
-      const sampleLabel = `sample ${index + 1}`;
-      assertSingleAttempt(sample, sampleLabel);
-      assert(response.status === 200, `${sampleLabel} expected 200, received ${response.status}`);
-      assert(!response.headers.has('location'), `${sampleLabel} returned a redirect`);
-      assert(
-        /text\/html/i.test(contentType(response)),
-        `${sampleLabel} returned unexpected content type: ${contentType(response)}`,
-      );
-      samples.push({ response, body, ttfbMs });
-    }
+  await check(
+    `canonical homepage routing (${HOMEPAGE_SAMPLE_COUNT} sequential samples)`,
+    async () => {
+      const url = new URL('/', options.baseUrl);
+      const samples = [];
 
-    homepageSamples = samples;
-    [homepage] = samples;
-    return `${samples.length} sequential 200 responses from ${url.href}`;
-  },
-);
+      for (let index = 0; index < HOMEPAGE_SAMPLE_COUNT; index += 1) {
+        const sample = await request(url, {
+          accept: 'text/html',
+          bodyType: 'text',
+        });
+        const { response, body, ttfbMs } = sample;
+        const sampleLabel = `sample ${index + 1}`;
+        assertSingleAttempt(sample, sampleLabel);
+        assert(response.status === 200, `${sampleLabel} expected 200, received ${response.status}`);
+        assert(!response.headers.has('location'), `${sampleLabel} returned a redirect`);
+        assert(
+          /text\/html/i.test(contentType(response)),
+          `${sampleLabel} returned unexpected content type: ${contentType(response)}`,
+        );
+        samples.push({ response, body, ttfbMs });
+      }
 
-await check('legacy alias routing', async () => {
-  const paths = ['/', '/work/neev'];
-  for (const path of paths) {
-    const legacyTarget = new URL(path, options.legacyUrl);
-    const expectedTarget = new URL(path, options.baseUrl);
-    const { response } = await request(legacyTarget);
-    assert(
-      response.status === 308,
-      `${legacyTarget.href} returned ${response.status}, expected 308`,
-    );
-    const location = response.headers.get('location');
-    assert(location, `${legacyTarget.href} did not include a Location header`);
-    const resolved = new URL(location, legacyTarget);
-    assert(
-      resolved.href === expectedTarget.href,
-      `${legacyTarget.href} redirected to ${resolved.href}, expected ${expectedTarget.href}`,
-    );
-  }
-  return '308 root and deep-path redirects preserve the canonical path';
-});
-
-await check('agent discovery Link header', () => {
-  assert(homepage, 'canonical homepage was unavailable');
-  const link = homepage.response.headers.get('link') ?? '';
-  const advertised = [
-    { path: '/llms.txt', rel: 'describedby', type: 'text/markdown' },
-    { path: '/llms-full.txt', rel: 'describedby', type: 'text/markdown' },
-    { path: '/sitemap.xml', rel: 'sitemap', type: 'application/xml' },
-    {
-      path: '/.well-known/agent-skills/index.json',
-      rel: 'describedby',
-      type: 'application/json',
+      homepageSamples = samples;
+      [homepage] = samples;
+      return `${samples.length} sequential 200 responses from ${url.href}`;
     },
-    { path: '/.well-known/mcp.json', rel: 'describedby', type: 'application/json' },
+  );
+
+  await check('legacy alias routing', async () => {
+    const paths = ['/', '/work/neev'];
+    for (const path of paths) {
+      const legacyTarget = new URL(path, options.legacyUrl);
+      const expectedTarget = new URL(path, options.baseUrl);
+      const { response } = await request(legacyTarget);
+      assert(
+        response.status === 308,
+        `${legacyTarget.href} returned ${response.status}, expected 308`,
+      );
+      const location = response.headers.get('location');
+      assert(location, `${legacyTarget.href} did not include a Location header`);
+      const resolved = new URL(location, legacyTarget);
+      assert(
+        resolved.href === expectedTarget.href,
+        `${legacyTarget.href} redirected to ${resolved.href}, expected ${expectedTarget.href}`,
+      );
+    }
+    return '308 root and deep-path redirects preserve the canonical path';
+  });
+
+  await check('agent discovery Link header', () => {
+    assert(homepage, 'canonical homepage was unavailable');
+    const link = homepage.response.headers.get('link') ?? '';
+    const advertised = [
+      { path: '/llms.txt', rel: 'describedby', type: 'text/markdown' },
+      { path: '/llms-full.txt', rel: 'describedby', type: 'text/markdown' },
+      { path: '/sitemap.xml', rel: 'sitemap', type: 'application/xml' },
+      {
+        path: '/.well-known/agent-skills/index.json',
+        rel: 'describedby',
+        type: 'application/json',
+      },
+      { path: '/.well-known/mcp.json', rel: 'describedby', type: 'application/json' },
+      {
+        path: '/.well-known/api-catalog',
+        rel: 'api-catalog',
+        type: 'application/linkset+json',
+      },
+      { path: '/api/openapi.json', rel: 'service-desc', type: 'application/json' },
+      { path: '/api/docs', rel: 'service-doc', type: 'text/html' },
+    ];
+    const count = validateDiscoveryLinks(link, options.baseUrl, advertised);
+    return `${count} canonical targets advertised with exact relation and type`;
+  });
+
+  const agentSurfaces = [
+    {
+      path: '/robots.txt',
+      type: /text\/plain/i,
+      validate(body) {
+        assert(/Content-Signal:/i.test(body), 'missing Content-Signal directive');
+        validateRobotsSitemap(body, options.baseUrl);
+      },
+    },
+    {
+      path: '/llms.txt',
+      type: /text\/markdown/i,
+      validate(body) {
+        assert(/^# /m.test(body), 'missing Markdown heading');
+      },
+    },
+    {
+      path: '/llms-full.txt',
+      type: /text\/markdown/i,
+      validate(body) {
+        assert(body.length > 5_000, `body is unexpectedly short (${body.length} bytes)`);
+        assert(body.includes('<about>'), 'missing about corpus section');
+      },
+    },
+    {
+      path: '/sitemap.xml',
+      type: /xml/i,
+      validate(body) {
+        assert(body.includes('<urlset'), 'missing sitemap urlset');
+        validateCanonicalSitemap(body, options.baseUrl);
+      },
+    },
     {
       path: '/.well-known/api-catalog',
-      rel: 'api-catalog',
-      type: 'application/linkset+json',
-    },
-    { path: '/api/openapi.json', rel: 'service-desc', type: 'application/json' },
-    { path: '/api/docs', rel: 'service-doc', type: 'text/html' },
-  ];
-  const count = validateDiscoveryLinks(link, options.baseUrl, advertised);
-  return `${count} canonical targets advertised with exact relation and type`;
-});
-
-const agentSurfaces = [
-  {
-    path: '/robots.txt',
-    type: /text\/plain/i,
-    validate(body) {
-      assert(/Content-Signal:/i.test(body), 'missing Content-Signal directive');
-      validateRobotsSitemap(body, options.baseUrl);
-    },
-  },
-  {
-    path: '/llms.txt',
-    type: /text\/markdown/i,
-    validate(body) {
-      assert(/^# /m.test(body), 'missing Markdown heading');
-    },
-  },
-  {
-    path: '/llms-full.txt',
-    type: /text\/markdown/i,
-    validate(body) {
-      assert(body.length > 5_000, `body is unexpectedly short (${body.length} bytes)`);
-      assert(body.includes('<about>'), 'missing about corpus section');
-    },
-  },
-  {
-    path: '/sitemap.xml',
-    type: /xml/i,
-    validate(body) {
-      assert(body.includes('<urlset'), 'missing sitemap urlset');
-      validateCanonicalSitemap(body, options.baseUrl);
-    },
-  },
-  {
-    path: '/.well-known/api-catalog',
-    type: /application\/linkset\+json/i,
-    validate(body, path) {
-      const json = parseJson(body, path);
-      assert(Array.isArray(json.linkset) && json.linkset.length > 0, 'linkset is empty');
-    },
-  },
-  {
-    path: '/.well-known/agent-skills/index.json',
-    type: /application\/json/i,
-    validate(body, path) {
-      const json = parseJson(body, path);
-      assert(Array.isArray(json.skills) && json.skills.length > 0, 'skills index is empty');
-    },
-  },
-  {
-    path: '/.well-known/agent-skills/hire-me/SKILL.md',
-    type: /text\/(?:markdown|plain)/i,
-    validate(body) {
-      assert(body.startsWith('---'), 'skill frontmatter is missing');
-    },
-  },
-  {
-    path: '/.well-known/mcp.json',
-    type: /application\/json/i,
-    validate(body, path) {
-      const json = parseJson(body, path);
-      assert(isRecord(json), 'MCP card is not a JSON object');
-      assert(typeof json.name === 'string' && json.name.length > 0, 'MCP card name is missing');
-      assert(json.status === 'live', `MCP card status is ${String(json.status)}, expected live`);
-      assert(
-        json.endpoint === new URL('/api/mcp', options.baseUrl).href,
-        `MCP card endpoint is ${String(json.endpoint)}, expected ${new URL('/api/mcp', options.baseUrl).href}`,
-      );
-      assert(
-        json.protocolVersion === MCP_PROTOCOL_VERSION,
-        `MCP card protocol is ${String(json.protocolVersion)}, expected ${MCP_PROTOCOL_VERSION}`,
-      );
-      assert(json.transport === 'streamable-http', 'MCP card transport is not streamable-http');
-      const capabilities = isRecord(json.capabilities) ? json.capabilities : {};
-      assertExactToolNames(capabilities.tools, 'MCP card');
-    },
-  },
-  {
-    path: '/api/openapi.json',
-    type: /application\/json/i,
-    validate(body, path) {
-      const json = parseJson(body, path);
-      assert(isRecord(json), 'OpenAPI document is not a JSON object');
-      assert(/^3\.1/.test(json.openapi), 'OpenAPI document is not version 3.1');
-      assert(isRecord(json.paths), 'OpenAPI paths are missing');
-      assert(isRecord(json.paths['/api/mcp']), 'OpenAPI /api/mcp path is missing');
-      assert(isRecord(json.paths['/api/mcp'].post), 'OpenAPI /api/mcp POST operation is missing');
-    },
-  },
-  {
-    path: '/api/docs',
-    type: /text\/html/i,
-    validate(body) {
-      assert(body.includes('OpenAPI 3.1'), 'human-readable API docs are incomplete');
-    },
-  },
-];
-
-for (const surface of agentSurfaces) {
-  await check(`agent surface ${surface.path}`, async () => {
-    const url = new URL(surface.path, options.baseUrl);
-    const { response, body } = await request(url, { bodyType: 'text' });
-    assert(response.status === 200, `expected 200, received ${response.status}`);
-    assert(
-      surface.type.test(contentType(response)),
-      `unexpected content type: ${contentType(response)}`,
-    );
-    assert(body.length > 0, 'body is empty');
-    surface.validate(body, surface.path);
-    return `${response.status} ${contentType(response).split(';')[0]}`;
-  });
-}
-
-await check('live MCP initialize, tools/list, and tool calls', async () => {
-  const initializeId = 'production-smoke-initialize';
-  const { response: initializeResponse, result: initialize } = await postMcp(
-    rpcRequest(
-      'initialize',
-      {
-        protocolVersion: MCP_PROTOCOL_VERSION,
-        capabilities: {},
-        clientInfo: { name: 'akaushik.org-production-smoke', version: '1.0.0' },
+      type: /application\/linkset\+json/i,
+      validate(body, path) {
+        const json = parseJson(body, path);
+        assert(Array.isArray(json.linkset) && json.linkset.length > 0, 'linkset is empty');
       },
-      initializeId,
-    ),
-    'initialize',
-  );
-  assert(
-    initialize.protocolVersion === MCP_PROTOCOL_VERSION,
-    `initialize negotiated ${String(initialize.protocolVersion)}, expected ${MCP_PROTOCOL_VERSION}`,
-  );
-  assert(!initializeResponse.headers.has('mcp-session-id'), 'stateless MCP issued a session id');
-  const initializeCapabilities = isRecord(initialize.capabilities) ? initialize.capabilities : {};
-  const initializeTools = isRecord(initializeCapabilities.tools)
-    ? initializeCapabilities.tools
-    : {};
-  assertOptionalFalse(initializeTools.listChanged, 'initialize capabilities.tools.listChanged');
-  const serverInfo = isRecord(initialize.serverInfo) ? initialize.serverInfo : {};
-  assert(serverInfo.name === 'akaushik-org', 'initialize serverInfo.name is incorrect');
+    },
+    {
+      path: '/.well-known/agent-skills/index.json',
+      type: /application\/json/i,
+      validate(body, path) {
+        const json = parseJson(body, path);
+        assert(Array.isArray(json.skills) && json.skills.length > 0, 'skills index is empty');
+      },
+    },
+    {
+      path: '/.well-known/agent-skills/hire-me/SKILL.md',
+      type: /text\/(?:markdown|plain)/i,
+      validate(body) {
+        assert(body.startsWith('---'), 'skill frontmatter is missing');
+      },
+    },
+    {
+      path: '/.well-known/mcp.json',
+      type: /application\/json/i,
+      validate(body, path) {
+        const json = parseJson(body, path);
+        assert(isRecord(json), 'MCP card is not a JSON object');
+        assert(typeof json.name === 'string' && json.name.length > 0, 'MCP card name is missing');
+        assert(json.status === 'live', `MCP card status is ${String(json.status)}, expected live`);
+        assert(
+          json.endpoint === new URL('/api/mcp', options.baseUrl).href,
+          `MCP card endpoint is ${String(json.endpoint)}, expected ${new URL('/api/mcp', options.baseUrl).href}`,
+        );
+        assert(
+          json.protocolVersion === MCP_PROTOCOL_VERSION,
+          `MCP card protocol is ${String(json.protocolVersion)}, expected ${MCP_PROTOCOL_VERSION}`,
+        );
+        assert(json.transport === 'streamable-http', 'MCP card transport is not streamable-http');
+        const capabilities = isRecord(json.capabilities) ? json.capabilities : {};
+        assertExactToolNames(capabilities.tools, 'MCP card');
+      },
+    },
+    {
+      path: '/api/openapi.json',
+      type: /application\/json/i,
+      validate(body, path) {
+        const json = parseJson(body, path);
+        assert(isRecord(json), 'OpenAPI document is not a JSON object');
+        assert(/^3\.1/.test(json.openapi), 'OpenAPI document is not version 3.1');
+        assert(isRecord(json.paths), 'OpenAPI paths are missing');
+        assert(isRecord(json.paths['/api/mcp']), 'OpenAPI /api/mcp path is missing');
+        assert(isRecord(json.paths['/api/mcp'].post), 'OpenAPI /api/mcp POST operation is missing');
+      },
+    },
+    {
+      path: '/api/docs',
+      type: /text\/html/i,
+      validate(body) {
+        assert(body.includes('OpenAPI 3.1'), 'human-readable API docs are incomplete');
+      },
+    },
+  ];
 
-  await postMcpInitialized();
-
-  const { result: listed } = await postMcp(
-    rpcRequest('tools/list', {}, 'tools-list'),
-    'tools/list',
-  );
-  const listedNames = assertExactToolNames(listed.tools, 'live MCP');
-  for (const tool of listed.tools) {
-    const annotations = isRecord(tool.annotations) ? tool.annotations : {};
-    assert(
-      annotations.readOnlyHint === true &&
-        annotations.destructiveHint === false &&
-        annotations.idempotentHint === true,
-      `live MCP tool ${tool.name} is not advertised as read-only and idempotent`,
-    );
+  for (const surface of agentSurfaces) {
+    await check(`agent surface ${surface.path}`, async () => {
+      const url = new URL(surface.path, options.baseUrl);
+      const { response, body } = await request(url, { bodyType: 'text' });
+      assert(response.status === 200, `expected 200, received ${response.status}`);
+      assert(
+        surface.type.test(contentType(response)),
+        `unexpected content type: ${contentType(response)}`,
+      );
+      assert(body.length > 0, 'body is empty');
+      surface.validate(body, surface.path);
+      return `${response.status} ${contentType(response).split(';')[0]}`;
+    });
   }
 
-  const { result: lookup } = await postMcp(
-    rpcRequest(
-      'tools/call',
-      { name: 'lookup_case_study', arguments: { slug: 'neev' } },
-      'lookup-neev',
-    ),
-    'lookup_case_study(neev)',
-  );
-  assertOptionalFalse(lookup.isError, 'lookup_case_study(neev) result.isError');
-  const caseStudy = isRecord(lookup.structuredContent) ? lookup.structuredContent : {};
-  assert(caseStudy.slug === 'neev', 'lookup_case_study returned the wrong slug');
-  assert(caseStudy.title === 'Neev', 'lookup_case_study returned the wrong title');
-  assert(
-    caseStudy.url === new URL('/work/neev', options.baseUrl).href,
-    'lookup_case_study returned the wrong canonical URL',
-  );
-  assert(
-    typeof caseStudy.markdown === 'string' && caseStudy.markdown.includes('# Neev'),
-    'lookup_case_study returned incomplete Markdown',
-  );
-  assert(
-    Array.isArray(lookup.content) && isRecord(lookup.content[0]),
-    'lookup text content is missing',
-  );
-  assert(lookup.content[0].type === 'text', 'lookup content is not text');
-  assert(typeof lookup.content[0].text === 'string', 'lookup text content is malformed');
-  const mirroredCaseStudy = parseJson(lookup.content[0].text, 'lookup_case_study text content');
-  assert(
-    isRecord(mirroredCaseStudy) && mirroredCaseStudy.slug === caseStudy.slug,
-    'lookup text content does not mirror structuredContent',
-  );
+  await check('live MCP initialize, tools/list, and tool calls', async () => {
+    const initializeId = 'production-smoke-initialize';
+    const { response: initializeResponse, result: initialize } = await postMcp(
+      rpcRequest(
+        'initialize',
+        {
+          protocolVersion: MCP_PROTOCOL_VERSION,
+          capabilities: {},
+          clientInfo: { name: 'akaushik.org-production-smoke', version: '1.0.0' },
+        },
+        initializeId,
+      ),
+      'initialize',
+    );
+    assert(
+      initialize.protocolVersion === MCP_PROTOCOL_VERSION,
+      `initialize negotiated ${String(initialize.protocolVersion)}, expected ${MCP_PROTOCOL_VERSION}`,
+    );
+    assert(!initializeResponse.headers.has('mcp-session-id'), 'stateless MCP issued a session id');
+    const initializeCapabilities = isRecord(initialize.capabilities) ? initialize.capabilities : {};
+    const initializeTools = isRecord(initializeCapabilities.tools)
+      ? initializeCapabilities.tools
+      : {};
+    assertOptionalFalse(initializeTools.listChanged, 'initialize capabilities.tools.listChanged');
+    const serverInfo = isRecord(initialize.serverInfo) ? initialize.serverInfo : {};
+    assert(serverInfo.name === 'akaushik-org', 'initialize serverInfo.name is incorrect');
 
-  const { result: availabilityResult } = await postMcp(
-    rpcRequest('tools/call', { name: 'get_availability', arguments: {} }, 'get-availability'),
-    'get_availability',
-  );
-  assertOptionalFalse(availabilityResult.isError, 'get_availability result.isError');
-  const availability = isRecord(availabilityResult.structuredContent)
-    ? availabilityResult.structuredContent
-    : {};
-  assert(availability.status === 'open', 'availability status is not open');
-  assert(
-    availability.capacity === 'one project this quarter',
-    'availability capacity is unexpected',
-  );
-  assert(
-    availability.contactUrl === new URL('/#contact', options.baseUrl).href,
-    'availability contact URL is incorrect',
-  );
-  assert(availability.email === 'hello@akaushik.org', 'availability email is incorrect');
+    await postMcpInitialized();
 
-  return `${MCP_PROTOCOL_VERSION}; ${listedNames.join(', ')}; Neev; availability open`;
-});
+    const { result: listed } = await postMcp(
+      rpcRequest('tools/list', {}, 'tools-list'),
+      'tools/list',
+    );
+    const listedNames = assertExactToolNames(listed.tools, 'live MCP');
+    for (const tool of listed.tools) {
+      const annotations = isRecord(tool.annotations) ? tool.annotations : {};
+      assert(
+        annotations.readOnlyHint === true &&
+          annotations.destructiveHint === false &&
+          annotations.idempotentHint === true,
+        `live MCP tool ${tool.name} is not advertised as read-only and idempotent`,
+      );
+    }
 
-await check('nonce Content-Security-Policy', () => {
-  assert(homepageSamples.length >= 2, 'separate homepage responses were unavailable');
-  const first = validateHomepageNonce(homepageSamples[0], 'homepage response 1');
-  const second = validateHomepageNonce(homepageSamples[1], 'homepage response 2');
-  assert(first.nonce !== second.nonce, 'CSP nonce did not rotate across homepage responses');
-  return `${first.scriptCount + second.scriptCount} inline/external scripts matched all CSP policies; nonce rotated`;
-});
+    const { result: lookup } = await postMcp(
+      rpcRequest(
+        'tools/call',
+        { name: 'lookup_case_study', arguments: { slug: 'neev' } },
+        'lookup-neev',
+      ),
+      'lookup_case_study(neev)',
+    );
+    assertOptionalFalse(lookup.isError, 'lookup_case_study(neev) result.isError');
+    const caseStudy = isRecord(lookup.structuredContent) ? lookup.structuredContent : {};
+    assert(caseStudy.slug === 'neev', 'lookup_case_study returned the wrong slug');
+    assert(caseStudy.title === 'Neev', 'lookup_case_study returned the wrong title');
+    assert(
+      caseStudy.url === new URL('/work/neev', options.baseUrl).href,
+      'lookup_case_study returned the wrong canonical URL',
+    );
+    assert(
+      typeof caseStudy.markdown === 'string' && caseStudy.markdown.includes('# Neev'),
+      'lookup_case_study returned incomplete Markdown',
+    );
+    assert(
+      Array.isArray(lookup.content) && isRecord(lookup.content[0]),
+      'lookup text content is missing',
+    );
+    assert(lookup.content[0].type === 'text', 'lookup content is not text');
+    assert(typeof lookup.content[0].text === 'string', 'lookup text content is malformed');
+    const mirroredCaseStudy = parseJson(lookup.content[0].text, 'lookup_case_study text content');
+    assert(
+      isRecord(mirroredCaseStudy) && mirroredCaseStudy.slug === caseStudy.slug,
+      'lookup text content does not mirror structuredContent',
+    );
 
-await check('raw contact mailto', () => {
-  assert(homepage, 'canonical homepage was unavailable');
-  assert(
-    hasMailtoAnchor(homepage.body, 'hello@akaushik.org'),
-    'usable raw mailto:hello@akaushik.org anchor is missing',
-  );
-  return 'raw mailto link present';
-});
+    const { result: availabilityResult } = await postMcp(
+      rpcRequest('tools/call', { name: 'get_availability', arguments: {} }, 'get-availability'),
+      'get_availability',
+    );
+    assertOptionalFalse(availabilityResult.isError, 'get_availability result.isError');
+    const availability = isRecord(availabilityResult.structuredContent)
+      ? availabilityResult.structuredContent
+      : {};
+    assert(availability.status === 'open', 'availability status is not open');
+    assert(
+      availability.capacity === 'one project this quarter',
+      'availability capacity is unexpected',
+    );
+    assert(
+      availability.contactUrl === new URL('/#contact', options.baseUrl).href,
+      'availability contact URL is incorrect',
+    );
+    assert(availability.email === 'hello@akaushik.org', 'availability email is incorrect');
 
-await check('Cloudflare email-protection decoder absent', () => {
-  assert(homepage, 'canonical homepage was unavailable');
-  const markers = [
-    ['/cdn-cgi/l/email-protection', /\/cdn-cgi\/l\/email-protection/i],
-    ['data-cfemail', /data-cfemail/i],
-    ['email-decode.min.js', /email-decode\.min\.js/i],
-    ['__cf_email__', /__cf_email__/i],
-  ];
-  const found = markers.filter(([, pattern]) => pattern.test(homepage.body)).map(([name]) => name);
-  assert(found.length === 0, `found Cloudflare email-protection artifacts: ${found.join(', ')}`);
-  return 'no decoder markup or script';
-});
+    return `${MCP_PROTOCOL_VERSION}; ${listedNames.join(', ')}; Neev; availability open`;
+  });
 
-await check('homepage image URLs', async () => {
-  assert(homepage, 'canonical homepage was unavailable');
-  const imageUrls = extractHomepageImageUrls(homepage.body, options.baseUrl);
-  assert(imageUrls.length > 0, 'homepage advertised no image URLs');
+  await check('nonce Content-Security-Policy', () => {
+    assert(homepageSamples.length >= 2, 'separate homepage responses were unavailable');
+    const first = validateHomepageNonce(homepageSamples[0], 'homepage response 1');
+    const second = validateHomepageNonce(homepageSamples[1], 'homepage response 2');
+    assert(first.nonce !== second.nonce, 'CSP nonce did not rotate across homepage responses');
+    return `${first.scriptCount + second.scriptCount} inline/external scripts matched all CSP policies; nonce rotated`;
+  });
 
-  for (const href of imageUrls) {
-    const url = new URL(href);
-    const { response, body } = await request(url, {
-      accept: 'image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8',
+  await check('raw contact mailto', () => {
+    assert(homepage, 'canonical homepage was unavailable');
+    assert(
+      hasMailtoAnchor(homepage.body, 'hello@akaushik.org'),
+      'usable raw mailto:hello@akaushik.org anchor is missing',
+    );
+    return 'raw mailto link present';
+  });
+
+  await check('Cloudflare email-protection decoder absent', () => {
+    assert(homepage, 'canonical homepage was unavailable');
+    const markers = [
+      ['/cdn-cgi/l/email-protection', /\/cdn-cgi\/l\/email-protection/i],
+      ['data-cfemail', /data-cfemail/i],
+      ['email-decode.min.js', /email-decode\.min\.js/i],
+      ['__cf_email__', /__cf_email__/i],
+    ];
+    const found = markers
+      .filter(([, pattern]) => pattern.test(homepage.body))
+      .map(([name]) => name);
+    assert(found.length === 0, `found Cloudflare email-protection artifacts: ${found.join(', ')}`);
+    return 'no decoder markup or script';
+  });
+
+  await check('homepage image URLs', async () => {
+    assert(homepage, 'canonical homepage was unavailable');
+    const imageUrls = extractHomepageImageUrls(homepage.body, options.baseUrl);
+    assert(imageUrls.length > 0, 'homepage advertised no image URLs');
+
+    for (const href of imageUrls) {
+      const url = new URL(href);
+      const { response, body } = await request(url, {
+        accept: 'image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8',
+        bodyType: 'bytes',
+      });
+      assert(response.status === 200, `${url.href} expected 200, received ${response.status}`);
+      assert(!response.headers.has('location'), `${url.href} returned a redirect`);
+      assert(
+        /^image\//i.test(contentType(response)),
+        `${url.href} returned unexpected content type: ${contentType(response)}`,
+      );
+      assert(body.length > 0, `${url.href} returned an empty image body`);
+    }
+
+    return `${imageUrls.length} same-origin HTTPS images returned non-empty image bodies`;
+  });
+
+  await check('legacy favicon', async () => {
+    const url = new URL('/favicon.ico', options.baseUrl);
+    const { response, body: bytes } = await request(url, {
+      accept: 'image/x-icon,image/*;q=0.8',
       bodyType: 'bytes',
     });
-    assert(response.status === 200, `${url.href} expected 200, received ${response.status}`);
-    assert(!response.headers.has('location'), `${url.href} returned a redirect`);
+    assert(response.status === 200, `expected 200, received ${response.status}`);
     assert(
-      /^image\//i.test(contentType(response)),
-      `${url.href} returned unexpected content type: ${contentType(response)}`,
+      /image\/(?:x-icon|vnd\.microsoft\.icon)|application\/octet-stream/i.test(
+        contentType(response),
+      ),
+      `unexpected content type: ${contentType(response)}`,
     );
-    assert(body.length > 0, `${url.href} returned an empty image body`);
-  }
+    assert(bytes.length >= 6, `ICO body is too short (${bytes.length} bytes)`);
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    assert(view.getUint16(0, true) === 0, 'ICO reserved field is invalid');
+    assert(view.getUint16(2, true) === 1, 'ICO type is not icon');
+    const imageCount = view.getUint16(4, true);
+    assert(imageCount > 0, 'ICO contains no images');
+    const directoryLength = 6 + imageCount * 16;
+    assert(
+      bytes.length >= directoryLength,
+      `ICO directory requires ${directoryLength} bytes, received ${bytes.length}`,
+    );
 
-  return `${imageUrls.length} same-origin HTTPS images returned non-empty image bodies`;
-});
+    const dimensions = [];
+    const formats = [];
+    for (let index = 0; index < imageCount; index += 1) {
+      const entryOffset = 6 + index * 16;
+      const width = bytes[entryOffset] || 256;
+      const height = bytes[entryOffset + 1] || 256;
+      const label = `ICO entry ${index + 1} (${width}x${height})`;
+      assert(bytes[entryOffset + 3] === 0, `${label} reserved field is invalid`);
 
-await check('legacy favicon', async () => {
-  const url = new URL('/favicon.ico', options.baseUrl);
-  const { response, body: bytes } = await request(url, {
-    accept: 'image/x-icon,image/*;q=0.8',
-    bodyType: 'bytes',
+      const imageSize = view.getUint32(entryOffset + 8, true);
+      const imageOffset = view.getUint32(entryOffset + 12, true);
+      assert(width >= 1 && width <= 256, `${label} width is invalid`);
+      assert(height >= 1 && height <= 256, `${label} height is invalid`);
+      assert(imageSize > 0, `${label} payload is empty`);
+      assert(imageOffset >= directoryLength, `${label} payload overlaps the ICO directory`);
+      assert(imageOffset <= bytes.length, `${label} payload offset exceeds the file length`);
+      assert(
+        imageSize <= bytes.length - imageOffset,
+        `${label} payload exceeds the file length (${imageOffset} + ${imageSize} > ${bytes.length})`,
+      );
+
+      const isPng = bytesMatch(
+        bytes,
+        imageOffset,
+        [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
+      );
+      const format = isPng
+        ? validatePngIcon(bytes, view, imageOffset, imageSize, width, height, label)
+        : validateDibIcon(view, imageOffset, imageSize, width, height, label);
+      dimensions.push(`${width}x${height}`);
+      formats.push(format);
+    }
+
+    const formatSummary = [...new Set(formats)].join('/');
+    return `${bytes.length} bytes; ${imageCount} bounded ${formatSummary} images (${dimensions.join(', ')})`;
   });
-  assert(response.status === 200, `expected 200, received ${response.status}`);
-  assert(
-    /image\/(?:x-icon|vnd\.microsoft\.icon)|application\/octet-stream/i.test(contentType(response)),
-    `unexpected content type: ${contentType(response)}`,
-  );
-  assert(bytes.length >= 6, `ICO body is too short (${bytes.length} bytes)`);
-  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  assert(view.getUint16(0, true) === 0, 'ICO reserved field is invalid');
-  assert(view.getUint16(2, true) === 1, 'ICO type is not icon');
-  const imageCount = view.getUint16(4, true);
-  assert(imageCount > 0, 'ICO contains no images');
-  const directoryLength = 6 + imageCount * 16;
-  assert(
-    bytes.length >= directoryLength,
-    `ICO directory requires ${directoryLength} bytes, received ${bytes.length}`,
-  );
 
-  const dimensions = [];
-  const formats = [];
-  for (let index = 0; index < imageCount; index += 1) {
-    const entryOffset = 6 + index * 16;
-    const width = bytes[entryOffset] || 256;
-    const height = bytes[entryOffset + 1] || 256;
-    const label = `ICO entry ${index + 1} (${width}x${height})`;
-    assert(bytes[entryOffset + 3] === 0, `${label} reserved field is invalid`);
-
-    const imageSize = view.getUint32(entryOffset + 8, true);
-    const imageOffset = view.getUint32(entryOffset + 12, true);
-    assert(width >= 1 && width <= 256, `${label} width is invalid`);
-    assert(height >= 1 && height <= 256, `${label} height is invalid`);
-    assert(imageSize > 0, `${label} payload is empty`);
-    assert(imageOffset >= directoryLength, `${label} payload overlaps the ICO directory`);
-    assert(imageOffset <= bytes.length, `${label} payload offset exceeds the file length`);
+  await check(`homepage median TTFB <= ${options.ttfbThresholdMs} ms`, () => {
     assert(
-      imageSize <= bytes.length - imageOffset,
-      `${label} payload exceeds the file length (${imageOffset} + ${imageSize} > ${bytes.length})`,
+      homepageSamples.length === HOMEPAGE_SAMPLE_COUNT,
+      `expected ${HOMEPAGE_SAMPLE_COUNT} homepage samples, received ${homepageSamples.length}`,
     );
+    const samples = homepageSamples.map(({ ttfbMs }) => ttfbMs);
+    const measured = median(samples);
+    const roundedMedian = Math.round(measured);
+    const roundedSamples = samples.map((sample) => Math.round(sample));
+    assert(
+      measured <= options.ttfbThresholdMs,
+      `median ${roundedMedian} ms from samples ${roundedSamples.join(', ')} ms; threshold ${options.ttfbThresholdMs} ms`,
+    );
+    return `median ${roundedMedian} ms (samples ${roundedSamples.join(', ')} ms)`;
+  });
 
-    const isPng = bytesMatch(bytes, imageOffset, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-    const format = isPng
-      ? validatePngIcon(bytes, view, imageOffset, imageSize, width, height, label)
-      : validateDibIcon(view, imageOffset, imageSize, width, height, label);
-    dimensions.push(`${width}x${height}`);
-    formats.push(format);
+  console.log(`Production smoke complete: ${passCount} passed, ${failures.length} failed.`);
+  return { passCount, failures: [...failures], exitCode: failures.length > 0 ? 1 : 0 };
+}
+
+export async function runProductionCheckCli(args = process.argv.slice(2), env = process.env) {
+  if (args.includes('--help')) {
+    console.log(HELP);
+    return 0;
   }
 
-  const formatSummary = [...new Set(formats)].join('/');
-  return `${bytes.length} bytes; ${imageCount} bounded ${formatSummary} images (${dimensions.join(', ')})`;
-});
+  let runOptions;
+  try {
+    runOptions = parseOptions(args, env);
+  } catch (error) {
+    console.error(`Configuration error: ${errorMessage(error)}`);
+    console.error('Run with --help for usage.');
+    return 2;
+  }
 
-await check(`homepage median TTFB <= ${options.ttfbThresholdMs} ms`, () => {
-  assert(
-    homepageSamples.length === HOMEPAGE_SAMPLE_COUNT,
-    `expected ${HOMEPAGE_SAMPLE_COUNT} homepage samples, received ${homepageSamples.length}`,
-  );
-  const samples = homepageSamples.map(({ ttfbMs }) => ttfbMs);
-  const measured = median(samples);
-  const roundedMedian = Math.round(measured);
-  const roundedSamples = samples.map((sample) => Math.round(sample));
-  assert(
-    measured <= options.ttfbThresholdMs,
-    `median ${roundedMedian} ms from samples ${roundedSamples.join(', ')} ms; threshold ${options.ttfbThresholdMs} ms`,
-  );
-  return `median ${roundedMedian} ms (samples ${roundedSamples.join(', ')} ms)`;
-});
+  const result = await runProductionChecks(runOptions);
+  return result.exitCode;
+}
 
-console.log(`Production smoke complete: ${passCount} passed, ${failures.length} failed.`);
-if (failures.length > 0) process.exitCode = 1;
+if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
+  process.exitCode = await runProductionCheckCli();
+}

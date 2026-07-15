@@ -131,16 +131,24 @@ export function assertSingleAttempt(result, label) {
   );
 }
 
-function linkParameterValue(parameters, name) {
-  const pattern = new RegExp(`;\\s*${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^;\\s]+))`, 'i');
-  const match = parameters.match(pattern);
-  return match?.[1] ?? match?.[2] ?? match?.[3] ?? null;
+function parseLinkParameters(value) {
+  const parameters = new Map();
+  const pattern = /;\s*([!#$%&'*+.^_`|~0-9a-z-]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^;\s]+))/gi;
+  for (const match of value.matchAll(pattern)) {
+    const name = match[1].toLowerCase();
+    assertSmoke(!parameters.has(name), `Link field repeats the ${name} parameter`);
+    parameters.set(name, match[2] ?? match[3] ?? match[4]);
+  }
+  const residue = value.replace(pattern, '').replace(/\s/g, '');
+  assertSmoke(residue.length === 0, `Link field contains malformed parameters: ${residue}`);
+  return parameters;
 }
 
 export function parseLinkHeader(value, baseUrl) {
   const entries = [];
   const pattern = /<([^<>]+)>((?:\s*;\s*[^,]*)?)(?=\s*(?:,|$))/g;
   for (const match of value.matchAll(pattern)) {
+    const parameters = parseLinkParameters(match[2]);
     let url;
     try {
       url = new URL(match[1], baseUrl);
@@ -149,11 +157,11 @@ export function parseLinkHeader(value, baseUrl) {
     }
     entries.push({
       url,
-      rel: (linkParameterValue(match[2], 'rel') ?? '')
+      rel: (parameters.get('rel') ?? '')
         .split(/\s+/)
         .map((relation) => relation.toLowerCase())
         .filter(Boolean),
-      type: (linkParameterValue(match[2], 'type') ?? '').toLowerCase(),
+      type: (parameters.get('type') ?? '').toLowerCase(),
     });
   }
 
@@ -165,9 +173,8 @@ export function parseLinkHeader(value, baseUrl) {
 export function validateDiscoveryLinks(value, baseUrl, expected) {
   const entries = parseLinkHeader(value, baseUrl);
   for (const contract of expected) {
-    const matches = entries.filter(
+    const candidates = entries.filter(
       (entry) =>
-        entry.url.origin === baseUrl.origin &&
         entry.url.pathname === contract.path &&
         entry.url.search === '' &&
         entry.url.hash === '' &&
@@ -175,8 +182,12 @@ export function validateDiscoveryLinks(value, baseUrl, expected) {
         entry.type === contract.type,
     );
     assertSmoke(
-      matches.length === 1,
+      candidates.length === 1,
       `${contract.path} must be advertised exactly once with rel=${contract.rel} and type=${contract.type}`,
+    );
+    assertSmoke(
+      candidates[0].url.origin === baseUrl.origin,
+      `${contract.path} must be advertised on ${baseUrl.origin}, received ${candidates[0].url.origin}`,
     );
   }
   return expected.length;
@@ -278,6 +289,13 @@ export function validateHomepageNonce(sample, label) {
     const policyLabel = `${label} CSP policy ${index + 1}`;
     const scriptSource = cspDirective(policy, 'script-src');
     const scriptElementSource = cspDirective(policy, 'script-src-elem');
+    const scriptAttributeSource = cspDirective(policy, 'script-src-attr');
+    if (scriptAttributeSource) {
+      assertSmoke(
+        /^script-src-attr\s+'none'\s*$/i.test(scriptAttributeSource),
+        `${policyLabel} script-src-attr must be exactly 'none' when present`,
+      );
+    }
     const effectiveDirectives = [
       ...(scriptSource ? [['script-src', scriptSource]] : []),
       ...(scriptElementSource ? [['script-src-elem', scriptElementSource]] : []),

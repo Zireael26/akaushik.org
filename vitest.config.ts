@@ -21,10 +21,9 @@ export default defineConfig({
     ],
     coverage: {
       provider: 'v8',
-      // The production monitor's framework-free validation/request core is
-      // coverage-gated here. Its CLI entrypoint performs live network I/O and
-      // is verified by the parsed workflow contract plus explicit smoke runs.
-      include: ['lib/**/*.ts', 'scripts/check-production-lib.mjs'],
+      // The production monitor's validation/request core and full CLI contract
+      // are coverage-gated through an injected in-process transport.
+      include: ['lib/**/*.ts', 'scripts/check-production-lib.mjs', 'scripts/check-production.mjs'],
       // about-copy + services are pure data constants; stats reads JSON at
       // module load; mdx-options + structured-data fall back to defaults
       // that fire only inside RSC rendering. Skip the data-shaped modules
