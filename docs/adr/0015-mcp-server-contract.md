@@ -27,7 +27,8 @@ the existing Next.js application.
   `tools/list`, and `tools/call`.
 - POST requests require JSON content and an `Accept` header listing both
   `application/json` and `text/event-stream`. Responses use JSON; valid
-  notifications receive HTTP 202 with no body.
+  notifications receive HTTP 202 with no body. Request bodies are capped at
+  1 MiB before JSON parsing.
 - GET, HEAD, PUT, PATCH, and DELETE return 405 after the same protocol and origin
   validation. The server emits no unsolicited messages, opens no SSE stream, and
   issues no session identifier.
@@ -55,10 +56,13 @@ production gate.
 The runtime implementation remains dependency-free. The official MCP Inspector
 is pinned as a verification client, not added to production dependencies.
 
-The framework-neutral HTTP contract lives in `lib/mcp-http.ts`; the App Router
-adapter delegates method, header, and raw-body handling to it. This keeps Origin,
-protocol, response-header, and error behavior centralized before any later
-transport-boundary change.
+The adapter uses a Pages API route with body parsing disabled. `/api/mcp` is
+excluded from `proxy.ts`, because the Fetch `Request` constructor used by the
+App Router/proxy path rejects raw methods such as `TRACE` before application
+code can validate `Origin`. The Node request boundary accepts those methods,
+applies the same Origin/protocol checks, and returns 403 or 405 instead of a
+framework 500. It reproduces the site's discovery and security response headers
+directly so the matcher exclusion does not weaken the public response contract.
 
 ## Discovery and documentation
 

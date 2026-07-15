@@ -57,7 +57,7 @@ function forbiddenOrigin(origin: string | null): Response | null {
 export async function handleMcpHttpRequest(
   method: string,
   headers: Headers,
-  rawBody: string | (() => Promise<string>) = '',
+  rawBody: string | null | (() => Promise<string | null>) = '',
 ): Promise<Response> {
   const normalizedMethod = method.toUpperCase();
   const origin = headers.get('origin');
@@ -69,9 +69,31 @@ export async function handleMcpHttpRequest(
     if (protocolVersion === null) {
       throw new Error('validated MCP protocol version was unexpectedly unavailable');
     }
+    let body: string | null;
+    try {
+      body = typeof rawBody === 'function' ? await rawBody() : rawBody;
+    } catch {
+      return jsonResponse(
+        jsonRpcError(null, JSON_RPC_ERROR_CODES.PARSE_ERROR, 'Parse error.'),
+        400,
+        origin,
+      );
+    }
+
+    if (body === null) {
+      return jsonResponse(
+        jsonRpcError(
+          null,
+          JSON_RPC_ERROR_CODES.INVALID_REQUEST,
+          'Request body exceeds 1 MiB.',
+        ),
+        413,
+        origin,
+      );
+    }
+
     let message: unknown;
     try {
-      const body = typeof rawBody === 'function' ? await rawBody() : rawBody;
       message = JSON.parse(body);
     } catch {
       return jsonResponse(

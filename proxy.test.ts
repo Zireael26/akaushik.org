@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { unstable_doesMiddlewareMatch } from 'next/experimental/testing/server.js';
 import { NextRequest } from 'next/server';
-import { proxy, securityHeaders } from './proxy';
+import { config, proxy, securityHeaders } from './proxy';
 
 describe('securityHeaders', () => {
   afterEach(() => {
@@ -85,5 +86,24 @@ describe('proxy Markdown canonical links', () => {
     );
 
     expect(response.headers.get('link')).not.toContain('rel="canonical"');
+  });
+});
+
+describe('proxy matcher', () => {
+  it('leaves the raw MCP transport outside Fetch Request construction', () => {
+    expect(
+      unstable_doesMiddlewareMatch({
+        config,
+        nextConfig: {},
+        url: 'https://akaushik.org/api/mcp',
+      }),
+    ).toBe(false);
+    expect(
+      unstable_doesMiddlewareMatch({
+        config,
+        nextConfig: {},
+        url: 'https://akaushik.org/api/mcpx',
+      }),
+    ).toBe(true);
   });
 });

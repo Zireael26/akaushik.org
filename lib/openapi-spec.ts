@@ -86,7 +86,7 @@ export const OPENAPI_SPEC = {
     '/api/mcp': {
       post: {
         summary: 'Call the stateless MCP server over Streamable HTTP',
-        description: `Accepts one JSON-RPC 2.0 request or notification for ${MCP_PROTOCOL_VERSION} and 2025-06-18. The ${MCP_FALLBACK_PROTOCOL_VERSION} compatibility path also accepts batches of 1–${MCP_MAX_BATCH_SIZE} calls. Every POST uses Content-Type application/json and negotiates the transport by listing both application/json and text/event-stream in Accept; responses use application/json when a body is present. Initialize echoes a supported requested revision and otherwise negotiates ${MCP_PROTOCOL_VERSION}. Later requests without MCP-Protocol-Version are handled as ${MCP_FALLBACK_PROTOCOL_VERSION}. The server is stateless and never issues MCP-Session-Id.`,
+        description: `Accepts one JSON-RPC 2.0 request or notification for ${MCP_PROTOCOL_VERSION} and 2025-06-18. The ${MCP_FALLBACK_PROTOCOL_VERSION} compatibility path also accepts batches of 1–${MCP_MAX_BATCH_SIZE} calls. Every POST uses Content-Type application/json, is capped at 1 MiB before parsing, and negotiates the transport by listing both application/json and text/event-stream in Accept; responses use application/json when a body is present. Initialize echoes a supported requested revision and otherwise negotiates ${MCP_PROTOCOL_VERSION}. Later requests without MCP-Protocol-Version are handled as ${MCP_FALLBACK_PROTOCOL_VERSION}. The server is stateless and never issues MCP-Session-Id.`,
         parameters: [
           {
             name: 'MCP-Protocol-Version',
@@ -174,6 +174,14 @@ export const OPENAPI_SPEC = {
           },
           '415': {
             description: 'Content-Type is not application/json',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/McpJsonRpcResponse' },
+              },
+            },
+          },
+          '413': {
+            description: 'Request body exceeds the 1 MiB transport limit',
             content: {
               'application/json': {
                 schema: { $ref: '#/components/schemas/McpJsonRpcResponse' },
