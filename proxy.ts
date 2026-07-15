@@ -125,7 +125,18 @@ function applyHeaders(
   response: NextResponse,
   pathname: string,
   productionSecurityHeaders: Record<string, string>,
+  markdownCanonicalPath?: string,
 ): NextResponse {
+  // A rewrite response is finalized before the destination route handler runs,
+  // so its Link header cannot be composed with the handler's canonical Link.
+  // Preserve the public HTML URL explicitly for both Markdown negotiation
+  // patterns, then append the global discovery links below.
+  if (markdownCanonicalPath) {
+    response.headers.set(
+      'Link',
+      `<https://akaushik.org${markdownCanonicalPath}>; rel="canonical"`,
+    );
+  }
   const defaults = buildResponseHeaders(pathname, productionSecurityHeaders);
   defaults.forEach((value, key) => {
     // Do not clobber headers the route handler has already set (e.g. the
@@ -155,6 +166,7 @@ export function proxy(request: NextRequest) {
       NextResponse.rewrite(new URL(patternB, request.url)),
       pathname,
       productionSecurityHeaders,
+      pathname.slice(0, -'.md'.length),
     );
   }
 
@@ -165,6 +177,7 @@ export function proxy(request: NextRequest) {
         NextResponse.rewrite(new URL(patternA, request.url)),
         pathname,
         productionSecurityHeaders,
+        pathname === '/' || pathname === '' ? undefined : pathname,
       );
     }
   }
