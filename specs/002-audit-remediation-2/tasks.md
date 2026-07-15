@@ -46,6 +46,10 @@
 - Delete dead `reel` frontmatter field (4 content MDX files).
 - Publish any specific `draft: true` post.
 
+## Closure annotation — 2026-07-14
+
+The T1–T9 row checks are the original task-level execution record. The done-criteria boxes below remain unchecked as authored and are not backfilled from later history. Commit `03c0663` subsequently removed the four held dead `reel` fields and published a separately approved writing batch; that later content action is not recast as spec-002 task execution.
+
 ## Done criteria
 
 - [ ] Every task checked with a passing fail-before/pass-after verifier.

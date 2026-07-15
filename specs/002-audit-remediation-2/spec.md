@@ -59,6 +59,10 @@ None. Operator set scope (all P1–P3) and delivery (spec triad, one PR) on 2026
 - PR merge or deployment. This pass stops at process-gate readiness + an opened PR.
 - ~~A new ADR; existing ADRs govern.~~ Superseded during process-gate: the bundle changes ADR-trigger paths (`package.json`, `next.config.ts`) and exceeds the 800-line size cap, so `docs/adr/0013-audit-remediation-2.md` records the cross-cutting decisions (draft-gating, security headers, CI/quality gates).
 
+## Closure annotation — 2026-07-14
+
+The unchecked success-criteria boxes above are preserved as the accepted specification, not retroactively turned into verifier receipts. Implementation landed across `ec28e5a` through `d7bba9b`, the cross-cutting decision record landed in `a031488`, and the branch was merged by `a093a84`. The later `03c0663` content change removed the held dead `reel` fields and published its separately approved writing batch. ClusterBid publication, MCP, and Wanderer work belong to spec-003 and do not rewrite this spec's original non-goals.
+
 ---
 
 ## Review checklist

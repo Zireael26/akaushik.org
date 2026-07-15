@@ -38,7 +38,7 @@
 - [ ] 4.4 Wikidata entry created + survived first deletion review **(Abhishek)**
 - [ ] 4.5 Profile NAP sync across all 6 platforms **(Abhishek)**
 - [ ] 4.6 GitHub profile: pin top 6 repos + README cross-link akaushik.org **(Abhishek)**
-- [ ] 4.7 OG image per page extended to `/work/[slug]` + `/writing/[slug]`
+- [x] 4.7 OG image per page extended to `/work/[slug]` + `/writing/[slug]`
 
 ### Phase 3 — AIO on-site
 
@@ -150,3 +150,4 @@ Outstanding manual-only tasks. Roll items into Phase progress checkboxes (§1) w
 | H10 | Register or verify the 5 Cowork tasks from `docs/seo/scheduled-tasks/REGISTER.md`; mark done only after the scheduler lists all five as enabled                   | Cowork session       | pending — no local scheduled-tasks directory found 2026-07-15                                                                |
 | H11 | Cloudflare robots controls on `akaushik.org` zone audited and `https://akaushik.org/robots.txt` purged.                                                           | Cloudflare dashboard | done 2026-07-04 — live `robots.txt` has no managed block and serves `Content-Signal: search=yes, ai-input=yes, ai-train=yes` |
 | H12 | GSC: after H11 lands, **Settings → robots.txt report → Request a recrawl**. Add `akaushik.org` as a Domain property (DNS TXT) if currently a URL-prefix property. | GSC dashboard        | pending — unblocked by H11                                                                                                   |
+| H13 | Render ADR-0011 writing loops locally when a weekly draft uses the default loop policy; commit composition source plus MP4/WebP and register the slug in `WRITING_LOOPS`.               | Local FFmpeg + Chrome | recurring external owner action; explicit process/non-visual exceptions need no render                                       |

@@ -18,19 +18,19 @@ Use **Playwright** as the end-to-end runner.
 
 Install footprint:
 
-- `@playwright/test@^1.50` — runner + assertion library.
-- `@axe-core/playwright@^4` — axe-core integration, for the accessibility assertion in `e2e/home.spec.ts`.
+- `@playwright/test@^1.61.1` — runner + assertion library.
+- `@axe-core/playwright@^4.12.1` — axe-core integration, for the accessibility assertion in `e2e/home.spec.ts`.
 
 Suite layout (`e2e/*.spec.ts`):
 
 - `home.spec.ts` — eight sections present, primary nav anchor scroll, axe-core clean on the home page.
-- `work.spec.ts` — home card grid lists all four slugs; Neev card → `/work/neev` detail; Bluehost confidentiality stub text renders.
+- `work.spec.ts` — home card grid lists all five published slugs; case-study detail and Markdown alternates render without broken media.
 - `theme.spec.ts` — `html[data-mode]` flips, `localStorage['abhishek.portfolio.mode']` persists, flip-back is idempotent.
 - `reduced-motion.spec.ts` — marquee `animation-name` or `animation-play-state` resolves to a no-op under `reducedMotion: 'reduce'`.
 
-Browser matrix (`playwright.config.ts`): Chromium / Firefox / WebKit on desktop (1440×900), Chromium on tablet (768×1024), Chromium on iPhone SE mobile (375×667 — matches the PRD's 375 breakpoint). The full Cartesian product is overkill for a static content site — three desktop browsers cover cross-engine rendering; tablet + mobile Chromium cover the breakpoints. Additional mobile browsers can be added if Phase-5 Wanderer work surfaces browser-specific WebGL gaps.
+Browser matrix (`playwright.config.ts`): Chromium / Firefox / WebKit on desktop (1440×900), Chromium on tablet (768×1024), and Mobile Safari emulation with an explicit 375×667 viewport matching the PRD contract. Playwright's `iPhone SE` descriptor supplies the touch/browser behavior but defaults to 320×568, so the config overrides only its viewport. The full Cartesian product is overkill for a static content site — three desktop browsers cover cross-engine rendering, Chromium covers the tablet breakpoint, and mobile WebKit covers the narrow touch layout in Safari's engine.
 
-CI wiring (`.github/workflows/e2e.yml`): on `pull_request`, wait for the Vercel preview URL via a two-step bash poll — wait for the `Vercel` commit-status context to flip to `success`, then grep the first `https://…vercel.app` URL out of the Vercel bot's sticky PR comment (the status context's `target_url` points at the Vercel dashboard, not the deployed preview, so the comment is the only reliable source). `lighthouse.yml` uses the same pattern. The third-party `patrickedqvist/wait-for-vercel-preview` action was evaluated and dropped — it hangs when Vercel reports as a `StatusContext` rather than a `CheckRun`. Then install Playwright browsers, run the suite with `PLAYWRIGHT_BASE_URL` pointed at the preview, upload the HTML report as an artefact.
+CI wiring (`.github/workflows/e2e.yml`): on `pull_request`, install dependencies and Playwright browsers, run `pnpm build`, start the production server with `pnpm start`, and wait for `http://localhost:3000`. The suite receives `PLAYWRIGHT_BASE_URL=http://localhost:3000`; reports and failure logs are uploaded as artefacts. This runner-local flow deliberately has no Vercel preview dependency.
 
 ## Consequences
 
@@ -39,7 +39,7 @@ CI wiring (`.github/workflows/e2e.yml`): on `pull_request`, wait for the Vercel 
 - Multi-engine coverage surfaces cross-browser regressions that matter on a content site (Newsreader variable-font rendering, `animation-play-state` semantics, WebGL fallbacks).
 - `@playwright/test` runs the tests; no marriage to Mocha/Jasmine/Jest + runner wiring.
 - `@axe-core/playwright` means the accessibility gate runs inside the browser the user is using — catches violations that server-side axe-core misses.
-- `PLAYWRIGHT_BASE_URL` indirection lets the same suite run locally (`pnpm dev` via `webServer`) and in CI (Vercel preview) without conditional code.
+- `PLAYWRIGHT_BASE_URL` indirection lets the same suite run locally (`pnpm dev` via `webServer`) and in CI against the runner-local production server without conditional test code.
 
 **Negative**
 
@@ -61,6 +61,6 @@ CI wiring (`.github/workflows/e2e.yml`): on `pull_request`, wait for the Vercel 
 
 ## Follow-ups
 
-- Phase 5 Slice 5.1b (hero canvas) adds WebGL-dependent behaviour. When it lands, add a `canvas.spec.ts` that asserts the `<canvas>` renders a non-empty frame on Chromium + Firefox and that the SVG fallback appears on `[data-motion="off"]`.
+- `canvas.spec.ts` now covers the AgentGraph and desktop-only Wanderer canvas/fallback policies, including mobile and motion-off absence.
 - Phase 5 Slice 5.3 ships the launch post and the real analytics. Add a `launch.spec.ts` that confirms the Calendly CTA wires to the expected URL and that `@vercel/analytics` is loaded.
 - If CI wall-time grows past 10 minutes as the suite expands, evaluate sharding (`--shard=1/4` across four jobs in a matrix) before considering smaller browser coverage.

@@ -18,7 +18,7 @@ A living document. Phases are ordered by dependency, not calendar. Each phase is
 
 - [x] Hero (01): taglines A/B/C, hero-facts DL, static SVG agent-graph scene, marquee
 - [x] About (02) — portrait placeholder + bio + meta rows
-- [x] Work (03) — four case cards + stub detail pages
+- [x] Work (03) — four case cards + stub detail pages (historical Phase 1 baseline; the current five-case-study state is tracked in Phase 2)
 - [x] Writing (04) — post list (replaced with real MDX in Phase 2)
 - [x] Services (05) — three engagement shapes
 - [x] Process (06) — inverted block + artifact list
@@ -35,6 +35,7 @@ A living document. Phases are ordered by dependency, not calendar. Each phase is
 - [x] VeriCite case study (AI-systems depth)
 - [x] Bluehost agents — permanent stub (confidentiality framing)
 - [x] curat.money case study (product-breadth framing)
+- [x] ClusterBid case study — fifth published case; scope is explicitly UAT/pre-production
 - [x] About long-form prose in section (full edit pending Abhishek's pass)
 - [x] Services + Process copy ported
 - [x] Writing seeds × 3 (micrograd, MSME, fastembed → TEI)
@@ -73,7 +74,7 @@ A living document. Phases are ordered by dependency, not calendar. Each phase is
 - [~] Calendly / Cal.com URL wired into Contact ghost button — current behavior falls back to `mailto:hello@akaushik.org?subject=20-minute%20call`; replace with a real scheduler URL when available
 - [x] Portrait photo swap (`/images/about/abhishek.webp`, 4:5) — shipped 2026-05-11 (CHANGELOG)
 - [~] Wanderer crane redesign + reinstate — implementation reinstated and local browser verification green 2026-07-15; clean-head bundle refresh, Linux CI, and deployed-production proof remain open under spec-003 T9/T10/T13 (see `docs/wanderer-redesign-brief.md`)
-- [~] Case-study reel MP4s — HyperFrames scaffold + 8 compositions + React integration landed (ADR-0008); remaining work is the render pass (`pnpm render:work && pnpm render:posters`) + committing `public/video/work/*.{mp4,webp}`. Blocked in-sandbox on FFmpeg/Chrome availability; runs cleanly on a local dev box
+- [x] Case-study reels — HyperFrames scaffold, 8 compositions, React integration, and 16 committed `public/video/work/*.{mp4,webp}` artifacts are present (ADR-0008). ClusterBid intentionally uses its static SVG treatment instead of a reel.
 - [~] `isitagentready.com` scan against prod + dated snapshot in `docs/agent-readiness-snapshots/` — first dated snapshot landed 2026-05-19 (`docs/agent-readiness-snapshots/2026-05-19.md`); PNG from the live UI still pending owner action (curl-based snapshot is in place)
 - [~] `pnpm analyze` / Lighthouse bundle audit — first measurement landed 2026-05-19; the latest committed baseline measured 299,026 bytes of script transfer on 2026-07-04, before Wanderer reinstatement. A clean-head refresh remains open under spec-003 T9. `lighthouserc.yml` remains at a 400 KiB `warn` ceiling; the 150 KiB aspiration is still open.
 - [~] Script-bundle overrun (latest committed baseline ~292 KiB > 150 KiB target; current post-reinstatement total unmeasured). **Resolution step (2026-05-19):** ported `components/scene/AgentGraph.tsx` to raw `three.js` (ADR-0012) and removed the prior framework dependencies. The remaining measured gap is the `three` runtime itself. Further reduction requires fresh evidence, then either accepting a new practical target in an ADR or porting to a smaller WebGL/static primitive.
