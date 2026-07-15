@@ -2,12 +2,12 @@
 generated_by: human-seed
 created: 2026-05-19
 schema_version: 1
-purpose: 50-slot publishing calendar consumed by the `seo-weekly-draft` scheduled task. Each row is one post; the cron picks the next `status: pending` slot, drafts MDX, opens a draft PR.
+purpose: 50-slot publishing calendar consumed by the registered `seo-weekly-draft` task. Each row is one post; a run picks the next `status: pending` slot, drafts MDX, and opens a draft PR.
 ---
 
 # Editorial calendar
 
-The cron task `seo-weekly-draft` (Mondays 06:00) picks the next slot with `status: pending`, drafts a writing post in MDX, and opens a `seo:draft`-labelled PR for Abhishek to edit + merge.
+When registered and enabled, `seo-weekly-draft` is intended to run Mondays at 06:00, pick the next `status: pending` slot, draft a writing post in MDX, and open a `seo:draft`-labelled PR for Abhishek to edit and merge.
 
 Statuses: `pending` (not started), `drafted` (PR open), `published` (merged), `dropped` (intentionally skipped).
 
@@ -76,7 +76,7 @@ Pillars: `msme` (AI for MSMEs), `agents` (agent systems in production), `rag` (R
 
 ## Notes for the scheduled task
 
-- **Picking the next slot.** Find the first row with `status: pending`. If none, append three pending slots to the bottom (the cron prompt at `docs/seo/scheduled-tasks/seo-weekly-draft.md` handles this).
-- **PR shape.** Branch `seo-bot/seo-weekly-draft/YYYY-MM-DD`; draft MDX in `content/writing/<slug>.mdx`; label `seo:draft`; do not push to main.
-- **Flipping status.** Change to `drafted` when the PR opens; to `published` when the PR merges; to `dropped` if Abhishek closes the PR without merging.
-- **Editing this file by hand is welcome.** The cron task does not assume immutability — it re-reads the file at every run.
+- **Picking the next slot.** Find the first row with `status: pending`. If none exists, record `calendar exhausted` in the status PR and stop; replenishment is an editorial action.
+- **PR shape.** Branch `seo-bot/weekly-draft/<YYYYMMDD>`; draft MDX in `content/writing/<slug>.mdx`; labels `seo:automation` + `seo:draft`; never push to main.
+- **Flipping status.** After the draft PR exists, change to `drafted` and append `<!-- draft-pr: <real URL> -->` to that row in a second committed and pushed update. Change to `published` only when the PR merges, or `dropped` if Abhishek closes it without merging.
+- **Editing this file by hand is welcome.** A registered task re-reads the file at every run.
