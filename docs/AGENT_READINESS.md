@@ -1,8 +1,8 @@
 # Agent Readiness — Alignment Spec
 
-**Status:** Draft v0.1 (review)
+**Status:** Implemented; production MCP WAF receipt pending (§5.3)
 **Author:** Claude (synthesis from Cloudflare's Agent Readiness score + related open standards)
-**Last updated:** 2026-04-19
+**Last updated:** 2026-07-14
 **Companion to:** `PRD.md` (this spec is a hard requirement, not a nice-to-have)
 
 ---
@@ -11,7 +11,7 @@
 
 Cloudflare shipped **isitagentready.com** during Agents Week 2026. It scores sites along four dimensions — Discoverability, Content, Bot Access Control, Capabilities — against emerging agent standards (robots.txt, Content Signals, llms.txt, Markdown content negotiation, Link headers, API Catalogs, OAuth, MCP, Agent Skills). Most of the web is not aligned: only ~4% of sites declare AI preferences, ~3.9% support Markdown content negotiation, fewer than 15 expose API Catalogs.
 
-For a portfolio whose thesis is *"AI engineer building agent systems that go to production"*, a low Agent Readiness score is a credibility leak. The portfolio must score high because it would be embarrassing if it didn't. This doc is the implementation contract.
+For a portfolio whose thesis is _"AI engineer building agent systems that go to production"_, a low Agent Readiness score is a credibility leak. The portfolio must score high because it would be embarrassing if it didn't. This doc is the implementation contract.
 
 **Target:** pass every applicable check on isitagentready.com at launch. Treat a failed check the way we treat a failed Lighthouse accessibility audit — a ship-blocker, not a future improvement.
 
@@ -23,12 +23,12 @@ For a portfolio whose thesis is *"AI engineer building agent systems that go to 
 
 ## 2. The four dimensions, summarized
 
-| Dimension | What Cloudflare's tool looks at | Our strategy |
-| --- | --- | --- |
-| Discoverability | `robots.txt`, `sitemap.xml`, HTTP `Link` headers, `/.well-known/` endpoints | Ship all of them, wired correctly |
-| Content | Markdown content negotiation (`Accept: text/markdown`), `/llms.txt`, `/llms-full.txt` | First-class Markdown variant per page + well-formed `llms.txt` |
-| Bot Access Control | Content Signals (`Content-Signal:` in `robots.txt`), AI-bot user-agent rules | Publish an opinionated, permissive-but-clear policy |
-| Capabilities | Agent Skills, API Catalogs (RFC 9727), OAuth (RFC 9728), MCP server cards | Ship a narrow surface — the portfolio's "API" is modest, but we expose it properly |
+| Dimension          | What Cloudflare's tool looks at                                                       | Our strategy                                                                       |
+| ------------------ | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Discoverability    | `robots.txt`, `sitemap.xml`, HTTP `Link` headers, `/.well-known/` endpoints           | Ship all of them, wired correctly                                                  |
+| Content            | Markdown content negotiation (`Accept: text/markdown`), `/llms.txt`, `/llms-full.txt` | First-class Markdown variant per page + well-formed `llms.txt`                     |
+| Bot Access Control | Content Signals (`Content-Signal:` in `robots.txt`), AI-bot user-agent rules          | Publish an opinionated, permissive-but-clear policy                                |
+| Capabilities       | Agent Skills, API Catalogs (RFC 9727), OAuth (RFC 9728), MCP server cards             | Ship a narrow surface — the portfolio's "API" is modest, but we expose it properly |
 
 The tool also checks **agentic commerce standards** (payment primitives, stored credentials, etc.). Those don't affect the score yet. They're out of scope for this site.
 
@@ -91,7 +91,7 @@ The `/.well-known/` prefix is reserved (RFC 8615) for machine-discoverable metad
 - `/.well-known/api-catalog` — see §6.1 (RFC 9727).
 - `/.well-known/agent-skills/index.json` — agent-skills discovery index (Cloudflare Agent Skills Discovery RFC; see §6.4).
 - `/.well-known/oauth-protected-resource` — only if we expose any authenticated capability (probably not in v1; document intent in a placeholder so the absence is explicit rather than implicit).
-- `/.well-known/mcp.json` — MCP server card if and when we ship one (see §6.3). `isitagentready.com` itself exposes its server at this path — we match the convention. The spec is in flight (SEP-1649 and SEP-1960 both propose related `/.well-known/` layouts); we mirror what the Cloudflare scanner actually checks for today.
+- `/.well-known/mcp.json` — site/scanner-specific discovery metadata for the same-origin endpoint at `/api/mcp` (see §6.3). MCP does **not** standardize this well-known path or a "server card" schema; we publish it only because scanners such as `isitagentready.com` use the convention.
 
 Also ensure `/favicon.ico`, `/apple-touch-icon.png`, `/manifest.webmanifest` are present — not agent-specific, but signals site hygiene.
 
@@ -116,7 +116,7 @@ Implementation notes for Next.js 16:
 - MDX is already the post format — reuse the raw frontmatter-stripped MDX as the Markdown payload.
 - Case study pages: source `.mdx` files live under `content/case-studies/`. Render a Markdown endpoint at `app/case-studies/[slug]/route.md.ts` (or equivalent) returning `text/markdown; charset=utf-8`.
 - Cache-control: same as the HTML page.
-- Ensure both variants are linked from the sitemap *or* at minimum referenced in `llms.txt` (below).
+- Ensure both variants are linked from the sitemap _or_ at minimum referenced in `llms.txt` (below).
 
 ### 4.2 `/llms.txt`
 
@@ -167,7 +167,7 @@ Regenerate on build (`scripts/generate-llms-txt.ts`) so new writing posts land a
 
 ### 4.3 `/llms-full.txt`
 
-Served at `/llms-full.txt` with `Content-Type: text/markdown; charset=utf-8`. This is the *full concatenated corpus* of the site — every case study, every post, the About, Services — inlined so an agent can grab the whole thing in one request.
+Served at `/llms-full.txt` with `Content-Type: text/markdown; charset=utf-8`. This is the _full concatenated corpus_ of the site — every case study, every post, the About, Services — inlined so an agent can grab the whole thing in one request.
 
 Generate at build time from the MDX sources:
 
@@ -228,11 +228,21 @@ For the portfolio, recommended policy: `Content-Signal: search=yes, ai-train=yes
 
 Beyond Content Signals, isitagentready.com also checks whether `robots.txt` has considered major AI crawlers as named user-agents (GPTBot, ClaudeBot, Google-Extended, Bingbot, PerplexityBot, etc.). Recommendation: a single `User-agent: *` block with open Allow — no per-bot blocking unless we have a reason. This is the simplest pass.
 
-If Abhishek later wants to block specific AI bots for any reason, add named `User-agent:` blocks *above* the wildcard. We document the list in a comment so future-us remembers the policy intent.
+If Abhishek later wants to block specific AI bots for any reason, add named `User-agent:` blocks _above_ the wildcard. We document the list in a comment so future-us remembers the policy intent.
 
 ### 5.3 Rate-limiting & abuse surface
 
-Vercel edge platform provides baseline DDoS and rate-limit handling. We don't add custom bot-blocking WAF rules in v1 — the portfolio's content is meant to be read.
+Baseline platform DDoS protection is not an enforceable per-source application rate limit, and must not be described as one. Production deployment of `/api/mcp` requires a control-plane WAF rate-limit rule with this exact policy:
+
+| Setting | Required value                   |
+| ------- | -------------------------------- |
+| Path    | `/api/mcp`                       |
+| Key     | Request source/IP                |
+| Limit   | 60 requests per 60 seconds       |
+| Action  | Block that source for 60 seconds |
+| Scope   | Production                       |
+
+The deployment receipt must record the provider rule name/ID, production scope, activation timestamp, and a black-box probe from one source showing: requests through the configured limit reach the application; the next request is rate-limited (normally HTTP 429); another request during the 60-second block remains blocked; and a request after the block expires reaches the application again. **Receipt status on 2026-07-14: pending.** No repository change proves this control, and this remediation does not mutate the deployment control plane.
 
 ---
 
@@ -268,6 +278,7 @@ Accompany with an **OpenAPI 3.1 spec** at `/api/openapi.json` describing:
 - `GET /{path}.md` → `text/markdown`
 - `GET /api/writing` → JSON list of posts (for agents that prefer structured enumeration)
 - `GET /api/case-studies` → JSON list of case studies
+- `POST /api/mcp` → MCP Streamable HTTP requests for published case-study lookup and public availability
 
 The JSON endpoints are a small addition. Next.js route handlers; cheap to ship.
 
@@ -277,11 +288,44 @@ Human-readable docs at `/api/docs` — a simple rendered page from the OpenAPI s
 
 Skip in v1 — the site has no authenticated endpoints. Document the omission explicitly so an auditor knows it's intentional. If we ever add "Book a call" with a calendar integration or a client portal, revisit.
 
-### 6.3 MCP Server Card
+### 6.3 MCP endpoint and site/scanner discovery metadata
 
-The portfolio does not expose an MCP server in v1. We *could* ship a small read-only MCP server that exposes `list_case_studies`, `read_case_study`, `list_posts`, `read_post` as tools — a low-effort implementation using the Cloudflare Workers + MCP reference architecture, deployed to Cloudflare (not Vercel).
+The portfolio MCP release candidate targets `https://akaushik.org/api/mcp`. It must not be promoted as live until the required production rate-limit receipt in §6.1 is complete. It is implemented in the existing Next.js application with no SDK, second deployment target, authentication, session state, or mutable capability. The document at `/.well-known/mcp.json` is explicitly labeled site/scanner-specific because MCP does not define that discovery path or its JSON shape. It advertises the endpoint, current revision `2025-11-25`, bounded compatibility support, Streamable HTTP transport, and tool names.
 
-Recommendation for v1: **out of scope, stubbed for v1.1**. Document the shape of the future MCP server in this file so we can ship it as a v1.1 announcement (good blog-post fodder: "the portfolio's MCP server").
+Transport contract:
+
+- `POST` accepts one JSON-RPC 2.0 object. Non-empty batches are accepted only for explicit or missing-header `2025-03-26` compatibility requests; notification members produce no response entry and an all-notification batch receives HTTP 202. `2025-06-18` and `2025-11-25` reject arrays with HTTP 400 and `-32600`.
+- Supported methods are `initialize`, `ping`, `notifications/initialized`, `tools/list`, and `tools/call`.
+- Every POST requires `Content-Type: application/json` and an `Accept` header that lists **both** `application/json` and `text/event-stream`. Unsupported content types return HTTP 415; a missing or incomplete `Accept` returns HTTP 406.
+- `initialize` supports `2025-11-25`, `2025-06-18`, and the bounded `2025-03-26` compatibility subset. It echoes a supported requested version; an unsupported preference negotiates to the current `2025-11-25` revision.
+- On requests after initialization, explicit `MCP-Protocol-Version` values may be `2025-11-25`, `2025-06-18`, or `2025-03-26`. An omitted header is accepted as the protocol-defined `2025-03-26` fallback. Any other explicit value returns HTTP 400 and `-32602`.
+- Valid notifications, including unknown notification methods, return HTTP 202 with no body. Known request-only methods still require an ID. String IDs and integer numeric IDs are accepted; null, fractional, boolean, object, and array IDs are invalid requests.
+- Malformed JSON alone returns `-32700`. Parsed JSON that is not a valid request object returns `-32600`.
+- `GET` returns HTTP 405 because this server does not offer a server-initiated SSE stream. `DELETE` also returns HTTP 405; `OPTIONS` returns HTTP 204. The server is stateless and never issues `MCP-Session-Id`.
+- Server clients may omit `Origin`. If `Origin` is present, it must equal `https://akaushik.org`; every other origin is rejected with HTTP 403 and no permissive wildcard CORS response.
+- JSON-RPC errors are `-32700` (parse error), `-32600` (invalid request), `-32601` (method not found), `-32602` (invalid params), and redacted `-32603` (internal error).
+
+Tool contract:
+
+- `lookup_case_study({ slug })` resolves only through the published case-study set. Success returns text plus `structuredContent` containing `slug`, `title`, `dek`, `role`, `year`, `stack`, `url`, and `markdown`. Unknown and draft-only case studies receive the same actionable `isError: true` result with no frontmatter or body content. Unit coverage injects a synthetic draft case-study source into the production lookup function, so removing either the published-list boundary or the loaded-post draft guard makes the test fail without adding an editorial MDX fixture.
+- `get_availability({})` returns text plus `structuredContent` containing `status`, `capacity`, `contactUrl`, and `email` from the public site contract.
+- An unknown tool name or malformed `tools/call` structure returns `-32602`. Once a known tool is identified, argument-schema failures return an actionable tool result with `isError: true` so a model can self-correct.
+
+Minimal probes:
+
+```bash
+curl -sS https://akaushik.org/api/mcp \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -H 'MCP-Protocol-Version: 2025-11-25' \
+  --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"curl","version":"1.0"}}}'
+
+curl -sS https://akaushik.org/api/mcp \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -H 'MCP-Protocol-Version: 2025-11-25' \
+  --data '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"lookup_case_study","arguments":{"slug":"neev"}}}'
+```
 
 ### 6.4 Agent Skills
 
@@ -321,12 +365,14 @@ description: Fetch Markdown content from Abhishek Kaushik's portfolio — case s
 This skill helps agents fetch content from Abhishek's portfolio.
 
 ## Fetching pages
+
 - `llms.txt` at `/llms.txt` lists all content URLs.
 - `llms-full.txt` at `/llms-full.txt` contains the entire site as concatenated Markdown.
 - Every HTML page has a `.md` alternate at the same path with `.md` appended (e.g., `/case-studies/neev` → `/case-studies/neev.md`).
 - Every page responds to `Accept: text/markdown` with the Markdown variant.
 
 ## Content types
+
 - Case studies: under `/case-studies/{slug}`
 - Writing: under `/writing/{slug}`
 ```
@@ -337,21 +383,24 @@ Minimum bar; we iterate the skill once the site content is in place.
 
 ## 7. Concrete Next.js implementation map
 
-| Requirement | File / code location |
-| --- | --- |
-| `robots.txt` | `app/robots.txt/route.ts` (Route Handler with direct `Content-Signal` directive control) |
-| `sitemap.xml` | `app/sitemap.ts` |
-| `Link` headers on all HTML responses | `proxy.ts` |
-| `/llms.txt` | `app/llms.txt/route.ts` |
-| `/llms-full.txt` | `app/llms-full.txt/route.ts` (built from MDX at request time with caching, or prebuilt at `build` step) |
-| `.md` alternates for pages | `app/work/[slug]/md/route.ts` and `app/writing/[slug]/md/route.ts` |
-| `Accept: text/markdown` negotiation | `proxy.ts` rewrites to `.md` endpoint when `Accept` matches |
-| `/.well-known/api-catalog` | `app/.well-known/api-catalog/route.ts` |
-| `/api/openapi.json` | `app/api/openapi.json/route.ts` (generated from a schema file committed in repo) |
-| `/api/docs` | `app/api/docs/page.tsx` (server-rendered React; reads `lib/openapi-spec.ts`; no client JS — Redoc/Swagger UI dropped on bundle-budget grounds) |
-| `/.well-known/agent-skills/index.json` | `app/.well-known/agent-skills/index.json/route.ts` (emits v0.2.0 schema; `digest` computed at build) |
-| `content/agent-skills/portfolio-content/SKILL.md` | Skill artifact itself, served at `/agent-skills/portfolio-content/SKILL.md` |
-| Content Signals | embedded in `app/robots.txt/route.ts` output |
+| Requirement                                       | File / code location                                                                                                                           |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `robots.txt`                                      | `app/robots.txt/route.ts` (Route Handler with direct `Content-Signal` directive control)                                                       |
+| `sitemap.xml`                                     | `app/sitemap.ts`                                                                                                                               |
+| `Link` headers on all HTML responses              | `proxy.ts`                                                                                                                                     |
+| `/llms.txt`                                       | `app/llms.txt/route.ts`                                                                                                                        |
+| `/llms-full.txt`                                  | `app/llms-full.txt/route.ts` (built from MDX at request time with caching, or prebuilt at `build` step)                                        |
+| `.md` alternates for pages                        | `app/work/[slug]/md/route.ts` and `app/writing/[slug]/md/route.ts`                                                                             |
+| `Accept: text/markdown` negotiation               | `proxy.ts` rewrites to `.md` endpoint when `Accept` matches                                                                                    |
+| `/.well-known/api-catalog`                        | `app/.well-known/api-catalog/route.ts`                                                                                                         |
+| `/.well-known/mcp.json`                           | `public/.well-known/mcp.json` (live endpoint, protocol, transport, and tools)                                                                  |
+| `/api/openapi.json`                               | `app/api/openapi.json/route.ts` (generated from a schema file committed in repo)                                                               |
+| `/api/docs`                                       | `app/api/docs/page.tsx` (server-rendered React; reads `lib/openapi-spec.ts`; no client JS — Redoc/Swagger UI dropped on bundle-budget grounds) |
+| MCP protocol core                                 | `lib/mcp.ts` (JSON-RPC validation, published-only lookup, read-only tools)                                                                     |
+| `/api/mcp`                                        | `app/api/mcp/route.ts` (stateless same-origin Streamable HTTP adapter)                                                                         |
+| `/.well-known/agent-skills/index.json`            | `app/.well-known/agent-skills/index.json/route.ts` (emits v0.2.0 schema; `digest` computed at build)                                           |
+| `content/agent-skills/portfolio-content/SKILL.md` | Skill artifact itself, served at `/agent-skills/portfolio-content/SKILL.md`                                                                    |
+| Content Signals                                   | embedded in `app/robots.txt/route.ts` output                                                                                                   |
 
 All of the above is implementable in under a day of focused work once the scaffold is up.
 
@@ -361,8 +410,8 @@ All of the above is implementable in under a day of focused work once the scaffo
 
 Three layers, mirroring how we handle accessibility and performance:
 
-1. **Build-time unit tests.** Snapshot the generated `robots.txt`, `/llms.txt`, `/llms-full.txt`, `/.well-known/api-catalog`, and the `/api/openapi.json`. Fail the build if any of them loses a required field.
-2. **Preview-deploy check.** After every Vercel preview, a CI script curls each canonical URL with `Accept: text/markdown`, `Accept: text/html`, and `Accept: application/json` variants and asserts the expected content type. Also curls `.md` alternates and asserts they're Markdown.
+1. **Build-time unit tests.** Snapshot the generated `robots.txt`, `/llms.txt`, `/llms-full.txt`, `/.well-known/api-catalog`, and `/api/openapi.json`; run `pnpm vitest run lib/mcp.test.ts` for JSON-RPC, origin, tool-schema, and draft-denial coverage. Fail the build if any required field or invariant disappears.
+2. **Preview-deploy check.** After every Vercel preview, a CI script curls each canonical URL with `Accept: text/markdown`, `Accept: text/html`, and `Accept: application/json` variants and asserts the expected content type. It also curls `.md` alternates and runs `pnpm exec playwright test e2e/mcp.spec.ts e2e/agent-readiness.spec.ts --project=chromium-desktop` against the preview.
 3. **External validation — two paths.**
    - **Web UI:** run `isitagentready.com` against the live URL after every production deploy. Persist a dated screenshot of the report in `docs/agent-readiness-snapshots/YYYY-MM-DD.png`.
    - **Programmatic via the tool's own MCP server:** `isitagentready.com` exposes a stateless MCP server at `https://isitagentready.com/.well-known/mcp.json` with a `scan_site` tool over Streamable HTTP. Wire this into the deploy gate so the latest score and any newly-failed checks are captured as JSON in CI artifacts. This is the version we trust as a regression gate; the screenshot is for the changelog.
@@ -384,9 +433,8 @@ This keeps agent-readiness regressions from merging unnoticed.
 
 ---
 
-## 10. Out of scope (for v1, with rationale)
+## 10. Out of scope (with rationale)
 
-- **MCP server.** Implementable in a day but adds a second deploy target (Cloudflare Workers). Deferred to v1.1 so v1 can ship cleanly.
 - **OAuth-protected endpoints.** Nothing to protect yet.
 - **Agentic commerce primitives.** The portfolio doesn't transact. Not checked against the score anyway.
 - **Multi-language `llms.txt` variants.** If we add Hindi/Devanagari copy in v1.1, we ship `llms.hi.txt` at that point.
@@ -396,9 +444,10 @@ This keeps agent-readiness regressions from merging unnoticed.
 ## 11. Open questions for Abhishek
 
 - **Q1. `ai-train=yes`?** The recommendation is yes for a portfolio (it's marketing content). Confirm, or we set `ai-train=no`.
-- **Q2. MCP server in v1 or v1.1?** Low effort, high signal — but splits deploy targets. My recommendation: v1.1 as a launch follow-up.
-- **Q3. Is the modest API catalog worth it for a content-only site?** I say yes because the score depends on it, and it's cheap. Confirm the scope (a `/api/writing` and `/api/case-studies` read-only JSON surface alongside the Markdown endpoints).
-- **Q4. Do we publish `/llms-full.txt` as the entire corpus including writing posts, or only the "evergreen" content (About, Services, Case Studies)?** Recommendation: include everything; writing is a core asset.
+- **Q2. Is the modest API catalog worth it for a content-only site?** I say yes because the score depends on it, and it's cheap. Confirm the scope (a `/api/writing` and `/api/case-studies` read-only JSON surface alongside the Markdown endpoints).
+- **Q3. Do we publish `/llms-full.txt` as the entire corpus including writing posts, or only the "evergreen" content (About, Services, Case Studies)?** Recommendation: include everything; writing is a core asset.
+
+The former MCP timing question was resolved on 2026-07-14: the server ships inside the existing Next.js deployment rather than creating a Cloudflare Workers target.
 
 ---
 
@@ -423,7 +472,11 @@ This keeps agent-readiness regressions from merging unnoticed.
 - `https://contentsignals.org/` — Content Signals policy (`search` / `ai-input` / `ai-train`)
 - `https://agentskills.io/specification` — Agent Skills format
 - `https://schemas.agentskills.io/discovery/0.2.0/schema.json` — Agent Skills discovery index schema
-- `https://modelcontextprotocol.io/` — MCP
+- `https://modelcontextprotocol.io/specification/2025-11-25/` — current stable MCP revision
+- `https://modelcontextprotocol.io/specification/2025-11-25/basic/transports` — Streamable HTTP headers, 2025-03-26 fallback, Origin validation, stateless sessions, and GET 405 behavior
+- `https://modelcontextprotocol.io/specification/2025-11-25/basic/lifecycle` — initialization and protocol negotiation
+- `https://modelcontextprotocol.io/specification/2025-11-25/server/tools` — tool listing, protocol errors, and actionable `isError` tool results
+- `https://www.jsonrpc.org/specification` — JSON-RPC request IDs and standard error-code meanings
 
 ### 12.3 PRD integration note
 

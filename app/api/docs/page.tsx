@@ -1,11 +1,18 @@
 import type { Metadata } from 'next';
 import { canonical } from '@/lib/canonical';
+import {
+  MCP_ENDPOINT,
+  MCP_FALLBACK_PROTOCOL_VERSION,
+  MCP_PROTOCOL_VERSION,
+  MCP_SUPPORTED_PROTOCOL_VERSIONS,
+  MCP_TOOLS,
+} from '@/lib/mcp';
 import { OPENAPI_SPEC } from '@/lib/openapi-spec';
 
 export const metadata: Metadata = {
   title: 'API docs',
   description:
-    'Human-readable reference for the akaushik.org portfolio API — Markdown surfaces, JSON listings, and content-negotiation patterns.',
+    'Human-readable reference for the akaushik.org portfolio API — Markdown, JSON, content negotiation, and the read-only MCP server.',
   alternates: { canonical: canonical('/api/docs') },
   robots: { index: true, follow: true },
 };
@@ -43,6 +50,9 @@ function PathBlock({
         const description = (op['description'] as string) ?? '';
         const responses = (op['responses'] as Record<string, Schema>) ?? {};
         const parameters = (op['parameters'] as Array<Record<string, unknown>>) ?? [];
+        const requestBody = (op['requestBody'] as Schema | undefined) ?? {};
+        const requestContent = (requestBody['content'] as Record<string, Schema>) ?? {};
+        const requestContentTypes = Object.keys(requestContent);
         return (
           <article key={method} className="api-docs-op">
             <p className="api-docs-op-summary">
@@ -57,9 +67,22 @@ function PathBlock({
                     <li key={i}>
                       <code>{p['name'] as string}</code> · {p['in'] as string} ·{' '}
                       {renderType(p['schema'] as Schema)}
+                      {p['required'] ? (
+                        <span className="api-docs-required"> (required)</span>
+                      ) : null}
+                      {p['description'] ? <span> · {p['description'] as string}</span> : null}
                     </li>
                   ))}
                 </ul>
+              </div>
+            ) : null}
+            {requestContentTypes.length > 0 ? (
+              <div className="api-docs-params">
+                <p className="api-docs-section-label">Request body</p>
+                <p>
+                  {requestBody['required'] ? 'Required' : 'Optional'} ·{' '}
+                  <code>{requestContentTypes.join(', ')}</code>
+                </p>
               </div>
             ) : null}
             <div className="api-docs-responses">
@@ -73,16 +96,90 @@ function PathBlock({
                     <li key={code}>
                       <code>{code}</code> · {desc}
                       {contentTypes.length ? (
-                        <span className="api-docs-content-types">
-                          {' '}
-                          ({contentTypes.join(', ')})
-                        </span>
+                        <span className="api-docs-content-types"> ({contentTypes.join(', ')})</span>
                       ) : null}
                     </li>
                   );
                 })}
               </ul>
             </div>
+          </article>
+        );
+      })}
+    </section>
+  );
+}
+
+function McpToolsBlock() {
+  return (
+    <section className="api-docs-paths" id="mcp-tools">
+      <h2>MCP tools</h2>
+      <p className="api-docs-description">
+        <code>{MCP_ENDPOINT}</code> is a stateless Streamable HTTP endpoint whose current revision
+        is <code>{MCP_PROTOCOL_VERSION}</code>. It also supports{' '}
+        <code>{MCP_SUPPORTED_PROTOCOL_VERSIONS.join(', ')}</code> for this bounded tool subset;
+        initialize echoes a supported requested revision and otherwise negotiates the current one. A
+        later request without <code>MCP-Protocol-Version</code> is handled as{' '}
+        <code>{MCP_FALLBACK_PROTOCOL_VERSION}</code>.
+      </p>
+      <p className="api-docs-description">
+        Every POST must use <code>Content-Type: application/json</code> and an <code>Accept</code>{' '}
+        header listing both <code>application/json</code> and <code>text/event-stream</code>.
+        Responses use JSON; valid notifications receive 202 with no body. This server issues no{' '}
+        <code>MCP-Session-Id</code>, and GET returns 405 because there is no server-initiated SSE
+        stream.
+      </p>
+      <p className="api-docs-description">
+        JSON-RPC errors are <code>-32700</code> parse error, <code>-32600</code> invalid request,{' '}
+        <code>-32601</code> method not found, <code>-32602</code> invalid params, and{' '}
+        <code>-32603</code> internal error. Numeric request IDs must be integers. The{' '}
+        <code>/.well-known/mcp.json</code> document is site/scanner-specific discovery metadata, not
+        an MCP protocol-standard server card.
+      </p>
+      {MCP_TOOLS.map((tool) => {
+        const inputSchema = tool.inputSchema as unknown as Schema;
+        const outputSchema = tool.outputSchema as unknown as Schema;
+        const inputProperties = (inputSchema['properties'] as Record<string, Schema>) ?? {};
+        const outputProperties = (outputSchema['properties'] as Record<string, Schema>) ?? {};
+        const requiredInput = (inputSchema['required'] as string[]) ?? [];
+
+        return (
+          <article className="api-docs-op" key={tool.name}>
+            <h3>
+              <code>{tool.name}</code>
+            </h3>
+            <p className="api-docs-op-description">{tool.description}</p>
+            <div className="api-docs-params">
+              <p className="api-docs-section-label">Input</p>
+              {Object.keys(inputProperties).length > 0 ? (
+                <ul>
+                  {Object.entries(inputProperties).map(([name, schema]) => (
+                    <li key={name}>
+                      <code>{name}</code>
+                      {requiredInput.includes(name) ? (
+                        <span className="api-docs-required"> (required)</span>
+                      ) : null}{' '}
+                      · <code>{renderType(schema)}</code>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No arguments.</p>
+              )}
+            </div>
+            <div className="api-docs-responses">
+              <p className="api-docs-section-label">Structured output</p>
+              <ul>
+                {Object.entries(outputProperties).map(([name, schema]) => (
+                  <li key={name}>
+                    <code>{name}</code> · <code>{renderType(schema)}</code>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <p className="api-docs-op-description">
+              Annotations: read-only, idempotent, non-destructive, closed-world.
+            </p>
           </article>
         );
       })}
@@ -119,7 +216,9 @@ function SchemaBlock({ name, schema }: { name: string; schema: Schema }) {
 export default function ApiDocsPage() {
   const { info, servers, paths, components } = OPENAPI_SPEC;
   const schemas = (components.schemas as unknown as Record<string, Schema>) ?? {};
-  const pathEntries = Object.entries(paths) as Array<[string, Record<string, Record<string, unknown>>]>;
+  const pathEntries = Object.entries(paths) as Array<
+    [string, Record<string, Record<string, unknown>>]
+  >;
   return (
     <main id="top" className="api-docs">
       <div className="api-docs-inner">
@@ -169,7 +268,15 @@ export default function ApiDocsPage() {
               </li>
             ))}
           </ul>
+          <p className="api-docs-section-label">MCP</p>
+          <ul>
+            <li>
+              <a href="#mcp-tools">Tool contracts</a>
+            </li>
+          </ul>
         </nav>
+
+        <McpToolsBlock />
 
         <section className="api-docs-paths">
           <h2>Paths</h2>

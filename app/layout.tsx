@@ -64,7 +64,7 @@ export const metadata: Metadata = {
     creator: '@abhi2601k',
   },
   other: {
-    'link-llms': '</llms.txt>; rel="llms-txt"; type="text/plain"',
+    'link-llms': '</llms.txt>; rel="llms-txt"; type="text/markdown"',
     'link-agent-skills': '</.well-known/agent-skills/index.json>; rel="agent-skills"',
   },
   robots: { index: true, follow: true },

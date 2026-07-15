@@ -19,6 +19,10 @@ test.describe('agent readiness', () => {
     const body = await res.text();
     expect(body).toMatch(/^# /m);
     expect(body).toMatch(/^> /m);
+    expect(body).toContain('https://akaushik.org/api/mcp');
+    expect(body).toContain('MCP 2025-11-25');
+    expect(body).toContain('lookup_case_study');
+    expect(body).toContain('get_availability');
   });
 
   test('/llms-full.txt assembles the full corpus', async ({ request }) => {
@@ -58,15 +62,37 @@ test.describe('agent readiness', () => {
     expect(body).toHaveProperty('linkset');
   });
 
-  test('/.well-known/mcp.json signals planned status and does not advertise an endpoint', async ({
+  test('/.well-known/mcp.json advertises the rate-limit-gated stable endpoint and exact tools', async ({
     request,
   }) => {
     const res = await request.get('/.well-known/mcp.json');
     expect(res.status()).toBe(200);
+    expect(res.headers()['content-type']).toMatch(/application\/json/);
     const body = await res.json();
-    expect(body).toHaveProperty('name');
-    expect(body).not.toHaveProperty('endpoint');
-    expect(body.status).toBe('planned');
+    expect(body).toMatchObject({
+      name: 'akaushik.org',
+      version: '1.0.0',
+      status: 'ready-pending-rate-limit',
+      endpoint: 'https://akaushik.org/api/mcp',
+      protocolVersion: '2025-11-25',
+      transport: 'streamable-http',
+      stateless: true,
+      sessionIdIssued: false,
+      discovery: { kind: 'site-scanner-specific', protocolStandard: false },
+      get: { status: 405 },
+      authentication: { required: false },
+    });
+    expect(body.supportedProtocolVersions).toEqual(['2025-11-25', '2025-06-18', '2025-03-26']);
+    expect(body.protocolSupport).toMatchObject({
+      current: '2025-11-25',
+      missingHeaderFallback: '2025-03-26',
+    });
+    expect(body.requiredPostHeaders.Accept).toBe('application/json, text/event-stream');
+    expect(body.capabilities.tools.map((tool: { name: string }) => tool.name)).toEqual([
+      'lookup_case_study',
+      'get_availability',
+    ]);
+    expect(body.capabilities.resources).toEqual([]);
   });
 
   test('/.well-known/agent-skills/index.json uses v0.2.0 schema with a digest', async ({
@@ -100,6 +126,28 @@ test.describe('agent readiness', () => {
     expect(body.info).toHaveProperty('title');
     expect(typeof body.paths).toBe('object');
     expect(Object.keys(body.paths).length).toBeGreaterThan(0);
+    expect(body.paths['/api/mcp']).toHaveProperty('post');
+    expect(body.paths['/api/mcp']).toHaveProperty('get');
+    expect(body.paths['/api/mcp']).toHaveProperty('delete');
+    expect(body.paths['/api/mcp']).toHaveProperty('options');
+    expect(body.components.schemas).toHaveProperty('McpJsonRpcRequest');
+    expect(body.components.schemas).toHaveProperty('McpJsonRpcResponse');
+    const post = body.paths['/api/mcp'].post;
+    const acceptHeader = post.parameters.find(
+      (parameter: { name: string }) => parameter.name === 'Accept',
+    );
+    const protocolHeader = post.parameters.find(
+      (parameter: { name: string }) => parameter.name === 'MCP-Protocol-Version',
+    );
+    expect(acceptHeader).toMatchObject({ in: 'header', required: true });
+    expect(protocolHeader.schema.enum).toEqual(['2025-11-25', '2025-06-18', '2025-03-26']);
+    expect(post.responses).toHaveProperty('406');
+    expect(body.components.schemas.McpJsonRpcRequest.properties.id.oneOf).toContainEqual({
+      type: 'integer',
+    });
+    expect(
+      body.components.schemas.McpJsonRpcErrorResponse.properties.error.properties.code.enum,
+    ).toEqual([-32700, -32600, -32601, -32602, -32603]);
   });
 
   test('/api/case-studies returns { count, caseStudies } shape', async ({ request }) => {
@@ -158,8 +206,15 @@ test.describe('agent readiness', () => {
       '/llms-full.txt',
       '/api/writing',
       '/api/case-studies',
+      '/api/mcp',
     ]) {
       expect(body).toContain(path);
     }
+    expect(body).toContain('MCP tools');
+    expect(body).toContain('2025-11-25');
+    expect(body).toContain('2025-03-26');
+    expect(body).toContain('site/scanner-specific');
+    expect(body).toContain('lookup_case_study');
+    expect(body).toContain('get_availability');
   });
 });

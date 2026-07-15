@@ -1,7 +1,82 @@
 {
-  "$comment": "MCP server deferred to v1.1 per docs/ROADMAP.md; this discovery file will gain an endpoint + tools entry when /api/mcp ships. Until then no endpoint field is advertised so agents do not chase a 404. See docs/AGENT_READINESS.md §6.3.",
+  "$comment": "Site/scanner-specific discovery metadata for a read-only MCP release candidate. Production promotion is held until the required per-source rate limit is active. The MCP protocol does not standardize /.well-known/mcp.json.",
+  "discovery": {
+    "kind": "site-scanner-specific",
+    "protocolStandard": false
+  },
   "name": "akaushik.org",
-  "version": "0.0.0",
-  "status": "planned",
-  "description": "Portfolio MCP server — planned for v1.1. Will expose case-study lookup + availability tools."
+  "version": "1.0.0",
+  "status": "ready-pending-rate-limit",
+  "description": "Read-only access to published portfolio case studies and current project availability.",
+  "endpoint": "https://akaushik.org/api/mcp",
+  "protocolVersion": "2025-11-25",
+  "supportedProtocolVersions": ["2025-11-25", "2025-06-18", "2025-03-26"],
+  "protocolSupport": {
+    "current": "2025-11-25",
+    "missingHeaderFallback": "2025-03-26",
+    "batchSupport": "Non-empty arrays are accepted only for 2025-03-26 compatibility requests",
+    "boundedMethods": [
+      "initialize",
+      "ping",
+      "notifications/initialized",
+      "tools/list",
+      "tools/call"
+    ]
+  },
+  "transport": "streamable-http",
+  "stateless": true,
+  "sessionIdIssued": false,
+  "get": {
+    "status": 405,
+    "reason": "No server-initiated SSE stream"
+  },
+  "requiredPostHeaders": {
+    "Accept": "application/json, text/event-stream",
+    "Content-Type": "application/json",
+    "MCP-Protocol-Version": "Required after initialization; omission is accepted as the 2025-03-26 compatibility fallback"
+  },
+  "authentication": {
+    "required": false
+  },
+  "capabilities": {
+    "tools": [
+      {
+        "name": "lookup_case_study",
+        "description": "Return one published portfolio case study as structured data and Markdown.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "slug": {
+              "type": "string",
+              "pattern": "^[a-z0-9_-]+$"
+            }
+          },
+          "required": ["slug"],
+          "additionalProperties": false
+        },
+        "annotations": {
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        }
+      },
+      {
+        "name": "get_availability",
+        "description": "Return current public project availability and contact details.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "annotations": {
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        }
+      }
+    ],
+    "resources": []
+  }
 }
