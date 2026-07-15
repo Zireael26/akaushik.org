@@ -4,7 +4,11 @@ on:
   schedule:
     # Daily 04:17 UTC
     - cron: '17 4 * * *'
-  workflow_dispatch:
+  # repository_dispatch resolves this workflow from the repository's default
+  # branch. Do not consume client_payload in secret-bearing steps; the event is
+  # only a branch-safe manual trigger.
+  repository_dispatch:
+    types: [refresh-github-stats]
 
 permissions:
   contents: read

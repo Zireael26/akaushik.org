@@ -1,13 +1,13 @@
 # Bundle and runtime budget
 
-[ADR-0015](adr/0015-post-launch-runtime-and-bundle-budget.md) replaces the permanently-red 150 KiB aspiration with a measured operating budget. Historical snapshots keep their original metrics; do not compare their numbers without normalizing the method.
+[ADR-0016](adr/0016-post-launch-runtime-and-bundle-budget.md) replaces the permanently-red 150 KiB aspiration with a measured operating budget. Historical snapshots keep their original metrics; do not compare their numbers without normalizing the method.
 
 ## Active budgets
 
 | Surface                            |                                           Budget or alert | Enforcement and response                                                                                                                                      |
 | ---------------------------------- | --------------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Build/runtime                      |                                               Node `22.x` | Build evidence is invalid under another major. CI and production automation must select Node 22.                                                              |
-| Normal-motion desktop home scripts |       **<= 350 KiB (358,400 B)** gzip response-body bytes | Active operating budget. Reduce, document a time-bounded exception, or supersede ADR-0015 when exceeded.                                                      |
+| Normal-motion desktop home scripts |       **<= 350 KiB (358,400 B)** gzip response-body bytes | Active operating budget. Reduce, document a time-bounded exception, or supersede ADR-0016 when exceeded.                                                      |
 | Lighthouse script monitor          | **<= 400 KiB (409,600 B)** `resource-summary:script:size` | Warning-only in [desktop](../lighthouserc.yml) and [mobile](../lighthouserc.mobile.yml) configs. A warning requires investigation; it is not silently raised. |
 | Production homepage TTFB           |                        **< 2,500 ms median of 3 samples** | Scheduled alert threshold in [check-production.mjs](../scripts/check-production.mjs). No production pass is claimed by the local bundle snapshot.             |
 

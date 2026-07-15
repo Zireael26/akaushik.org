@@ -1,12 +1,23 @@
 #!/usr/bin/env node
 
+import {
+  assertOptionalFalse,
+  assertSmoke as assert,
+  contentType,
+  createRequester,
+  errorMessage,
+  extractHomepageImageUrls,
+  isRecord,
+  parseJson,
+  parseMcpPayload,
+  validateHomepageNonce,
+} from './check-production-lib.mjs';
+
 const DEFAULT_BASE_URL = 'https://akaushik.org';
 const DEFAULT_LEGACY_URL = 'https://akaushik.dev';
 const DEFAULT_TTFB_THRESHOLD_MS = 2_500;
 const DEFAULT_TIMEOUT_MS = 15_000;
 const HOMEPAGE_SAMPLE_COUNT = 3;
-const MAX_FETCH_ATTEMPTS = 2;
-const RETRY_DELAY_MS = 250;
 const MCP_PROTOCOL_VERSION = '2025-11-25';
 const MCP_ACCEPT = 'application/json, text/event-stream';
 const MCP_TOOL_NAMES = ['lookup_case_study', 'get_availability'];
@@ -14,9 +25,10 @@ const MCP_TOOL_NAMES = ['lookup_case_study', 'get_availability'];
 const HELP = `Usage: pnpm production:check [options]
 
 Checks canonical and legacy routing, agent discovery and live MCP, rotating
-nonce CSP, contact-email integrity, the full ICO directory, and median homepage
-TTFB from three sequential samples. Transient fetch failures and HTTP 5xx
-responses receive one bounded retry; assertion failures are never retried.
+nonce CSP, contact-email integrity, homepage image URLs, the full ICO directory,
+and median homepage TTFB from three sequential samples. Transient fetch/body
+failures and HTTP 5xx responses receive one bounded retry; assertion failures
+are never retried.
 
 Options:
   --base-url <url>               Canonical production origin
@@ -88,18 +100,6 @@ function parseOptions(args) {
   };
 }
 
-function assert(condition, message) {
-  if (!condition) throw new Error(message);
-}
-
-function errorMessage(error) {
-  return error instanceof Error ? error.message : String(error);
-}
-
-function isRecord(value) {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 let options;
 try {
   options = parseOptions(process.argv.slice(2));
@@ -108,6 +108,8 @@ try {
   console.error('Run with --help for usage.');
   process.exit(2);
 }
+
+const request = createRequester({ timeoutMs: options.timeoutMs });
 
 let passCount = 0;
 const failures = [];
@@ -121,68 +123,6 @@ async function check(name, assertion) {
     const message = errorMessage(error);
     failures.push({ name, message });
     console.error(`FAIL ${name} - ${message}`);
-  }
-}
-
-function isTransientFetchFailure(error) {
-  return (
-    error instanceof TypeError ||
-    (error instanceof DOMException && ['AbortError', 'TimeoutError'].includes(error.name))
-  );
-}
-
-function delay(milliseconds) {
-  return new Promise((resolve) => setTimeout(resolve, milliseconds));
-}
-
-async function request(url, { accept = '*/*', method = 'GET', headers = {}, body } = {}) {
-  const requestHeaders = new Headers(headers);
-  if (!requestHeaders.has('accept')) requestHeaders.set('accept', accept);
-  requestHeaders.set('user-agent', 'akaushik.org-production-smoke/1.0');
-
-  for (let attempt = 1; attempt <= MAX_FETCH_ATTEMPTS; attempt += 1) {
-    const start = performance.now();
-    try {
-      const response = await fetch(url, {
-        method,
-        body,
-        headers: requestHeaders,
-        redirect: 'manual',
-        signal: AbortSignal.timeout(options.timeoutMs),
-      });
-      const ttfbMs = performance.now() - start;
-
-      if (response.status >= 500 && response.status <= 599 && attempt < MAX_FETCH_ATTEMPTS) {
-        await response.body?.cancel();
-        console.warn(
-          `RETRY ${method} ${url.href} - HTTP ${response.status} (attempt ${attempt + 1}/${MAX_FETCH_ATTEMPTS})`,
-        );
-        await delay(RETRY_DELAY_MS);
-        continue;
-      }
-
-      return { response, ttfbMs };
-    } catch (error) {
-      if (attempt >= MAX_FETCH_ATTEMPTS || !isTransientFetchFailure(error)) throw error;
-      console.warn(
-        `RETRY ${method} ${url.href} - ${errorMessage(error)} (attempt ${attempt + 1}/${MAX_FETCH_ATTEMPTS})`,
-      );
-      await delay(RETRY_DELAY_MS);
-    }
-  }
-
-  throw new Error(`request attempts exhausted for ${url.href}`);
-}
-
-function contentType(response) {
-  return response.headers.get('content-type') ?? '';
-}
-
-function parseJson(body, path) {
-  try {
-    return JSON.parse(body);
-  } catch {
-    throw new Error(`${path} did not return valid JSON`);
   }
 }
 
@@ -207,65 +147,13 @@ function median(values) {
   return sorted[Math.floor(sorted.length / 2)];
 }
 
-function cspDirective(policy, name) {
-  const normalizedName = name.toLowerCase();
-  return (
-    policy
-      .split(';')
-      .map((directive) => directive.trim())
-      .find((directive) => directive.split(/\s+/, 1)[0]?.toLowerCase() === normalizedName) ?? ''
-  );
-}
-
-function inlineScriptNonce(attributes) {
-  const match = attributes.match(/\bnonce\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/i);
-  return match?.[1] ?? match?.[2] ?? match?.[3] ?? null;
-}
-
-function validateHomepageNonce(sample, label) {
-  const policy = sample.response.headers.get('content-security-policy') ?? '';
-  const scriptSource = cspDirective(policy, 'script-src');
-  assert(scriptSource, `${label} script-src directive is missing`);
-  assert(
-    !/(?:^|\s)'unsafe-inline'(?:\s|$)/i.test(scriptSource),
-    `${label} script-src contains 'unsafe-inline'`,
-  );
-  assert(
-    /(?:^|\s)'strict-dynamic'(?:\s|$)/i.test(scriptSource),
-    `${label} script-src is missing 'strict-dynamic'`,
-  );
-
-  const nonceSources = [...scriptSource.matchAll(/'nonce-([^']+)'/gi)];
-  assert(nonceSources.length === 1, `${label} script-src must contain exactly one nonce source`);
-  const responseNonce = nonceSources[0][1];
-  assert(responseNonce.length > 0, `${label} script-src nonce is empty`);
-
-  const scripts = [];
-  const scriptPattern = /<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi;
-  for (const match of sample.body.matchAll(scriptPattern)) {
-    if (match[2].trim().length > 0) scripts.push(match[1]);
-  }
-  assert(scripts.length > 0, `${label} contains no non-empty inline scripts`);
-
-  const mismatches = scripts
-    .map((attributes, index) => ({ index: index + 1, nonce: inlineScriptNonce(attributes) }))
-    .filter(({ nonce }) => nonce !== responseNonce)
-    .map(({ index }) => index);
-  assert(
-    mismatches.length === 0,
-    `${label} inline script${mismatches.length === 1 ? '' : 's'} ${mismatches.join(', ')} did not carry the response nonce`,
-  );
-
-  return { nonce: responseNonce, inlineScriptCount: scripts.length };
-}
-
 function rpcRequest(method, params, id) {
   return { jsonrpc: '2.0', id, method, ...(params === undefined ? {} : { params }) };
 }
 
 async function postMcp(message, label) {
   const url = new URL('/api/mcp', options.baseUrl);
-  const { response } = await request(url, {
+  const { response, body } = await request(url, {
     method: 'POST',
     accept: MCP_ACCEPT,
     headers: {
@@ -273,14 +161,10 @@ async function postMcp(message, label) {
       'mcp-protocol-version': MCP_PROTOCOL_VERSION,
     },
     body: JSON.stringify(message),
+    bodyType: 'text',
   });
-  const body = await response.text();
   assert(response.status === 200, `${label} expected 200, received ${response.status}`);
-  assert(
-    /application\/json/i.test(contentType(response)),
-    `${label} returned unexpected content type: ${contentType(response)}`,
-  );
-  const json = parseJson(body, `${url.pathname} ${label}`);
+  const json = parseMcpPayload(body, response, `${url.pathname} ${label}`);
   assert(isRecord(json), `${label} response is not a JSON object`);
   assert(json.jsonrpc === '2.0', `${label} response is not JSON-RPC 2.0`);
   assert(json.id === message.id, `${label} response id did not match the request`);
@@ -296,7 +180,7 @@ async function postMcp(message, label) {
 
 async function postMcpInitialized() {
   const url = new URL('/api/mcp', options.baseUrl);
-  const { response } = await request(url, {
+  const { response, body } = await request(url, {
     method: 'POST',
     accept: MCP_ACCEPT,
     headers: {
@@ -304,8 +188,8 @@ async function postMcpInitialized() {
       'mcp-protocol-version': MCP_PROTOCOL_VERSION,
     },
     body: JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }),
+    bodyType: 'bytes',
   });
-  const body = new Uint8Array(await response.arrayBuffer());
   assert(
     response.status === 202,
     `initialized notification expected 202, received ${response.status}`,
@@ -368,8 +252,10 @@ await check(
     const samples = [];
 
     for (let index = 0; index < HOMEPAGE_SAMPLE_COUNT; index += 1) {
-      const { response, ttfbMs } = await request(url, { accept: 'text/html' });
-      const body = await response.text();
+      const { response, body, ttfbMs } = await request(url, {
+        accept: 'text/html',
+        bodyType: 'text',
+      });
       const sampleLabel = `sample ${index + 1}`;
       assert(response.status === 200, `${sampleLabel} expected 200, received ${response.status}`);
       assert(!response.headers.has('location'), `${sampleLabel} returned a redirect`);
@@ -392,7 +278,6 @@ await check('legacy alias routing', async () => {
     const legacyTarget = new URL(path, options.legacyUrl);
     const expectedTarget = new URL(path, options.baseUrl);
     const { response } = await request(legacyTarget);
-    await response.body?.cancel();
     assert(
       response.status === 308,
       `${legacyTarget.href} returned ${response.status}, expected 308`,
@@ -526,8 +411,7 @@ const agentSurfaces = [
 for (const surface of agentSurfaces) {
   await check(`agent surface ${surface.path}`, async () => {
     const url = new URL(surface.path, options.baseUrl);
-    const { response } = await request(url);
-    const body = await response.text();
+    const { response, body } = await request(url, { bodyType: 'text' });
     assert(response.status === 200, `expected 200, received ${response.status}`);
     assert(
       surface.type.test(contentType(response)),
@@ -562,7 +446,7 @@ await check('live MCP initialize, tools/list, and tool calls', async () => {
   const initializeTools = isRecord(initializeCapabilities.tools)
     ? initializeCapabilities.tools
     : {};
-  assert(initializeTools.listChanged === false, 'initialize tools capability is incomplete');
+  assertOptionalFalse(initializeTools.listChanged, 'initialize capabilities.tools.listChanged');
   const serverInfo = isRecord(initialize.serverInfo) ? initialize.serverInfo : {};
   assert(serverInfo.name === 'akaushik-org', 'initialize serverInfo.name is incorrect');
 
@@ -591,7 +475,7 @@ await check('live MCP initialize, tools/list, and tool calls', async () => {
     ),
     'lookup_case_study(neev)',
   );
-  assert(lookup.isError === false, 'lookup_case_study(neev) returned isError');
+  assertOptionalFalse(lookup.isError, 'lookup_case_study(neev) result.isError');
   const caseStudy = isRecord(lookup.structuredContent) ? lookup.structuredContent : {};
   assert(caseStudy.slug === 'neev', 'lookup_case_study returned the wrong slug');
   assert(caseStudy.title === 'Neev', 'lookup_case_study returned the wrong title');
@@ -619,7 +503,7 @@ await check('live MCP initialize, tools/list, and tool calls', async () => {
     rpcRequest('tools/call', { name: 'get_availability', arguments: {} }, 'get-availability'),
     'get_availability',
   );
-  assert(availabilityResult.isError === false, 'get_availability returned isError');
+  assertOptionalFalse(availabilityResult.isError, 'get_availability result.isError');
   const availability = isRecord(availabilityResult.structuredContent)
     ? availabilityResult.structuredContent
     : {};
@@ -642,7 +526,7 @@ await check('nonce Content-Security-Policy', () => {
   const first = validateHomepageNonce(homepageSamples[0], 'homepage response 1');
   const second = validateHomepageNonce(homepageSamples[1], 'homepage response 2');
   assert(first.nonce !== second.nonce, 'CSP nonce did not rotate across homepage responses');
-  return `${first.inlineScriptCount + second.inlineScriptCount} inline scripts matched their response nonce; nonce rotated`;
+  return `${first.scriptCount + second.scriptCount} inline/external scripts matched all CSP policies; nonce rotated`;
 });
 
 await check('raw contact mailto', () => {
@@ -666,10 +550,35 @@ await check('Cloudflare email-protection decoder absent', () => {
   return 'no decoder markup or script';
 });
 
+await check('homepage image URLs', async () => {
+  assert(homepage, 'canonical homepage was unavailable');
+  const imageUrls = extractHomepageImageUrls(homepage.body, options.baseUrl);
+  assert(imageUrls.length > 0, 'homepage advertised no image URLs');
+
+  for (const href of imageUrls) {
+    const url = new URL(href);
+    const { response, body } = await request(url, {
+      accept: 'image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8',
+      bodyType: 'bytes',
+    });
+    assert(response.status === 200, `${url.href} expected 200, received ${response.status}`);
+    assert(!response.headers.has('location'), `${url.href} returned a redirect`);
+    assert(
+      /^image\//i.test(contentType(response)),
+      `${url.href} returned unexpected content type: ${contentType(response)}`,
+    );
+    assert(body.length > 0, `${url.href} returned an empty image body`);
+  }
+
+  return `${imageUrls.length} same-origin HTTPS images returned non-empty image bodies`;
+});
+
 await check('legacy favicon', async () => {
   const url = new URL('/favicon.ico', options.baseUrl);
-  const { response } = await request(url, { accept: 'image/x-icon,image/*;q=0.8' });
-  const bytes = new Uint8Array(await response.arrayBuffer());
+  const { response, body: bytes } = await request(url, {
+    accept: 'image/x-icon,image/*;q=0.8',
+    bodyType: 'bytes',
+  });
   assert(response.status === 200, `expected 200, received ${response.status}`);
   assert(
     /image\/(?:x-icon|vnd\.microsoft\.icon)|application\/octet-stream/i.test(contentType(response)),

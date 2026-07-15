@@ -1,4 +1,4 @@
-# ADR-0015 — Post-launch runtime and bundle budget
+# ADR-0016 — Post-launch runtime and bundle budget
 
 **Status:** Accepted, 2026-07-14
 **Context:** Post-launch closure of the Node runtime and the permanently-red 150 KiB script aspiration.
