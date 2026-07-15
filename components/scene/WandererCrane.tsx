@@ -3,6 +3,12 @@
 import { useEffect } from 'react';
 import * as THREE from 'three';
 
+const DESKTOP_QUERY = '(min-width: 861px)';
+const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+const RENDERER_ATTRIBUTE = 'data-wanderer-renderer';
+const POSE_ATTRIBUTE = 'data-wanderer-pose';
+const MAX_RENDER_PIXELS = 1920 * 1080;
+
 // Full port of `_reference/portfolio/companion.js` (221 LOC) to a React
 // effect-mounted Three.js scene. Why not R3F: the Wanderer lives inside a
 // fixed-position `#companion` host, not a bounded canvas — the parallax +
@@ -13,8 +19,8 @@ import * as THREE from 'three';
 // managed declarative scenes.
 //
 // Design invariants:
-//   - bails out to the SVG fallback if `prefers-reduced-motion`,
-//     `[data-motion="off"]`, or WebGL context creation throws
+//   - bails out if the desktop/motion policy changed while the lazy chunk
+//     loaded, and keeps the SVG fallback if WebGL context creation throws
 //   - canvas sits inside `#companion` (the Wanderer server component
 //     ships the host div + fallback SVG)
 //   - eight POSES drive per-section placement; lerp toward target each
@@ -32,6 +38,36 @@ type Pose = {
   flap: number;
   spin: number;
 };
+
+type VisiblePoseEntry = Pick<
+  IntersectionObserverEntry,
+  'target' | 'isIntersecting' | 'intersectionRatio'
+>;
+
+export function updateVisiblePoseRatios(
+  ratios: Map<Element, number>,
+  entries: ReadonlyArray<VisiblePoseEntry>,
+): void {
+  for (const entry of entries) {
+    if (entry.isIntersecting && entry.intersectionRatio > 0) {
+      ratios.set(entry.target, entry.intersectionRatio);
+    } else {
+      ratios.delete(entry.target);
+    }
+  }
+}
+
+export function selectDominantPose(ratios: ReadonlyMap<Element, number>): Element | null {
+  let dominant: Element | null = null;
+  let dominantRatio = -1;
+  for (const [target, ratio] of ratios) {
+    if (ratio > dominantRatio) {
+      dominant = target;
+      dominantRatio = ratio;
+    }
+  }
+  return dominant;
+}
 
 const POSES: Record<string, Pose> = {
   hero: { x: 0.55, y: 0.15, z: 0, rotY: 0.3, rotX: -0.1, scale: 1.0, flap: 0.35, spin: 0.08 },
@@ -104,10 +140,7 @@ function buildCrane(): Crane {
   const tailGeom = new THREE.BufferGeometry();
   tailGeom.setAttribute(
     'position',
-    new THREE.Float32BufferAttribute(
-      [0, 0.05, -0.5, 0.15, -0.05, -1.3, -0.15, -0.05, -1.3],
-      3,
-    ),
+    new THREE.Float32BufferAttribute([0, 0.05, -0.5, 0.15, -0.05, -1.3, -0.15, -0.05, -1.3], 3),
   );
   tailGeom.computeVertexNormals();
   const tail = new THREE.Mesh(tailGeom, fold);
@@ -118,19 +151,13 @@ function buildCrane(): Crane {
     const g1 = new THREE.BufferGeometry();
     g1.setAttribute(
       'position',
-      new THREE.Float32BufferAttribute(
-        [0, 0, 0, sign * 1.4, 0.6, -0.2, sign * 0.9, 0.1, 0.6],
-        3,
-      ),
+      new THREE.Float32BufferAttribute([0, 0, 0, sign * 1.4, 0.6, -0.2, sign * 0.9, 0.1, 0.6], 3),
     );
     g1.computeVertexNormals();
     const g2 = new THREE.BufferGeometry();
     g2.setAttribute(
       'position',
-      new THREE.Float32BufferAttribute(
-        [0, 0, 0, sign * 0.9, 0.1, 0.6, sign * 0.8, -0.1, -0.5],
-        3,
-      ),
+      new THREE.Float32BufferAttribute([0, 0, 0, sign * 0.9, 0.1, 0.6, sign * 0.8, -0.1, -0.5], 3),
     );
     g2.computeVertexNormals();
     w.add(new THREE.Mesh(g1, paper));
@@ -171,9 +198,12 @@ export default function WandererCrane() {
     const host = document.getElementById('companion');
     if (!host) return;
 
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const motionTweak = document.documentElement.getAttribute('data-motion') !== 'off';
-    if (reduceMotion || !motionTweak) return;
+    const desktop = window.matchMedia(DESKTOP_QUERY).matches;
+    const reduceMotion = window.matchMedia(REDUCED_MOTION_QUERY).matches;
+    const motionEnabled = document.documentElement.getAttribute('data-motion') !== 'off';
+    if (!desktop || reduceMotion || !motionEnabled) return;
+
+    const svg = host.querySelector<SVGElement>('.companion-svg');
 
     const canvas = document.createElement('canvas');
     canvas.setAttribute('aria-hidden', 'true');
@@ -189,9 +219,9 @@ export default function WandererCrane() {
       });
     } catch {
       host.removeChild(canvas);
-      return;
+      host.setAttribute(RENDERER_ATTRIBUTE, 'fallback');
+      return () => host.removeAttribute(RENDERER_ATTRIBUTE);
     }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     const scene = new THREE.Scene();
@@ -213,25 +243,17 @@ export default function WandererCrane() {
     const current: Pose = { ...(POSES.hero as Pose) };
     const target: Pose = { ...(POSES.hero as Pose) };
 
-    const sections = Array.from(
-      document.querySelectorAll('[data-companion-pose]'),
-    );
+    const sections = Array.from(document.querySelectorAll('[data-companion-pose]'));
+    const visiblePoseRatios = new Map<Element, number>();
+    host.setAttribute(POSE_ATTRIBUTE, 'hero');
     const observer = new IntersectionObserver(
       (entries) => {
-        let best: IntersectionObserverEntry | null = null;
-        entries.forEach((e) => {
-          if (
-            e.isIntersecting &&
-            (!best || e.intersectionRatio > best.intersectionRatio)
-          ) {
-            best = e;
-          }
-        });
-        if (!best) return;
-        const k = (best as IntersectionObserverEntry).target.getAttribute(
-          'data-companion-pose',
-        );
-        if (k && POSES[k]) Object.assign(target, POSES[k]);
+        updateVisiblePoseRatios(visiblePoseRatios, entries);
+        const dominant = selectDominantPose(visiblePoseRatios);
+        const key = dominant?.getAttribute('data-companion-pose');
+        if (!key || !POSES[key]) return;
+        Object.assign(target, POSES[key]);
+        host.setAttribute(POSE_ATTRIBUTE, key);
       },
       { threshold: [0.2, 0.45, 0.7] },
     );
@@ -255,6 +277,8 @@ export default function WandererCrane() {
     const resize = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
+      const pixelBudgetRatio = Math.sqrt(MAX_RENDER_PIXELS / Math.max(1, w * h));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5, pixelBudgetRatio));
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
@@ -278,6 +302,10 @@ export default function WandererCrane() {
     let rafId = 0;
 
     const frame = () => {
+      if (document.hidden) {
+        rafId = 0;
+        return;
+      }
       const now = performance.now();
       const dt = Math.min((now - lastFrame) / 1000, 0.05);
       lastFrame = now;
@@ -293,11 +321,10 @@ export default function WandererCrane() {
       current.flap = lerp(current.flap, target.flap, damp);
       current.spin = lerp(current.spin, target.spin, damp);
 
-      const halfH = Math.tan(((camera.fov * Math.PI) / 180) / 2) * camera.position.z;
+      const halfH = Math.tan((camera.fov * Math.PI) / 180 / 2) * camera.position.z;
       const halfW = halfH * camera.aspect;
       crane.group.position.x = current.x * halfW + pointer.x * 0.25;
-      crane.group.position.y =
-        current.y * halfH + pointer.y * 0.15 + Math.sin(t * 1.1) * 0.08;
+      crane.group.position.y = current.y * halfH + pointer.y * 0.15 + Math.sin(t * 1.1) * 0.08;
       crane.group.position.z = current.z;
 
       crane.group.rotation.y = current.rotY + t * current.spin + scrollVel * 2.2;
@@ -316,6 +343,19 @@ export default function WandererCrane() {
       rafId = requestAnimationFrame(frame);
     };
 
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        cancelAnimationFrame(rafId);
+        rafId = 0;
+        return;
+      }
+      if (rafId === 0) {
+        lastFrame = performance.now();
+        rafId = requestAnimationFrame(frame);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
     // Warm-up render so the first visible frame has shaders compiled before
     // the SVG fallback is hidden. WebGL context creation above is already
     // guarded by try/catch — the correct failure mode for unavailable WebGL.
@@ -325,8 +365,8 @@ export default function WandererCrane() {
     // When the canvas is mounted, hide the SVG fallback so both don't
     // composite. `companion-svg` is the CSS selector the Wanderer server
     // component uses for its fallback polygon.
-    const svg = host.querySelector<SVGElement>('.companion-svg');
     if (svg) svg.style.display = 'none';
+    host.setAttribute(RENDERER_ATTRIBUTE, 'canvas');
 
     return () => {
       cancelAnimationFrame(rafId);
@@ -335,10 +375,14 @@ export default function WandererCrane() {
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('resize', resize);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       crane.dispose();
       renderer.dispose();
+      renderer.forceContextLoss();
       if (canvas.parentElement === host) host.removeChild(canvas);
       if (svg) svg.style.display = '';
+      host.removeAttribute(RENDERER_ATTRIBUTE);
+      host.removeAttribute(POSE_ATTRIBUTE);
     };
   }, []);
 

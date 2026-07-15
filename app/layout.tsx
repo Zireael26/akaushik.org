@@ -4,7 +4,7 @@ import { headers } from 'next/headers';
 import Script from 'next/script';
 import SiteNav from '@/components/site/SiteNav';
 import SiteFooter from '@/components/site/SiteFooter';
-// import { Wanderer } from '@/components/scene/Wanderer'; // Disabled per PR #58 (2026-05-11). Redesign brief: docs/wanderer-redesign-brief.md.
+import { Wanderer } from '@/components/scene/Wanderer';
 import { TweakBridge } from '@/components/dev/TweakBridge';
 import { CANONICAL_ORIGIN } from '@/lib/canonical';
 import { JsonLdScript } from '@/components/seo/JsonLdScript';
@@ -117,12 +117,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <JsonLdScript id="ld-json-site" json={jsonLdString(siteGraph())} nonce={nonce} />
       </head>
       <body>
-        {/* Wanderer disabled per PR #58 (2026-05-11). When reinstated, this
-            mount renders the #companion host + SVG fallback + the Three.js
-            crane layered on top for `[data-motion="on"]` + no
-            `prefers-reduced-motion`. Reinstatement checklist + open redesign
-            questions live in docs/wanderer-redesign-brief.md. */}
-        {/* <Wanderer /> */}
+        <Wanderer />
         <SiteNav />
         {children}
         <SiteFooter />
