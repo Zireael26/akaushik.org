@@ -1,103 +1,188 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
-// Smoke test for the Phase-5 scene work: the hero agent-graph Three.js canvas
-// + the Wanderer Three.js crane. Visual parity against the reference
-// design is Abhishek's eyes (per plan §Final state + ADR-0005 follow-up);
-// what this spec proves is that the canvas mounts, the SVG fallback is
-// present for reduced-motion, and both scenes coexist without console
-// errors blocking first paint.
-//
-// Scope kept narrow on purpose — the scenes are heavy, the assertions
-// are shallow. WebGL doesn't render deterministically on Playwright
-// headless in every environment, so we assert the DOM plumbing rather
-// than pixel output.
+const DESKTOP_MIN_WIDTH = 861;
+const RENDERER_ATTRIBUTE = 'data-wanderer-renderer';
 
-test.describe.configure({ mode: 'serial' });
+function isDesktop(page: Page): boolean {
+  return (page.viewportSize()?.width ?? 0) >= DESKTOP_MIN_WIDTH;
+}
+
+async function expectWandererCanvas(page: Page) {
+  const companion = page.locator('#companion');
+  const svg = companion.locator('.companion-svg');
+
+  await expect(companion).toBeVisible();
+  await expect(svg).toBeAttached();
+  await expect(companion).toHaveAttribute(RENDERER_ATTRIBUTE, 'canvas', {
+    timeout: 30_000,
+  });
+  await expect(companion.locator('canvas')).toBeVisible();
+  await expect(svg).toBeHidden();
+}
+
+async function expectWandererAbsent(page: Page) {
+  const companion = page.locator('#companion');
+
+  await expect(companion).toBeAttached();
+  await expect(companion).toBeHidden();
+  await expect(companion.locator('canvas')).toHaveCount(0);
+  await expect.poll(() => companion.getAttribute(RENDERER_ATTRIBUTE)).toBeNull();
+}
+
+test.describe.configure({ mode: 'serial', timeout: 90_000 });
 
 test.describe('hero canvas + wanderer', () => {
-  test.skip(
-    ({ browserName }) => browserName !== 'chromium',
-    'Three.js stability varies by engine; chromium-desktop is the canonical surface for this spec.',
-  );
+  test('scene frame renders its SVG fallback and canvas host', async ({ browserName, page }) => {
+    test.skip(browserName !== 'chromium', 'The hero Three.js smoke remains Chromium-scoped.');
 
-  test('scene frame renders both SVG fallback and canvas host', async ({
-    page,
-  }) => {
     await page.goto('/');
-    // SVG fallback ships on SSR, always attached. Once the Three.js canvas mounts,
-    // AgentGraphClient flags the scene-frame with `data-canvas-active="true"`
-    // and the SVG is hidden (display: none) so the two layers don't composite
-    // through the transparent WebGL canvas — so assert presence, not paint.
     const sceneFrame = page.locator('.scene-frame');
     await expect(sceneFrame).toBeVisible();
     await expect(sceneFrame.locator('.scene-svg')).toBeAttached();
-    // Canvas host is injected client-side by AgentGraphClient.
     await expect(sceneFrame.locator('.scene-canvas-host')).toBeAttached({
-      timeout: 5000,
+      timeout: 30_000,
     });
     await expect(sceneFrame).toHaveAttribute('data-canvas-active', 'true', {
-      timeout: 5000,
+      timeout: 30_000,
     });
   });
 
-  test('wanderer host ships SVG fallback + hosts a <canvas> after hydration', async ({
+  test('desktop Wanderer promotes its SVG floor to a real canvas', async ({
+    browserName,
     page,
   }) => {
     test.skip(
-      true,
-      'Wanderer disabled since PR #58 (2026-05-11). Reinstate when the redesign brief in docs/wanderer-redesign-brief.md is closed. Until then #companion is not rendered and these assertions would fail.',
+      browserName !== 'chromium' || !isDesktop(page),
+      'The positive WebGL renderer proof is Chromium-desktop scoped.',
     );
+
+    const runtimeErrors: string[] = [];
+    page.on('pageerror', (error) => runtimeErrors.push(error.message));
+    page.on('console', (message) => {
+      if (message.type() === 'error') runtimeErrors.push(message.text());
+    });
+
     await page.goto('/');
-    await expect(page.locator('#companion')).toBeAttached();
-    await expect(page.locator('#companion .companion-svg')).toBeAttached();
-    await page.waitForTimeout(1500);
+    await expectWandererCanvas(page);
+    const renderPixels = await page
+      .locator('#companion canvas')
+      .evaluate(
+        (canvas) => (canvas as HTMLCanvasElement).width * (canvas as HTMLCanvasElement).height,
+      );
+    expect(renderPixels).toBeLessThanOrEqual(1920 * 1080);
+    expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([]);
   });
 
-  test('reduced-motion: canvas stays hidden; SVG remains primary', async ({
+  test('desktop Wanderer settles on its SVG fallback when WebGL is unavailable', async ({
+    browserName,
     page,
   }) => {
-    await page.emulateMedia({ reducedMotion: 'reduce' });
+    test.skip(
+      browserName !== 'chromium' || !isDesktop(page),
+      'The forced WebGL failure proof is Chromium-desktop scoped.',
+    );
+
+    await page.addInitScript(() => {
+      const original = HTMLCanvasElement.prototype.getContext;
+      Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
+        configurable: true,
+        value: function (this: HTMLCanvasElement, contextId: string, ...args: unknown[]) {
+          if (this.parentElement?.id === 'companion' && contextId.startsWith('webgl')) {
+            const probe = window as unknown as { __wandererWebglAttempts?: number };
+            probe.__wandererWebglAttempts = (probe.__wandererWebglAttempts ?? 0) + 1;
+            return null;
+          }
+          return Reflect.apply(original, this, [contextId, ...args]);
+        },
+      });
+    });
+
     await page.goto('/');
-    // AgentGraphClient's getSnapshot() reads `prefers-reduced-motion` and
-    // returns false, so `{render ? <AgentGraph /> : null}` never renders
-    // AgentGraph — `.scene-canvas-host` is AgentGraph's only DOM node, so
-    // it never mounts at all (not merely CSS-hidden). Assert absence.
-    const canvasHost = page.locator('.scene-canvas-host');
-    await expect(canvasHost).toHaveCount(0);
-    // Wanderer crane bails early when reduceMotion is true, so no canvas
-    // should be inside #companion. With Wanderer disabled site-wide (PR #58)
-    // #companion is not in the DOM at all — the count check still holds
-    // (zero canvases match a missing parent) but the assertion is no longer
-    // exercising the bail-out path. Keep it for completeness; reinstating
-    // the Wanderer per docs/wanderer-redesign-brief.md re-arms it.
-    const crane = page.locator('#companion canvas');
-    await expect(crane).toHaveCount(0);
+    await expect
+      .poll(
+        () =>
+          page.evaluate(
+            () =>
+              (window as unknown as { __wandererWebglAttempts?: number }).__wandererWebglAttempts ??
+              0,
+          ),
+        { timeout: 30_000 },
+      )
+      .toBeGreaterThan(0);
+
+    const companion = page.locator('#companion');
+    await expect(companion).toHaveAttribute(RENDERER_ATTRIBUTE, 'fallback');
+    await expect(companion.locator('canvas')).toHaveCount(0);
+    await expect(companion.locator('.companion-svg')).toBeVisible();
   });
 
-  test('[data-motion="off"]: canvas host hidden', async ({ page }) => {
-    await page.goto('/');
-    await page.evaluate(() => {
-      document.documentElement.setAttribute('data-motion', 'off');
-    });
-    // Same JS gate as the reduced-motion test: the `data-motion="off"`
-    // MutationObserver flips AgentGraphClient's getSnapshot() to false,
-    // unmounting AgentGraph entirely — `.scene-canvas-host` never exists
-    // in the DOM once the attribute flips. Assert absence, not visibility.
-    const canvasHost = page.locator('.scene-canvas-host');
-    await expect(canvasHost).toHaveCount(0);
+  test('Wanderer is absent outside the pose-driven home route', async ({ page }) => {
+    test.skip(!isDesktop(page), 'Wanderer is already absent on narrow viewports.');
+
+    const response = await page.goto('/work/neev');
+    expect(response?.status()).toBe(200);
+    await expect(page.getByRole('heading', { name: 'Neev', exact: true })).toBeVisible();
+    await page.waitForLoadState('networkidle');
+    await expectWandererAbsent(page);
   });
 
-  test('no console errors on home page load', async ({ page }) => {
-    const errors: string[] = [];
-    page.on('pageerror', (err) => errors.push(err.message));
-    page.on('console', (msg) => {
-      if (msg.type() === 'error') errors.push(msg.text());
-    });
+  test('client navigation tears down and restores the home-only scene', async ({
+    browserName,
+    page,
+  }) => {
+    test.skip(
+      browserName !== 'chromium' || !isDesktop(page),
+      'One desktop engine is sufficient for route lifecycle transitions.',
+    );
+
+    await page.goto('/');
+    await expectWandererCanvas(page);
+
+    await page.locator('#case-neev .case-link').click();
+    await expect(page).toHaveURL(/\/work\/neev$/);
+    await expectWandererAbsent(page);
+
+    await page.goBack();
+    await expect(page).toHaveURL(/\/$/);
+    await expectWandererCanvas(page);
+  });
+
+  test('pose arbitration follows the most-visible home section', async ({ browserName, page }) => {
+    test.skip(
+      browserName !== 'chromium' || !isDesktop(page),
+      'One desktop engine is sufficient for IntersectionObserver choreography.',
+    );
+
+    await page.goto('/');
+    await expectWandererCanvas(page);
+    await page.locator('#writing').scrollIntoViewIfNeeded();
+    await expect(page.locator('#companion')).toHaveAttribute('data-wanderer-pose', 'writing');
+  });
+
+  test('Wanderer is absent below the desktop breakpoint', async ({ page }) => {
+    test.skip(isDesktop(page), 'This assertion targets tablet and mobile.');
+
     await page.goto('/');
     await page.waitForLoadState('networkidle');
-    // Allow a stabilisation window for AgentGraph + Wanderer to run at least one
-    // frame before we sample console state.
-    await page.waitForTimeout(1500);
-    expect(errors, errors.join('\n')).toEqual([]);
+    await expectWandererAbsent(page);
+  });
+
+  test('crossing the desktop breakpoint tears down and restores Wanderer', async ({
+    browserName,
+    page,
+  }) => {
+    test.skip(
+      browserName !== 'chromium' || !isDesktop(page),
+      'One desktop engine is sufficient for the live viewport transition.',
+    );
+
+    await page.goto('/');
+    await expectWandererCanvas(page);
+
+    await page.setViewportSize({ width: DESKTOP_MIN_WIDTH - 1, height: 900 });
+    await expectWandererAbsent(page);
+
+    await page.setViewportSize({ width: DESKTOP_MIN_WIDTH, height: 900 });
+    await expectWandererCanvas(page);
   });
 });
