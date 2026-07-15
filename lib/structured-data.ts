@@ -1,8 +1,8 @@
 // Schema.org JSON-LD generators. Trellis web-seo.md is wary of JSON-LD
-// unless it earns a rich result we actually want — the four shapes here all
+// unless it earns a rich result we actually want — the five shapes here all
 // do: Person (knowledge panel), Organization (brand panel + sitelinks),
 // WebSite (sitelinks search box / site name), Article (article rich result
-// in Search + Discover). Stable @id URIs let the graphs cross-reference
+// in Search + Discover), BreadcrumbList (detail-page hierarchy). Stable @id URIs let the graphs cross-reference
 // across pages so Google can unify Person ↔ Author ↔ Publisher.
 //
 // Single source of truth — every JSON-LD island on the site flows through
@@ -10,8 +10,9 @@
 // the home page and the writing index.
 
 import type { CaseStudyFrontmatter, WritingFrontmatter } from './content';
+import { canonical, CANONICAL_ORIGIN } from './canonical';
 
-export const SITE_URL = 'https://akaushik.org';
+export const SITE_URL = CANONICAL_ORIGIN;
 export const PERSON_ID = `${SITE_URL}/#person`;
 export const ORG_ID = `${SITE_URL}/#organization`;
 export const WEBSITE_ID = `${SITE_URL}/#website`;
@@ -95,6 +96,42 @@ export function siteGraph(): JsonLdNode {
   return {
     '@context': 'https://schema.org',
     '@graph': [personNode(), organizationNode(), websiteNode()],
+  };
+}
+
+export function breadcrumbGraph(
+  section: 'work' | 'writing',
+  slug: string,
+  title: string,
+): JsonLdNode {
+  const sectionName = section === 'work' ? 'Work' : 'Writing';
+  const sectionUrl = canonical(`/${section}`);
+  const pageUrl = canonical(`/${section}/${slug}`);
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    '@id': `${pageUrl}#breadcrumb`,
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: canonical('/'),
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: sectionName,
+        item: sectionUrl,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: title,
+        item: pageUrl,
+      },
+    ],
   };
 }
 

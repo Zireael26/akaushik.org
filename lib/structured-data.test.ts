@@ -10,6 +10,7 @@ import {
   siteGraph,
   articleGraph,
   caseStudyGraph,
+  breadcrumbGraph,
   jsonLdString,
 } from './structured-data';
 import type { CaseStudyFrontmatter, WritingFrontmatter } from './content';
@@ -92,6 +93,41 @@ describe('structured-data', () => {
     expect(c['keywords']).toEqual(['Next.js', 'Postgres']);
     expect((c['about'] as { name: string }).name).toBe('AI for MSMEs');
     expect(c['@id']).toBe('https://akaushik.org/work/neev#case-study');
+  });
+
+  it.each([
+    {
+      section: 'work' as const,
+      slug: 'neev',
+      title: 'Neev',
+      names: ['Home', 'Work', 'Neev'],
+      urls: [
+        'https://akaushik.org/',
+        'https://akaushik.org/work',
+        'https://akaushik.org/work/neev',
+      ],
+    },
+    {
+      section: 'writing' as const,
+      slug: 'ai-for-msme',
+      title: 'Notes on bringing AI to an MSME',
+      names: ['Home', 'Writing', 'Notes on bringing AI to an MSME'],
+      urls: [
+        'https://akaushik.org/',
+        'https://akaushik.org/writing',
+        'https://akaushik.org/writing/ai-for-msme',
+      ],
+    },
+  ])('breadcrumbGraph emits canonical $section detail-page crumbs', ({ section, slug, title, names, urls }) => {
+    const breadcrumbs = breadcrumbGraph(section, slug, title);
+    const items = breadcrumbs['itemListElement'] as Array<Record<string, unknown>>;
+
+    expect(breadcrumbs['@context']).toBe('https://schema.org');
+    expect(breadcrumbs['@type']).toBe('BreadcrumbList');
+    expect(breadcrumbs['@id']).toBe(`${urls.at(-1)}#breadcrumb`);
+    expect(items.map((item) => item['position'])).toEqual([1, 2, 3]);
+    expect(items.map((item) => item['name'])).toEqual(names);
+    expect(items.map((item) => item['item'])).toEqual(urls);
   });
 
   it('jsonLdString round-trips to JSON when the script-tag escapes are reversed', () => {

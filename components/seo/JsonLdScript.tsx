@@ -22,13 +22,16 @@ import type { ReactElement } from 'react';
 export function JsonLdScript({
   id,
   json,
+  nonce,
 }: {
   id: string;
   json: string;
+  nonce?: string;
 }): ReactElement {
   return (
     <script
       id={id}
+      nonce={nonce}
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: json }}
     />

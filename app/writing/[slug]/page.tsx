@@ -1,13 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import { getAllPosts, getPost, isDraftHidden, type WritingFrontmatter } from '@/lib/content';
 import { canonical } from '@/lib/canonical';
 import { getReadingTime } from '@/lib/reading-time';
 import { MDX_OPTIONS } from '@/lib/mdx-options';
 import { formatMonthYear } from '@/lib/dates';
-import { articleGraph, jsonLdString } from '@/lib/structured-data';
+import { articleGraph, breadcrumbGraph, jsonLdString } from '@/lib/structured-data';
 import { JsonLdScript } from '@/components/seo/JsonLdScript';
 import { HyperframesLoop, type WritingLoopSlug } from '@/components/media/hyperframes-loop';
 
@@ -53,6 +54,7 @@ export async function generateMetadata({
 
 export default async function WritingPost({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
   const post = getPost('writing', slug);
   if (!post) notFound();
   const fm = post.frontmatter as WritingFrontmatter;
@@ -68,6 +70,12 @@ export default async function WritingPost({ params }: { params: Promise<{ slug: 
       <JsonLdScript
         id={`ld-json-article-${slug}`}
         json={jsonLdString(articleGraph(slug, fm))}
+        nonce={nonce}
+      />
+      <JsonLdScript
+        id={`ld-json-breadcrumb-writing-${slug}`}
+        json={jsonLdString(breadcrumbGraph('writing', slug, fm.title))}
+        nonce={nonce}
       />
       <Link href="/writing" className="work-stub-back">
         ← All writing
