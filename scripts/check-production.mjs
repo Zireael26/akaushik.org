@@ -2,15 +2,20 @@
 
 import {
   assertOptionalFalse,
+  assertSingleAttempt,
   assertSmoke as assert,
   contentType,
   createRequester,
   errorMessage,
   extractHomepageImageUrls,
+  hasMailtoAnchor,
   isRecord,
   parseJson,
   parseMcpPayload,
+  validateCanonicalSitemap,
+  validateDiscoveryLinks,
   validateHomepageNonce,
+  validateRobotsSitemap,
 } from './check-production-lib.mjs';
 
 const DEFAULT_BASE_URL = 'https://akaushik.org';
@@ -252,11 +257,13 @@ await check(
     const samples = [];
 
     for (let index = 0; index < HOMEPAGE_SAMPLE_COUNT; index += 1) {
-      const { response, body, ttfbMs } = await request(url, {
+      const sample = await request(url, {
         accept: 'text/html',
         bodyType: 'text',
       });
+      const { response, body, ttfbMs } = sample;
       const sampleLabel = `sample ${index + 1}`;
+      assertSingleAttempt(sample, sampleLabel);
       assert(response.status === 200, `${sampleLabel} expected 200, received ${response.status}`);
       assert(!response.headers.has('location'), `${sampleLabel} returned a redirect`);
       assert(
@@ -297,18 +304,25 @@ await check('agent discovery Link header', () => {
   assert(homepage, 'canonical homepage was unavailable');
   const link = homepage.response.headers.get('link') ?? '';
   const advertised = [
-    '/llms.txt',
-    '/llms-full.txt',
-    '/sitemap.xml',
-    '/.well-known/agent-skills/index.json',
-    '/.well-known/mcp.json',
-    '/.well-known/api-catalog',
-    '/api/openapi.json',
-    '/api/docs',
+    { path: '/llms.txt', rel: 'describedby', type: 'text/markdown' },
+    { path: '/llms-full.txt', rel: 'describedby', type: 'text/markdown' },
+    { path: '/sitemap.xml', rel: 'sitemap', type: 'application/xml' },
+    {
+      path: '/.well-known/agent-skills/index.json',
+      rel: 'describedby',
+      type: 'application/json',
+    },
+    { path: '/.well-known/mcp.json', rel: 'describedby', type: 'application/json' },
+    {
+      path: '/.well-known/api-catalog',
+      rel: 'api-catalog',
+      type: 'application/linkset+json',
+    },
+    { path: '/api/openapi.json', rel: 'service-desc', type: 'application/json' },
+    { path: '/api/docs', rel: 'service-doc', type: 'text/html' },
   ];
-  const missing = advertised.filter((path) => !link.includes(path));
-  assert(missing.length === 0, `missing discovery targets: ${missing.join(', ')}`);
-  return `${advertised.length} targets advertised`;
+  const count = validateDiscoveryLinks(link, options.baseUrl, advertised);
+  return `${count} canonical targets advertised with exact relation and type`;
 });
 
 const agentSurfaces = [
@@ -317,7 +331,7 @@ const agentSurfaces = [
     type: /text\/plain/i,
     validate(body) {
       assert(/Content-Signal:/i.test(body), 'missing Content-Signal directive');
-      assert(/Sitemap:/i.test(body), 'missing sitemap directive');
+      validateRobotsSitemap(body, options.baseUrl);
     },
   },
   {
@@ -340,7 +354,7 @@ const agentSurfaces = [
     type: /xml/i,
     validate(body) {
       assert(body.includes('<urlset'), 'missing sitemap urlset');
-      assert(body.includes(options.baseUrl.origin), 'sitemap omits the canonical origin');
+      validateCanonicalSitemap(body, options.baseUrl);
     },
   },
   {
@@ -531,9 +545,10 @@ await check('nonce Content-Security-Policy', () => {
 
 await check('raw contact mailto', () => {
   assert(homepage, 'canonical homepage was unavailable');
-  const rawMailto =
-    /href=(?:"mailto:hello@akaushik\.org(?:\?[^"']*)?"|'mailto:hello@akaushik\.org(?:\?[^"']*)?')/i;
-  assert(rawMailto.test(homepage.body), 'raw mailto:hello@akaushik.org link is missing');
+  assert(
+    hasMailtoAnchor(homepage.body, 'hello@akaushik.org'),
+    'usable raw mailto:hello@akaushik.org anchor is missing',
+  );
   return 'raw mailto link present';
 });
 

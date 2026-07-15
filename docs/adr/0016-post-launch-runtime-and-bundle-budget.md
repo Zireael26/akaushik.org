@@ -30,7 +30,7 @@ Adopt **350 KiB (358,400 bytes)** as the active normal-motion desktop-home budge
 1. local scripts declared by the route HTML, including `/init-theme.js`; and
 2. the shared `three` chunk plus the AgentGraph and Wanderer scene chunks that the desktop/motion policy can load after hydration.
 
-The final integrated composition is 342,835 bytes (334.8 KiB), leaving 15,565 bytes (15.2 KiB, 4.5%) of headroom. Route HTML, CSS, fonts, images, and media remain separate measurements and do not count toward this script number.
+The final integrated composition is 342,854 bytes (334.8 KiB), leaving 15,546 bytes (15.18 KiB, 4.34%) of headroom. Route HTML, CSS, fonts, images, and media remain separate measurements and do not count toward this script number.
 
 The existing **400 KiB Lighthouse `resource-summary:script:size` warning** remains the CI monitoring ceiling. It is intentionally not renamed as the product target or a hard gate: Lighthouse `transferSize` is not byte-for-byte equivalent to the gzip response-body method above, and the current configuration is warning-only. Crossing either the 350 KiB operating budget or the 400 KiB Lighthouse warning requires a fresh snapshot and one of:
 
@@ -48,9 +48,9 @@ The current production artifact separates the scene code as follows:
 | -------------------------- | -----------: | -----------------------: | ------------------------------------------- |
 | Shared raw `three` chunk   |    548,509 B |                136,119 B | Count once whenever either scene loads.     |
 | AgentGraph component chunk |      6,172 B |                  2,662 B | Home route, normal-motion gate.             |
-| Wanderer component chunk   |      5,725 B |                  2,497 B | Home route, desktop and normal-motion gate. |
+| Wanderer component chunk   |      6,475 B |                  2,799 B | Home route, desktop and normal-motion gate. |
 
-The scene filenames are absent from the server-rendered HTML's script tags; they are runtime-loaded chunks. On the home route, AgentGraph already needs `three`, so the measured Wanderer-attributable lazy payload is 2,497 gzip bytes. Wanderer is home-route-only: detail and index routes do not load it or shared `three`. If that route gate is changed later, its hypothetical first-scene cost is 138,616 gzip bytes for `three` plus the crane chunk. This is not presented as a total before/after Wanderer delta: the wrapper shares an initial chunk and the SVG fallback contributes route HTML, and no controlled no-Wanderer rebuild was run.
+The scene filenames are absent from the server-rendered HTML's script tags; they are runtime-loaded chunks. On the home route, AgentGraph already needs `three`, so the measured Wanderer-attributable lazy payload is 2,799 gzip bytes. Wanderer is home-route-only: detail and index routes do not load it or shared `three`. If that route gate is changed later, its hypothetical first-scene cost is 138,918 gzip bytes for `three` plus the crane chunk. This is not presented as a total before/after Wanderer delta: the wrapper shares an initial chunk and the SVG fallback contributes route HTML, and no controlled no-Wanderer rebuild was run.
 
 ## Consequences
 
@@ -58,7 +58,7 @@ The scene filenames are absent from the server-rendered HTML's script tags; they
 - Raw Three.js remains an explicit, measured design cost rather than a permanently open exception.
 - Route HTML and conditional chunks cannot be conflated with static chunk disk sizes; every snapshot must report them separately.
 - A fresh Lighthouse run may produce a different number because its `transferSize` method, browser profile, headers, cache state, and optional analytics requests differ. Comparisons must use the same method on both sides.
-- The 2026-07-14 evidence is from a Node 22 local production server built from a live dirty checkout. It is not deployed-production, Vercel-runtime, analyzer, or post-deployment evidence.
+- The 2026-07-14 evidence began from a Node 22 local production server built from a live dirty checkout; route and chunk measurements were refreshed on 2026-07-15 from the clean, build-equivalent platform tree. It is not deployed-production, Vercel-runtime, analyzer, or post-deployment evidence.
 
 ## Alternatives considered
 

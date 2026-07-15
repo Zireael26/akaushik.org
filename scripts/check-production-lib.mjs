@@ -72,6 +72,7 @@ export function createRequester({
     url,
     { accept = '*/*', method = 'GET', headers = {}, body, bodyType = 'none' } = {},
   ) {
+    const overallStart = performance.now();
     const requestHeaders = new Headers(headers);
     if (!requestHeaders.has('accept')) requestHeaders.set('accept', accept);
     requestHeaders.set('user-agent', 'akaushik.org-production-smoke/1.0');
@@ -102,7 +103,13 @@ export function createRequester({
 
         phase = 'response body';
         const responseBody = await readResponseBody(response, bodyType);
-        return { response, body: responseBody, ttfbMs };
+        return {
+          response,
+          body: responseBody,
+          ttfbMs,
+          attempts: attempt,
+          totalElapsedMs: performance.now() - overallStart,
+        };
       } catch (error) {
         await cancelResponseBody(response);
         if (attempt >= maxAttempts || !isTransientFetchFailure(error)) throw error;
@@ -115,6 +122,110 @@ export function createRequester({
 
     throw new Error(`request attempts exhausted for ${url.href}`);
   };
+}
+
+export function assertSingleAttempt(result, label) {
+  assertSmoke(
+    result.attempts === 1,
+    `${label} required ${result.attempts} attempts over ${Math.round(result.totalElapsedMs)} ms`,
+  );
+}
+
+function linkParameterValue(parameters, name) {
+  const pattern = new RegExp(`;\\s*${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^;\\s]+))`, 'i');
+  const match = parameters.match(pattern);
+  return match?.[1] ?? match?.[2] ?? match?.[3] ?? null;
+}
+
+export function parseLinkHeader(value, baseUrl) {
+  const entries = [];
+  const pattern = /<([^<>]+)>((?:\s*;\s*[^,]*)?)(?=\s*(?:,|$))/g;
+  for (const match of value.matchAll(pattern)) {
+    let url;
+    try {
+      url = new URL(match[1], baseUrl);
+    } catch {
+      throw new Error(`Link target is not a valid URL: ${match[1]}`);
+    }
+    entries.push({
+      url,
+      rel: (linkParameterValue(match[2], 'rel') ?? '')
+        .split(/\s+/)
+        .map((relation) => relation.toLowerCase())
+        .filter(Boolean),
+      type: (linkParameterValue(match[2], 'type') ?? '').toLowerCase(),
+    });
+  }
+
+  const residue = value.replace(pattern, '').replace(/[\s,]/g, '');
+  assertSmoke(residue.length === 0, `Link header contains malformed fields: ${residue}`);
+  return entries;
+}
+
+export function validateDiscoveryLinks(value, baseUrl, expected) {
+  const entries = parseLinkHeader(value, baseUrl);
+  for (const contract of expected) {
+    const matches = entries.filter(
+      (entry) =>
+        entry.url.origin === baseUrl.origin &&
+        entry.url.pathname === contract.path &&
+        entry.url.search === '' &&
+        entry.url.hash === '' &&
+        entry.rel.includes(contract.rel) &&
+        entry.type === contract.type,
+    );
+    assertSmoke(
+      matches.length === 1,
+      `${contract.path} must be advertised exactly once with rel=${contract.rel} and type=${contract.type}`,
+    );
+  }
+  return expected.length;
+}
+
+export function validateRobotsSitemap(body, baseUrl) {
+  const sitemapLines = [...body.matchAll(/^\s*Sitemap:\s*(\S+)\s*$/gim)].map((match) => match[1]);
+  const expected = new URL('/sitemap.xml', baseUrl).href;
+  assertSmoke(sitemapLines.length === 1, 'robots.txt must contain exactly one Sitemap directive');
+  let actual;
+  try {
+    actual = new URL(sitemapLines[0]).href;
+  } catch {
+    throw new Error(`robots.txt Sitemap is not a valid absolute URL: ${sitemapLines[0]}`);
+  }
+  assertSmoke(actual === expected, `robots.txt Sitemap is ${actual}, expected ${expected}`);
+}
+
+export function validateCanonicalSitemap(body, baseUrl) {
+  const locations = [...body.matchAll(/<loc>\s*([^<]+?)\s*<\/loc>/gi)].map((match) =>
+    match[1].replaceAll('&amp;', '&'),
+  );
+  assertSmoke(locations.length > 0, 'sitemap contains no URL locations');
+  for (const location of locations) {
+    let url;
+    try {
+      url = new URL(location);
+    } catch {
+      throw new Error(`sitemap location is not a valid absolute URL: ${location}`);
+    }
+    assertSmoke(
+      url.origin === baseUrl.origin && !url.username && !url.password,
+      `sitemap location is not canonical: ${url.href}`,
+    );
+  }
+  return locations.length;
+}
+
+export function hasMailtoAnchor(body, email) {
+  const rendered = body
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<(script|style|template)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '');
+  for (const match of rendered.matchAll(/<a\b([^>]*)>/gi)) {
+    const href = attributeValue(match[1], 'href');
+    if (!href) continue;
+    const address = href.slice(0, href.indexOf('?') === -1 ? undefined : href.indexOf('?'));
+    if (address.toLowerCase() === `mailto:${email.toLowerCase()}`) return true;
+  }
+  return false;
 }
 
 function cspDirective(policy, name) {
@@ -162,34 +273,43 @@ export function validateHomepageNonce(sample, label) {
   assertSmoke(policies.length > 0, `${label} Content-Security-Policy is missing`);
 
   const policyNonces = [];
-  let hasStrictDynamic = false;
   for (let index = 0; index < policies.length; index += 1) {
     const policy = policies[index];
-    const scriptSource =
-      cspDirective(policy, 'script-src-elem') ||
-      cspDirective(policy, 'script-src') ||
-      cspDirective(policy, 'default-src');
-    if (!scriptSource) continue;
-
     const policyLabel = `${label} CSP policy ${index + 1}`;
-    assertSmoke(
-      !/(?:^|\s)'unsafe-inline'(?:\s|$)/i.test(scriptSource),
-      `${policyLabel} effective script directive contains 'unsafe-inline'`,
-    );
-    hasStrictDynamic ||= /(?:^|\s)'strict-dynamic'(?:\s|$)/i.test(scriptSource);
+    const scriptSource = cspDirective(policy, 'script-src');
+    const scriptElementSource = cspDirective(policy, 'script-src-elem');
+    const effectiveDirectives = [
+      ...(scriptSource ? [['script-src', scriptSource]] : []),
+      ...(scriptElementSource ? [['script-src-elem', scriptElementSource]] : []),
+      ...(!scriptSource && !scriptElementSource
+        ? [['default-src', cspDirective(policy, 'default-src')]]
+        : []),
+    ];
 
-    const nonceSources = [...scriptSource.matchAll(/'nonce-([^']+)'/gi)];
-    assertSmoke(
-      nonceSources.length === 1,
-      `${policyLabel} effective script directive must contain exactly one nonce source`,
-    );
-    const nonce = nonceSources[0][1];
-    assertSmoke(nonce.length > 0, `${policyLabel} script nonce is empty`);
-    policyNonces.push(nonce);
+    for (const [directiveName, directive] of effectiveDirectives) {
+      assertSmoke(directive, `${policyLabel} has no effective script directive`);
+      const directiveLabel = `${policyLabel} ${directiveName}`;
+      assertSmoke(
+        !/(?:^|\s)'unsafe-inline'(?:\s|$)/i.test(directive),
+        `${directiveLabel} contains 'unsafe-inline'`,
+      );
+      assertSmoke(
+        /(?:^|\s)'strict-dynamic'(?:\s|$)/i.test(directive),
+        `${directiveLabel} omits 'strict-dynamic'`,
+      );
+
+      const nonceSources = [...directive.matchAll(/'nonce-([^']+)'/gi)];
+      assertSmoke(
+        nonceSources.length === 1,
+        `${directiveLabel} must contain exactly one nonce source`,
+      );
+      const nonce = nonceSources[0][1];
+      assertSmoke(nonce.length > 0, `${directiveLabel} nonce is empty`);
+      policyNonces.push(nonce);
+    }
   }
 
   assertSmoke(policyNonces.length > 0, `${label} has no effective CSP script directive`);
-  assertSmoke(hasStrictDynamic, `${label} effective CSP script directives omit 'strict-dynamic'`);
   const responseNonce = policyNonces[0];
   assertSmoke(
     policyNonces.every((nonce) => nonce === responseNonce),

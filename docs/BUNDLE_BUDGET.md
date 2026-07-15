@@ -15,13 +15,13 @@ The 350 KiB budget counts local script response bodies declared by `/` plus scen
 
 ## Current baseline
 
-The [2026-07-14 Node 22 snapshot](bundle-snapshots/2026-07-14-bundle.md) was captured from a local production server built from the live dirty checkout.
+The [2026-07-14 Node 22 snapshot](bundle-snapshots/2026-07-14-bundle.md) began from a live dirty checkout and was refreshed on 2026-07-15 from the clean, build-equivalent platform tree.
 
 | Route        | Route HTML, identity | Route HTML, gzip median | HTML-declared scripts |                   Conditional scene scripts |      Composed script body |
 | ------------ | -------------------: | ----------------------: | --------------------: | ------------------------------------------: | ------------------------: |
-| `/`          |            111,119 B |                31,738 B |             201,557 B | 141,278 B (`three` + AgentGraph + Wanderer) | **342,835 B (334.8 KiB)** |
-| `/work/neev` |             47,316 B |                15,915 B |             195,427 B |                 none; Wanderer is home-only |     195,427 B (190.8 KiB) |
-| `/writing`   |             36,101 B |                11,318 B |             194,821 B |                 none; Wanderer is home-only |     194,821 B (190.3 KiB) |
+| `/`          |            111,405 B |                32,279 B |             201,274 B | 141,580 B (`three` + AgentGraph + Wanderer) | **342,854 B (334.8 KiB)** |
+| `/work/neev` |             47,613 B |                16,379 B |             195,144 B |                 none; Wanderer is home-only |     195,144 B (190.6 KiB) |
+| `/writing`   |             36,297 B |                11,749 B |             194,538 B |                 none; Wanderer is home-only |     194,538 B (190.0 KiB) |
 
 These main routes are request-rendered (`ƒ`) because [ADR-0014](adr/0014-nonce-based-csp.md) requires a per-response nonce. They do not have route `.html` files under `.next/server/app`. The gzip HTML values are five-response medians because each nonce changes compression slightly.
 
@@ -29,20 +29,20 @@ These main routes are request-rendered (`ƒ`) because [ADR-0014](adr/0014-nonce-
 
 ## Scene budget
 
-| Chunk role           |       Raw | Local gzip body | Brotli-11 artifact estimate |
-| -------------------- | --------: | --------------: | --------------------------: |
-| Shared raw `three`   | 548,509 B |       136,119 B |                   110,875 B |
-| AgentGraph component |   6,172 B |         2,662 B |                     2,320 B |
-| Wanderer component   |   5,725 B |         2,497 B |                     2,155 B |
+| Chunk role           |       Raw | Local gzip body |
+| -------------------- | --------: | --------------: |
+| Shared raw `three`   | 548,509 B |       136,119 B |
+| AgentGraph component |   6,172 B |         2,662 B |
+| Wanderer component   |   6,475 B |         2,799 B |
 
 All three are lazy chunks and are absent from the route HTML's `<script src>` set. [AgentGraphClient](../components/scene/AgentGraphClient.tsx) loads AgentGraph after hydration when motion is allowed. [WandererCraneClient](../components/scene/WandererCraneClient.tsx) additionally requires the home route and a viewport of at least 861 px.
 
 Wanderer therefore has two honest cost readings:
 
-- **Home:** 2,497 gzip bytes attributable to the Wanderer component after AgentGraph has already loaded shared `three`.
-- **Hypothetical first-scene cost:** 138,616 gzip bytes if a future route-policy change lets Wanderer load without AgentGraph. Current non-home routes load neither.
+- **Home:** 2,799 gzip bytes attributable to the Wanderer component after AgentGraph has already loaded shared `three`.
+- **Hypothetical first-scene cost:** 138,918 gzip bytes if a future route-policy change lets Wanderer load without AgentGraph. Current non-home routes load neither.
 
-The initial wrapper chunk and server-rendered SVG are shared with other code/HTML and were not isolated by a no-Wanderer counterfactual build. Do not label 2,480 bytes as the total reinstatement delta.
+The initial wrapper chunk and server-rendered SVG are shared with other code/HTML and were not isolated by a no-Wanderer counterfactual build. Do not label 2,799 bytes as the total reinstatement delta.
 
 ## Measurement procedure
 
