@@ -9,10 +9,9 @@ const MARQUEE_ITEMS = [
   'Hugging Face TEI',
   'Qdrant',
   'MCP',
-  'Framer Motion',
-  'r3f',
+  'React 19',
+  'Three.js',
   'Tailwind 4',
-  'shadcn/ui v4',
   'Vercel',
   'Kubernetes',
   'Ory',
@@ -98,7 +97,7 @@ export default function Hero() {
               <span className="scene-label-key">scene.live</span>
               <span className="scene-label-val">agent-graph · three.js</span>
             </div>
-            {/* SVG paints first (SSR-rendered, reduced-motion-safe). The R3F
+            {/* SVG paints first (SSR-rendered, reduced-motion-safe). The Three.js
                 canvas loads on top and visually covers it once mounted. */}
             <StaticSVGScene />
             <AgentGraphClient />
