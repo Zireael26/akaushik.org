@@ -60,7 +60,7 @@ A living document. Phases are ordered by dependency, not calendar. Each phase is
 ## Phase 5 — Launch
 
 - [x] Hero raw-Three.js canvas — agent-graph live scene (4 nodes, rings, labels, edges, packets, pointer parallax; ADR-0012 supersedes the earlier framework bump)
-- [~] Wanderer full Three.js port — 8 POSES, IntersectionObserver dispatch, damp lerp, scroll-velocity rotation, accent sync (disabled 2026-05-11 per PR #58; reinstate tracked post-launch — see `docs/wanderer-redesign-brief.md`)
+- [x] Wanderer full Three.js port — 8 POSES, IntersectionObserver dispatch, damp lerp, scroll-velocity rotation, and accent sync; reinstated 2026-07-15 as a home-only, desktop-only gated lazy runtime
 - [x] OG images via `next/og` — home + per case study + per writing post
 - [x] Cloudflare Web Analytics beacon (token-gated, cookieless)
 - [x] Head `<link>` tags synced to proxy Link header shape
@@ -72,11 +72,11 @@ A living document. Phases are ordered by dependency, not calendar. Each phase is
 
 - [~] Calendly / Cal.com URL wired into Contact ghost button — current behavior falls back to `mailto:hello@akaushik.org?subject=20-minute%20call`; replace with a real scheduler URL when available
 - [x] Portrait photo swap (`/images/about/abhishek.webp`, 4:5) — shipped 2026-05-11 (CHANGELOG)
-- [ ] Wanderer crane redesign + reinstate — see `docs/wanderer-redesign-brief.md`
+- [~] Wanderer crane redesign + reinstate — implementation reinstated and local browser verification green 2026-07-15; clean-head bundle refresh, Linux CI, and deployed-production proof remain open under spec-003 T9/T10/T13 (see `docs/wanderer-redesign-brief.md`)
 - [~] Case-study reel MP4s — HyperFrames scaffold + 8 compositions + React integration landed (ADR-0008); remaining work is the render pass (`pnpm render:work && pnpm render:posters`) + committing `public/video/work/*.{mp4,webp}`. Blocked in-sandbox on FFmpeg/Chrome availability; runs cleanly on a local dev box
 - [~] `isitagentready.com` scan against prod + dated snapshot in `docs/agent-readiness-snapshots/` — first dated snapshot landed 2026-05-19 (`docs/agent-readiness-snapshots/2026-05-19.md`); PNG from the live UI still pending owner action (curl-based snapshot is in place)
-- [~] `pnpm analyze` / Lighthouse bundle audit — first measurement landed 2026-05-19; latest 2026-07-04 audit measured 299,026 bytes of script transfer. `lighthouserc.yml` ceiling remains 400 KiB `warn` to suppress noise; the 150 KiB aspiration is still open.
-- [~] Script-bundle overrun (now ~292 KiB > 150 KiB target). **Resolution step (2026-05-19):** ported `components/scene/AgentGraph.tsx` to raw `three.js` (ADR-0012) and removed the prior framework dependencies. The remaining gap is the `three` runtime itself. Further reduction requires either accepting the new practical target in an ADR or porting to a smaller WebGL/static primitive — deferred until the next quarterly gap-analysis cycle.
+- [~] `pnpm analyze` / Lighthouse bundle audit — first measurement landed 2026-05-19; the latest committed baseline measured 299,026 bytes of script transfer on 2026-07-04, before Wanderer reinstatement. A clean-head refresh remains open under spec-003 T9. `lighthouserc.yml` remains at a 400 KiB `warn` ceiling; the 150 KiB aspiration is still open.
+- [~] Script-bundle overrun (latest committed baseline ~292 KiB > 150 KiB target; current post-reinstatement total unmeasured). **Resolution step (2026-05-19):** ported `components/scene/AgentGraph.tsx` to raw `three.js` (ADR-0012) and removed the prior framework dependencies. The remaining measured gap is the `three` runtime itself. Further reduction requires fresh evidence, then either accepting a new practical target in an ADR or porting to a smaller WebGL/static primitive.
 - [x] WCAG 2.0/2.1 contrast violations on the home page — closed 2026-05-19. `--ink-70` / `--ink-60` / `--ink-40` opacity caps bumped in `app/globals.css`; composited values now clear 4.5:1 against the parchment background. `e2e/home.spec.ts` axe-core gate armed (no more `test.fixme`); axe-core scan returns zero violations.
 - [~] Lighthouse category thresholds — 2026-05-19 measurement landed; performance + accessibility + best-practices promoted to `error` severity (desktop 0.95 / 0.95 / 0.95, mobile 0.9 / 0.95 / 0.9). SEO + JS-budget remain `warn` until SEO crosses 1.0 and the bundle overrun resolves
 - [x] `/api/docs` human-readable page rendering the OpenAPI spec — shipped 2026-05-19 (gap-analysis PR-5). Server-rendered React reading from `lib/openapi-spec.ts`; same source as `/api/openapi.json`. No client JS.

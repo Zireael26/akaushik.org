@@ -1,6 +1,6 @@
 # Wanderer redesign brief
 
-**Status:** implementation reinstated and locally verified; Linux CI/production proof open.
+**Status:** implementation reinstated and locally verified; clean-head bundle, Linux CI, and production proof open.
 **Owner:** Abhishek Kaushik.
 **Last updated:** 2026-07-15.
 
@@ -40,9 +40,10 @@ The historical checklist is retained so code closure and documentation/validatio
 - [x] Replace unconditional skip wrappers with policy-specific browser coverage, including real-canvas and forced-fallback proofs.
 - [x] Refresh `.claude/primers/wanderer-crane-scene.md` — drop the STATUS banner, bump `last_refreshed`.
 - [x] Update `.claude/primers/INDEX.md` — drop the "Currently disabled" tag.
-- [~] Reconcile the post-launch ROADMAP entry. Code reinstatement is recorded; browser and production proof remain open.
+- [x] Reconcile the ROADMAP entries: implementation is complete; clean-head bundle, Linux CI, and production proof remain explicit post-launch validation work.
 - [x] Update the primer's Data flow + Gotchas sections for the home-route and lazy-load policies; per-frame channels remain unchanged.
 - [x] Add a `docs/CHANGELOG.md` entry under `[Unreleased]` summarising the reinstatement.
+- [~] Refresh clean-head bundle evidence and complete Linux CI/production validation under spec-003 T9/T10/T13; the 2026-07-04 bundle snapshot predates reinstatement.
 
 ## What does **not** need to change to reinstate
 

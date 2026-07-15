@@ -3,7 +3,7 @@ slug: wanderer-crane-scene
 purpose: Home-only desktop paper-crane Three.js companion driven by document scroll and IntersectionObserver pose anchors, with a no-WebGL SVG fallback and strict route/motion gates.
 pinned_to: 087020d
 created: 2026-05-15
-last_refreshed: 2026-07-14
+last_refreshed: 2026-07-15
 related_primers: []
 ---
 
@@ -42,6 +42,10 @@ A scroll past the `[data-companion-pose="work"]` section:
 ## Test commands
 
 ```bash
+# Unit: retain visible ratios across incremental observer callbacks and select
+# the globally most-visible pose anchor.
+pnpm exec vitest run components/scene/WandererCrane.test.ts
+
 # Build/start separately, then prove real canvas, forced no-WebGL fallback,
 # route/breakpoint absence, and live motion-policy teardown/restore.
 PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 pnpm exec playwright test \
@@ -49,13 +53,13 @@ PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 pnpm exec playwright test \
   --project=chromium-desktop --workers=1
 ```
 
-There are no Vitest tests for the scene; the closest thing to a fixture is the SVG silhouette inside `Wanderer.tsx` — it must remain a byte-faithful port of `_reference/portfolio/companion.js:211–219`.
+`WandererCrane.test.ts` is load-bearing for pose arbitration: it proves that an incremental callback for a less-visible section does not erase the still-visible dominant section, then proves dominance transfers when that section exits. It does not exercise the browser's `IntersectionObserver`; the Playwright coverage remains the runtime proof. The SVG silhouette inside `Wanderer.tsx` must remain a byte-faithful port of `_reference/portfolio/companion.js:211–219`.
 
 ## Gotchas
 
 - **Three lerps, not one.** Eight pose channels (x, y, z, rotY, rotX, scale, flap, spin) are lerped independently every frame. If you add a channel, add it to both `POSES` rows _and_ the per-frame lerp block; missing entries silently freeze at the hero defaults.
 - **The policy is intentionally checked twice.** `WandererCraneClient` owns live route/viewport/motion transitions through `usePathname` and `useSyncExternalStore`; `WandererCrane` repeats the checks at effect mount so a policy change while the lazy chunk is in flight cannot create a stale canvas.
-- **IntersectionObserver thresholds are `[0.2, 0.45, 0.7]`** and the algorithm picks the highest intersecting ratio. Sections shorter than ~20% of the viewport will never trigger a pose change — keep `[data-companion-pose]` blocks tall, or add a sentinel.
+- **IntersectionObserver thresholds are `[0.2, 0.45, 0.7]`** and the algorithm picks the highest intersecting ratio. Short sections can reach an intersection ratio of `1` when fully visible. A very tall section's maximum ratio is roughly viewport height divided by section height, so it may never reach even the `0.2` threshold; use a sentinel or adjust the thresholds if such an anchor needs finer updates.
 - **`scrollVel` damps each frame** (`*= 0.9`). Fast flicks momentarily flare wing-flap amount + Y-rotation; this is intentional. Don't normalize it without checking the design intent.
 - **WebGL context creation is the bail-out.** A `try`/`catch` around `new THREE.WebGLRenderer` is the only context-loss handler — there's no `webglcontextlost` listener. Acceptable today because the SVG fallback is the explicit recovery surface; revisit if mobile Safari starts losing context mid-session.
 - **`#companion` host is global.** Only one Wanderer per page. Adding a second `<Wanderer />` will fight over the same `#companion` div and the SVG removal/restore will tear.
