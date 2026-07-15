@@ -266,7 +266,7 @@ test.describe('MCP Streamable HTTP endpoint', () => {
         { jsonrpc: '2.0', method: 'tools/list' },
       ],
     });
-    expect(notificationOnly.status()).toBe(204);
+    expect(notificationOnly.status()).toBe(202);
     expect((await notificationOnly.body()).byteLength).toBe(0);
 
     const oversized = await request.post('/api/mcp', {
@@ -444,4 +444,5 @@ test.describe('MCP Streamable HTTP endpoint', () => {
       }
     }
   });
+
 });

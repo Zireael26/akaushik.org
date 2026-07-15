@@ -27,8 +27,8 @@ describe('MCP unsupported HTTP methods', () => {
     }
   });
 
-  it('keeps GET origin-guarded for Next.js automatic HEAD delegation', async () => {
-    const response = await route.GET(
+  it('keeps HEAD origin-guarded', async () => {
+    const response = await route.HEAD(
       new Request('https://akaushik.org/api/mcp', {
         method: 'HEAD',
         headers: { Origin: 'https://evil.example' },

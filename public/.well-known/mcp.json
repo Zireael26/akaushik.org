@@ -14,7 +14,7 @@
   "protocolSupport": {
     "current": "2025-11-25",
     "missingHeaderFallback": "2025-03-26",
-    "batchSupport": "Arrays of 1 to 32 calls are accepted only for 2025-03-26 compatibility requests; no-id calls produce no response entries and an all-notification batch returns HTTP 204",
+    "batchSupport": "Arrays of 1 to 32 calls are accepted only for 2025-03-26 compatibility requests; no-id calls produce no response entries and an all-notification batch returns HTTP 202",
     "maxBatchSize": 32,
     "boundedMethods": [
       "initialize",

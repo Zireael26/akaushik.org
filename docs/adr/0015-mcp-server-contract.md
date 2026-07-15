@@ -36,7 +36,7 @@ the existing Next.js application.
 - JSON-RPC array batches are accepted only on the `2025-03-26` compatibility
   path, where the transport revision permits them, and are capped at 32 calls
   before dispatch. Empty batches remain invalid, notification-only batches receive
-  HTTP 204, and later protocol revisions reject arrays. Every no-id call is
+  HTTP 202, and later protocol revisions reject arrays. Every no-id call is
   dispatched as a notification where applicable, including request-shaped
   methods, and produces no JSON-RPC response. Numeric request IDs must be
   integers. Protocol failures use the standard `-32700`, `-32600`, `-32601`,
@@ -54,6 +54,11 @@ production gate.
 
 The runtime implementation remains dependency-free. The official MCP Inspector
 is pinned as a verification client, not added to production dependencies.
+
+The framework-neutral HTTP contract lives in `lib/mcp-http.ts`; the App Router
+adapter delegates method, header, and raw-body handling to it. This keeps Origin,
+protocol, response-header, and error behavior centralized before any later
+transport-boundary change.
 
 ## Discovery and documentation
 

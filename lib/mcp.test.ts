@@ -356,7 +356,7 @@ describe('MCP JSON-RPC errors', () => {
     ]);
   });
 
-  it('returns 204 without a body for an all-notification fallback batch', () => {
+  it('returns 202 without a body for an all-notification fallback batch', () => {
     const response = handleMcpPayload(
       [
         { jsonrpc: '2.0', method: 'notifications/initialized' },
@@ -364,7 +364,7 @@ describe('MCP JSON-RPC errors', () => {
       ],
       MCP_FALLBACK_PROTOCOL_VERSION,
     );
-    expect(response).toEqual({ status: 204, body: null });
+    expect(response).toEqual({ status: 202, body: null });
   });
 
   it('publishes one centralized 32-member fallback batch limit', () => {

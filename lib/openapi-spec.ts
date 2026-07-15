@@ -142,9 +142,9 @@ export const OPENAPI_SPEC = {
               },
             },
           },
-          '202': { description: 'Single notification accepted; no response body' },
-          '204': {
-            description: 'Fallback batch contained only no-id calls; no response body',
+          '202': {
+            description:
+              'Single notification or notification-only compatibility batch accepted; no response body',
           },
           '400': {
             description:
