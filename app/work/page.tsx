@@ -4,7 +4,7 @@ import { CASE_STUDIES } from '@/components/sections/Work';
 import { canonical } from '@/lib/canonical';
 
 const DESCRIPTION =
-  'Four case studies — Neev, VeriCite, Bluehost agents framework, curat.money — ordered by strategic weight.';
+  'Five case studies — Neev, VeriCite, Bluehost agents framework, curat.money, and ClusterBid — ordered by strategic weight.';
 
 export const metadata: Metadata = {
   title: 'Selected work',

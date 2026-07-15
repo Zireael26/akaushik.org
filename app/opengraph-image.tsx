@@ -73,7 +73,7 @@ export default async function OGImage() {
             paddingTop: 24,
           }}
         >
-          <span>Neev · VeriCite · Bluehost · curat.money</span>
+          <span>Neev · VeriCite · Bluehost · curat.money · ClusterBid</span>
           <span style={{ color: '#13423D' }}>hello@akaushik.org</span>
         </div>
       </div>

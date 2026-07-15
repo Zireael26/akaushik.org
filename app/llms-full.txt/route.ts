@@ -64,11 +64,7 @@ function renderServices(): string {
 // §4.4. Keep the H1 + blockquote so agents see semantically complete
 // documents; the wrapper contributes only the slug + metadata list that the
 // body can't carry inline.
-function renderCaseStudy(
-  slug: string,
-  fm: CaseStudyFrontmatter,
-  body: string,
-): string {
+function renderCaseStudy(slug: string, fm: CaseStudyFrontmatter, body: string): string {
   const stack = fm.stack?.length ? fm.stack.join(', ') : '—';
   return [
     `<case-study slug="${slug}">`,
@@ -85,11 +81,7 @@ function renderCaseStudy(
   ].join('\n');
 }
 
-function renderWritingPost(
-  slug: string,
-  fm: WritingFrontmatter,
-  body: string,
-): string {
+function renderWritingPost(slug: string, fm: WritingFrontmatter, body: string): string {
   return [
     `<post slug="${slug}">`,
     '',
@@ -109,6 +101,7 @@ const CASE_STUDY_ORDER: ReadonlyArray<string> = [
   'vericite',
   'bluehost-agents',
   'curat-money',
+  'clusterbid',
 ];
 
 function buildCorpus(): string {

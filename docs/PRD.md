@@ -2,12 +2,13 @@
 
 **Status:** Draft v0.1 (review)
 **Author:** Abhishek Kaushik (with Claude as drafting partner)
-**Last updated:** 2026-04-19
+**Last updated:** 2026-07-14
 
 **Companion docs (to be produced after PRD sign-off):**
+
 - `ROADMAP.md` — phased delivery plan
-- `ADR-0001-stack.md` — Next.js + TS + Tailwind + shadcn/ui, pinned versions
-- `CASE_STUDIES_OUTLINE.md` — problem → approach → outcome skeletons for the four featured projects (draft alongside this doc)
+- `ADR-0001-stack.md` — original Next.js + TypeScript + Tailwind stack decision (later dependency changes remain historical)
+- `CASE_STUDIES_OUTLINE.md` — problem → approach → outcome skeletons for the five featured projects (draft alongside this doc)
 - `DESIGN_DIRECTION.md` — aesthetic principles, motion language, typography & color hypotheses (draft alongside this doc)
 - `BIO_DRAFT.md` — hero tagline + About paragraph drafts (draft alongside this doc)
 - `AGENT_READINESS.md` — hard requirement spec aligning the site with Cloudflare's isitagentready.com checks across Discoverability / Content / Bot Access Control / Capabilities (draft alongside this doc)
@@ -66,11 +67,13 @@ The site is one navigable surface with a primary top-nav and a deliberate scroll
 
 ### 5.2 Featured Projects / Case Studies
 
-Four case studies, ordered deliberately:
+Five case studies, ordered deliberately:
+
 1. **Neev** — MSME business operations platform (hero case study; the anchor for the MSME thesis).
 2. **VeriCite** — institutional RAG system (proof of AI-systems depth).
 3. **Bluehost agents framework backend** — day-job platform work (proof of operating at scale).
 4. **curat.money** — crypto-card comparison platform (proof of breadth and consumer-product engineering).
+5. **ClusterBid** — inference-cloud platform engineering through a real-host UAT (proof of pre-production delivery and systems discipline).
 
 Each case study has a summary card on the index and a full page: problem in the client's words, approach, the key trade-offs, what shipped, the systems detail that makes it credible, and honest scope on what was and wasn't included.
 
@@ -145,7 +148,7 @@ Before advancing past PRD:
 
 - [ ] Goals and non-goals reflect Abhishek's actual positioning (not a generic portfolio PRD).
 - [ ] MSME-first thesis is unambiguous and hero-level.
-- [ ] Four case studies are the right four.
+- [ ] Five case studies are the right five.
 - [ ] Motion strategy is restrained enough that it won't read as "AI-agency template."
 - [ ] Success metrics are measurable without needing analytics we don't yet have.
 - [ ] Open questions Q1–Q5 are acknowledged (not answered) before scaffolding begins.

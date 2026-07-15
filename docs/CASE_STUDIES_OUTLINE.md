@@ -2,9 +2,9 @@
 
 **Status:** Draft v0.1 (review)
 **Author:** Claude (structural skeleton from interview + repo context; Abhishek to fill technical gaps and confirm scope)
-**Last updated:** 2026-04-19
+**Last updated:** 2026-07-14
 
-Four featured case studies, ordered by strategic weight: Neev first (the MSME thesis anchor), VeriCite second (the AI-systems depth proof), Bluehost agents framework third (the operating-at-scale proof), curat.money fourth (the breadth proof).
+Five featured case studies, ordered by strategic weight: Neev first (the MSME thesis anchor), VeriCite second (the AI-systems depth proof), Bluehost agents framework third (the operating-at-scale proof), curat.money fourth (the breadth proof), ClusterBid fifth (the UAT platform-engineering proof).
 
 Each case study uses the same five-beat structure so a reader who has read one knows how to read the others: **Context → Problem → Approach → What shipped → Honest scope.** Two optional beats — **Trade-offs** and **What I'd do next** — appear where they have content.
 
@@ -184,22 +184,64 @@ On the portfolio, this case study is framed as *product engineering for a niche 
 
 ---
 
-## 5. Cross-cutting notes
+## 5. ClusterBid — UAT platform engineering
 
-### 5.1 What each case study is evidence of
+**Headline:** _From monorepo checks to a real-host k3s UAT, with every mock and boundary named._
+**Sub-headline:** A Go-and-Next.js inference-cloud platform taken through repository-wide validation, Helm deployment, and a mock-inference metering-to-billing smoke — pre-production proof, not a production outcome.
 
-| Case study | Primary evidence of… |
-| --- | --- |
-| Neev | MSME-thesis depth; systems + product discipline; solo ownership |
-| VeriCite | Institutional AI-systems depth; retrieval-stack sophistication |
-| Bluehost agents framework | Scale; production responsibility; team context |
-| curat.money | Product breadth; data-pipeline-to-web-product operational chops |
+### 5.1 Context
 
-### 5.2 Case-study page template
+ClusterBid is a pre-production, region-pinned inference-cloud platform. Go services and shared packages, Next.js clients, TypeScript packages, Helm charts, and infrastructure code live under one review surface. Abhishek's role is bounded to engineering advisor across process and platform.
+
+### 5.2 Problem
+
+- A Go workspace needs module-aware vet, lint, race-test, and coverage loops; one root `go vet ./...` cannot honestly cover it.
+- The Next.js clients and TypeScript packages keep separate build, lint, and test contracts that still need one repository-level entry point.
+- Local tests and rendered charts do not prove a real deployment. UAT exposed stateful-container capability, isolated image-build, and browser-origin assumptions that had to be fixed in source.
+
+### 5.3 Approach
+
+- **Makefile as routing layer.** Enumerate workspace modules, route each subtree to its native checks, and compose them through `quality-gate-local` with repository linting.
+- **Native git-boundary checks.** Keep conventional-commit and process-gate policy in `.githooks/commit-msg` and `.githooks/pre-push`, independent of any nested Next.js client.
+- **UAT as an explicit contract.** Use a dedicated single-VM k3s overlay and runbook with one-node NATS settings, environment-specific URLs, mock inference, local Stripe, and named secret requirements.
+- **Persist deployment findings.** Move live-proven chart, image-build, and runtime-origin corrections back into tracked source rather than retaining imperative cluster patches.
+
+### 5.4 What reached UAT
+
+- Real-host UAT surfaces for the marketing site, console, and API gateway over publicly valid TLS.
+- A mock-inference request path through gateway, metering, and billing, with spend and reconciliation checked in UAT.
+- Durable repository fixes for the chart, isolated service builds, and console runtime-origin configuration.
+- An asset-free static portfolio reel, so publishing the case study introduces no ClusterBid media request.
+
+### 5.5 Trade-offs
+
+- **One repository over service-by-service repositories.** Cross-surface changes stay reviewable together, but validation needs an explicit routing layer.
+- **Mock providers inside UAT.** Service topology and billing contracts can be exercised without presenting GPU or payment-provider readiness as complete.
+- **Single-node UAT over high availability.** The environment is an economical integration boundary, not a production topology recommendation.
+
+### 5.6 Honest scope
+
+This case study claims UAT and pre-production engineering only. It does not claim customer traffic, adoption, revenue, a production deployment, live GPU inference, or live Stripe processing. Technical statements are limited to the current repository and its recorded UAT evidence; the owner-authored role is **Engineering advisor · process & platform**.
+
+---
+
+## 6. Cross-cutting notes
+
+### 6.1 What each case study is evidence of
+
+| Case study                | Primary evidence of…                                            |
+| ------------------------- | --------------------------------------------------------------- |
+| Neev                      | MSME-thesis depth; systems + product discipline; solo ownership |
+| VeriCite                  | Institutional AI-systems depth; retrieval-stack sophistication  |
+| Bluehost agents framework | Scale; production responsibility; team context                  |
+| curat.money               | Product breadth; data-pipeline-to-web-product operational chops |
+| ClusterBid                | UAT delivery; platform and repository discipline                |
+
+### 6.2 Case-study page template
 
 Every case study page uses the same scaffold:
 
-1. Hero image or motion reel (HyperFrames-rendered background loop at low opacity; static fallback).
+1. Hero image or reel (HyperFrames-rendered background loop where an asset exists; static fallback always; ClusterBid is deliberately asset-free).
 2. Headline + sub-headline.
 3. Context.
 4. Problem.
@@ -210,7 +252,7 @@ Every case study page uses the same scaffold:
 9. What I'd do next (optional).
 10. Links — repo (if public), live site (if public), relevant ADRs/PRDs.
 
-### 5.3 Writing voice
+### 6.3 Writing voice
 
 - Present tense for what the system *does*; past tense for what *I did*.
 - Short paragraphs. No bulleted dumps for their own sake.
@@ -219,10 +261,11 @@ Every case study page uses the same scaffold:
 
 ---
 
-## 6. Review prompts for Abhishek
+## 7. Review prompts for Abhishek
 
 - Neev — the "WhatsApp + paper ledgers" framing is load-bearing. Keep, soften, or replace?
 - VeriCite — are we clear on what's yours to claim as individual design/implementation?
 - Bluehost — confirm the "publicly shareable altitude" with your manager before we finalize copy. Flagging now because this is the one case study that needs outside sign-off.
 - curat.money — how hard do we lean into the crypto framing vs. positioning this as consumer product engineering?
+- ClusterBid — retain the UAT/pre-production boundary until real-provider and production evidence exists.
 - Missing anything? Is there work you'd rather feature than curat.money?

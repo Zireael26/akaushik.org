@@ -11,6 +11,13 @@ import {
 } from './content';
 
 const DRAFT_FIXTURE_SLUG = '_test-draft';
+const PUBLISHED_CASE_STUDY_SLUGS = [
+  'neev',
+  'vericite',
+  'bluehost-agents',
+  'curat-money',
+  'clusterbid',
+] as const;
 
 // These tests exercise the real `content/` directory rather than mocking the
 // filesystem — the parser's job is to handle the real frontmatter shapes the
@@ -65,14 +72,24 @@ describe('content — getPost', () => {
     expect(post.frontmatter.stack.length).toBeGreaterThan(0);
   });
 
+  it('publishes ClusterBid with bounded copy and no authoring placeholders', () => {
+    const post = getPost('case-studies', 'clusterbid');
+    if (!post) throw new Error('expected clusterbid case study');
+
+    expect(post.frontmatter.draft).toBe(false);
+    expect(post.frontmatter.role).toBe('Engineering advisor · process & platform');
+    expect(post.content).toContain('UAT');
+    expect(post.content).toContain('pre-production');
+    expect(`${JSON.stringify(post.frontmatter)}\n${post.content}`).not.toMatch(
+      /placeholder|Abhishek to confirm|TODO\(clusterbid\)/i,
+    );
+  });
+
   it('keeps commas inside quoted inline-array values', async () => {
     const root = mkdtempSync(join(tmpdir(), 'akaushik-content-'));
     const caseStudies = join(root, 'content', 'case-studies');
     mkdirSync(caseStudies, { recursive: true });
-    writeFileSync(
-      join(caseStudies, 'inline-array.mdx'),
-      '---\nstack: ["a, b", c]\n---\nBody\n',
-    );
+    writeFileSync(join(caseStudies, 'inline-array.mdx'), '---\nstack: ["a, b", c]\n---\nBody\n');
 
     const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(root);
     vi.resetModules();
@@ -145,6 +162,11 @@ describe('content — getAllPosts', () => {
     const posts = getAllPosts('writing', { includeDrafts: true });
     const slugs = getPostSlugs('writing');
     expect(posts.map((p) => p.slug)).toEqual(slugs);
+  });
+
+  it('returns exactly the five published case studies', () => {
+    const slugs = getAllPosts('case-studies').map((post) => post.slug);
+    expect(slugs.sort()).toEqual([...PUBLISHED_CASE_STUDY_SLUGS].sort());
   });
 });
 
