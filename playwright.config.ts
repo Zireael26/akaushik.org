@@ -1,10 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
 // E2E smoke suite. 5 projects: Chromium/Firefox/WebKit desktop (1440×900)
-// + Chromium tablet (768×1024) + WebKit mobile (iPhone SE, 375×667).
-// Runs against a local `pnpm dev` server by default; CI runs against the
-// Vercel preview URL via `PLAYWRIGHT_BASE_URL` (see
-// `.github/workflows/e2e.yml`).
+// + Chromium tablet (768×1024) + WebKit mobile (375×667).
+// Runs against a local `pnpm dev` server by default. CI builds and starts the
+// production app on localhost, then sets `PLAYWRIGHT_BASE_URL` to that server
+// (see `.github/workflows/e2e.yml`).
 //
 // Tests target user-visible behaviour only — section presence, nav anchor
 // scroll, theme toggle, reduced-motion honoring. No internal state, no
@@ -46,15 +46,15 @@ export default defineConfig({
       name: 'chromium-tablet',
       use: { ...devices['Desktop Chrome'], viewport: { width: 768, height: 1024 } },
     },
-    // Mobile — iPhone SE (375×667) matches the PRD's 375 mobile breakpoint
-    // spec. iPhone 13 resolves to 390×844 which is close but off-contract.
+    // Mobile — retain Mobile Safari's touch/browser behavior while overriding
+    // Playwright's 320px iPhone SE viewport to the PRD's exact 375×667 contract.
     {
       name: 'webkit-mobile',
-      use: { ...devices['iPhone SE'] },
+      use: { ...devices['iPhone SE'], viewport: { width: 375, height: 667 } },
     },
   ],
 
-  // Local runs only — CI sets PLAYWRIGHT_BASE_URL and skips webServer.
+  // Local runs only — CI starts its localhost production server explicitly.
   webServer: IS_CI
     ? undefined
     : {

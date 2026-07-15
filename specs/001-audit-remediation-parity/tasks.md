@@ -46,6 +46,10 @@
 
 - Local full `pnpm test:e2e` matrix needs the Playwright Firefox/WebKit cache repaired on this machine. `pnpm exec playwright install firefox` and `pnpm exec playwright install webkit` both reached 100% download but hung in the browser download helper; focused Chromium desktop/tablet E2E and production curl/screenshot checks passed.
 
+## Closure annotation — 2026-07-14
+
+The follow-up above is the original 2026-07-04 blocker. `pnpm exec playwright install --list` now detects the Chromium, Firefox, and WebKit installations, so the install-cache part is resolved. In the 2026-07-14 macOS host snapshot, Firefox 1532 still failed at `browserType.launch`; browser installation was resolved, while the full Linux matrix remains spec-003 T10. The original task and done-criteria checkboxes remain the receipts recorded by that execution; this annotation does not create new ones.
+
 ## Done criteria
 
 - [x] Every task above is checked.

@@ -60,6 +60,10 @@ None as of 2026-07-04. Operator authorized autonomous implementation; the only p
 - A new ADR for this remediation bundle. Existing ADRs govern the technical decisions; this spec records audit closure.
 - PR creation, merge, or deployment. This pass stops at local implementation and process-gate readiness unless the operator asks to publish.
 
+## Closure annotation — 2026-07-14
+
+This specification is preserved as accepted, including its originally unchecked success-criteria boxes; they are not retroactively converted into execution receipts. The implementation landed in `81d436b` and was merged by `e16234c`. The independent 2026-07-13 audit subsequently reported zero falsified spec-001 completion claims. Later MCP implementation, Wanderer reinstatement, and the fifth case study are spec-003 work and do not rewrite this spec's original non-goals.
+
 ---
 
 ## Review checklist

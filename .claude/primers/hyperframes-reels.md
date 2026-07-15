@@ -17,7 +17,7 @@ Pre-render motion reels for the four home `Work` cards (600×400, 5s loop) and t
 
 ## Entry points
 
-- `scripts/hyperframes/<slug>/index.html` + `hyperframes.json` — one project per composition. Eight slugs total: `neev`, `vericite`, `bluehost-agents`, `curat-money` (cards) and `*-hero` variants.
+- Composition projects live in `scripts/hyperframes/neev/`, `scripts/hyperframes/vericite/`, `scripts/hyperframes/bluehost-agents/`, `scripts/hyperframes/curat-money/`, and their concrete `scripts/hyperframes/neev-hero/`, `scripts/hyperframes/vericite-hero/`, `scripts/hyperframes/bluehost-agents-hero/`, `scripts/hyperframes/curat-money-hero/` variants. Each directory contains `index.html` and `hyperframes.json`.
 - `scripts/hyperframes/shared/tokens.css` + `base.css` — design tokens mirrored from `app/globals.css` plus composition layout/clip helpers. Subset only — flagged in the file header as drift-prone.
 - `scripts/hyperframes/render-all.mjs` — orchestrator. Walks `SLUGS`, invokes `npx hyperframes render` per project, post-processes each MP4 with ffmpeg (`-movflags +faststart`, H.264 baseline, yuv420p, silent).
 - `scripts/hyperframes/generate-posters.mjs` — pulls a frame at `t≈0.5s` as `.webp` for the `<video poster>` attribute.

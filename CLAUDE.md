@@ -52,7 +52,7 @@ Everything below is **project-specific** and extends the parent. If a rule below
 - EPM artefacts under `docs/epm/` cover Phase-0-style scaffolding only (one file today: `EPIC-01-pixel-parity.md`). Per-phase narrative since Phase 1 lives in `docs/CHANGELOG.md`. **Backfill not required.** New EPMs only when a piece of work spans more than one subsystem and the CHANGELOG alone won't carry the planning shape.
 
 ### Working conventions
-- Content lives in `src/content/` as MDX. Don't generate new MDX files without asking — each one is a deliberate editorial unit.
+- Content lives in `content/` as MDX. Don't generate new MDX files without asking — each one is a deliberate editorial unit.
 - `_reference/` is scratchpad/archive. Read-only in normal work.
 - `HANDOFF.md` at repo root is the session-between-sessions log. If you wrote something there, read it first next session.
 

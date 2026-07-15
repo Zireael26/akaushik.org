@@ -1,9 +1,11 @@
 # EPIC-01 — Pixel parity with the Claude Design reference
 
-**Status:** Open · 2026-04-20
+**Status:** Closed as a historical Phase-0/Phase-1 execution brief · 2026-07-14
 **Owner:** Claude Code (build engineer)
 **PRD:** `docs/PRD.md` · **Design:** `docs/DESIGN_DIRECTION.md` · **Reference:** `_reference/portfolio/`
 **Roadmap phase:** Phase 1 — Pixel parity with the Claude Design reference
+
+> Closure note (2026-07-14): this file preserves the Phase-0/Phase-1 plan as authored; it is not retrofitted into a post-launch ledger. Later phase history lives in `docs/CHANGELOG.md`, while current state lives in `docs/ROADMAP.md` and accepted specs. The four-card wording below is the original baseline; the current spec-003 implementation exposes five published case studies. Completion criteria remain historical acceptance language, not newly claimed command receipts.
 
 ## 1. Goal
 
