@@ -27,6 +27,8 @@ No database or persistent-data schema changes. The only data-file change is the 
 | GET, HEAD, PUT, PATCH, DELETE, other raw methods | `/api/mcp` | no body; optional supported protocol header; `Origin`, when present, must be canonical | Origin/protocol validation followed by a method-not-supported JSON response; no SSE stream | 400, 403, 405 |
 | OPTIONS | `/api/mcp` | optional supported protocol header; `Origin`, when present, must be canonical | Same-origin capability response; no permissive cross-origin CORS policy | 204, 400, 403 |
 
+The raw adapter owns Origin validation for every method that reaches the function. Deployment ingress may reject a method first: the Vercel preview returns platform 405 `NOT_ALLOWED` for `TRACE`, while a forwarded `PROPFIND` request reaches the adapter and receives its JSON-RPC Origin response. Both paths avoid the prior framework 500 and expose no MCP payload cross-origin.
+
 MCP tool contracts:
 
 - `lookup_case_study({ slug: string })` returns text plus `structuredContent` containing `slug`, `title`, `dek`, `role`, `year`, `stack`, `url`, and `markdown` for a published case study. Unknown or draft-only slugs return an MCP tool result with `isError: true`; they never include frontmatter or body content.

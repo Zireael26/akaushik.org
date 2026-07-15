@@ -59,10 +59,14 @@ is pinned as a verification client, not added to production dependencies.
 The adapter uses a Pages API route with body parsing disabled. `/api/mcp` is
 excluded from `proxy.ts`, because the Fetch `Request` constructor used by the
 App Router/proxy path rejects raw methods such as `TRACE` before application
-code can validate `Origin`. The Node request boundary accepts those methods,
-applies the same Origin/protocol checks, and returns 403 or 405 instead of a
-framework 500. It reproduces the site's discovery and security response headers
-directly so the matcher exclusion does not weaken the public response contract.
+code can validate `Origin`. Any method that reaches the Node request boundary
+therefore receives the same Origin/protocol checks and a 403 or 405 instead of a
+framework 500. Vercel's preview ingress rejects `TRACE` itself with 405
+`NOT_ALLOWED` before the function; that platform-owned path never reaches the
+MCP server. A forwarded custom method (`PROPFIND`) was observed reaching the
+adapter and receiving its JSON-RPC Origin rejection. The adapter reproduces the
+site's discovery and security response headers directly so the matcher exclusion
+does not weaken responses that reach the function.
 
 ## Discovery and documentation
 
