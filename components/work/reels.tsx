@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
  *   - `variant="card"`: 600×400, 5s loop, used by the home Work cards.
  *   - `variant="hero"`: 1600×900, 10s loop, used by the case-study hero band.
  *
- * Each reel renders the original SVG as the static floor AND a <video> of the
+ * Most reels render the original SVG as the static floor AND a <video> of the
  * HyperFrames render on top. The `<video>` is hidden when either:
  *   - `prefers-reduced-motion: reduce`, or
  *   - `[data-motion="off"]` (set by the tweaks panel)
@@ -13,7 +13,8 @@ import type { ReactNode } from 'react';
  * Server-only, no client JS — the gate is pure CSS (see `app/globals.css`).
  *
  * The MP4s live at `public/video/work/<slug>[-hero].mp4` and are authored
- * under `scripts/hyperframes/`. See `docs/adr/0008-hyperframes-rendering-pipeline.md`.
+ * under `scripts/hyperframes/`. ClusterBid intentionally ships only its SVG,
+ * so it emits no media URL that could fail. See ADR-0008 for the video pipeline.
  */
 
 type ReelVariant = 'card' | 'hero';
@@ -109,13 +110,44 @@ function CuratReel() {
   );
 }
 
-export type ReelSlug = 'neev' | 'vericite' | 'bluehost-agents' | 'curat-money';
+function ClusterBidReel() {
+  return (
+    <svg
+      viewBox="0 0 600 400"
+      className="placeholder placeholder-reel reel-fallback"
+      data-reel-slug="clusterbid"
+    >
+      <rect width="600" height="400" fill="var(--ink-05)" />
+      <g stroke="var(--ink-15)" strokeWidth="1" fill="none">
+        <path d="M0 80 H600 M0 160 H600 M0 240 H600 M0 320 H600" />
+        <path d="M100 0 V400 M200 0 V400 M300 0 V400 M400 0 V400 M500 0 V400" />
+      </g>
+      <g fill="var(--ink-15)" stroke="var(--ink-40)" strokeWidth="1.2">
+        <rect x="48" y="76" width="132" height="64" rx="8" />
+        <rect x="234" y="48" width="132" height="64" rx="8" />
+        <rect x="420" y="76" width="132" height="64" rx="8" />
+        <rect x="48" y="260" width="132" height="64" rx="8" />
+        <rect x="234" y="288" width="132" height="64" rx="8" />
+        <rect x="420" y="260" width="132" height="64" rx="8" />
+      </g>
+      <g stroke="var(--accent-60)" strokeWidth="2" fill="none">
+        <path d="M180 108 H234 M366 80 H420 M114 140 V260 M486 140 V260 M180 292 H234 M366 320 H420" />
+        <path d="M300 112 V288" strokeDasharray="6 7" />
+      </g>
+      <circle cx="300" cy="200" r="48" fill="var(--accent-40)" />
+      <circle cx="300" cy="200" r="18" fill="var(--accent)" />
+    </svg>
+  );
+}
+
+export type ReelSlug = 'neev' | 'vericite' | 'bluehost-agents' | 'curat-money' | 'clusterbid';
 
 export const REELS: Record<ReelSlug, () => ReactNode> = {
   neev: NeevReel,
   vericite: VeriCiteReel,
   'bluehost-agents': BluehostReel,
   'curat-money': CuratReel,
+  clusterbid: ClusterBidReel,
 };
 
 /**
@@ -135,14 +167,10 @@ function reelAssetPath(slug: ReelSlug, variant: ReelVariant): { mp4: string; pos
  * video on top. The video lives behind a `.reel-video` class that `globals.css`
  * hides under `prefers-reduced-motion: reduce` and `[data-motion="off"]`.
  */
-export function Reel({
-  slug,
-  variant = 'card',
-}: {
-  slug: ReelSlug;
-  variant?: ReelVariant;
-}) {
+export function Reel({ slug, variant = 'card' }: { slug: ReelSlug; variant?: ReelVariant }) {
   const Fallback = REELS[slug];
+  if (slug === 'clusterbid') return <Fallback />;
+
   const { mp4, poster } = reelAssetPath(slug, variant);
   // width/height are the intrinsic aspect — the parent figure sizes it via CSS.
   const w = variant === 'hero' ? 1600 : 600;

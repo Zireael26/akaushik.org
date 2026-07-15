@@ -1,37 +1,57 @@
 ---
 title: ClusterBid
-dek: A polyglot monorepo SaaS — Go services, Next.js console, Python GPU runners — wired up to one engineering process.
-index: "05"
-tag: Polyglot monorepo · engineering depth
-year: 2026 — now
-role: PLACEHOLDER — Abhishek to confirm (consulting CTO / tech advisor / platform lead?)
-stack: [Go workspace, Next.js, Python, k8s, Makefile orchestration]
-evidenceOf: Backend depth · multi-language platform discipline
-draft: true
+dek: Taking a Go-and-Next.js inference-cloud platform from monorepo checks to a real-host k3s UAT — without mistaking pre-production proof for production.
+index: '05'
+tag: UAT platform engineering
+year: 2026 — UAT
+role: Engineering advisor · process & platform
+stack: [Go workspace, Next.js, TypeScript, Helm, k3s]
+evidenceOf: Pre-production delivery · platform discipline
+draft: false
 ---
 
 # ClusterBid
 
-> A polyglot monorepo SaaS — Go services, Next.js console, Python GPU runners — wired up to one engineering process.
+> Taking a Go-and-Next.js inference-cloud platform from monorepo checks to a real-host k3s UAT — without mistaking pre-production proof for production.
 
 ## Context
 
-*Who runs ClusterBid, what they do, why the polyglot shape is load-bearing rather than accidental. Tie to the "GPU runners" use case if appropriate.*
+ClusterBid is a pre-production, region-pinned inference-cloud platform. Its repository puts Go services and shared packages, Next.js clients, TypeScript packages, Helm charts, and infrastructure code under one review surface. That shape is useful: a gateway change can move with its console contract and deployment values. It also creates a harder standard for what “green” means.
+
+My role was engineering advisor across process and platform. The work here was not to claim a commercial launch. It was to make the repository and its deployment path tell the truth about what had been implemented, what had been exercised, and what was still mocked.
 
 ## Problem
 
-*The systems problem in their words. Why a single-language stack would have made the trade-offs worse. What "polyglot done right" needs to provide.*
+A root command can look successful while checking only one part of a mixed repository. A Go workspace cannot honestly be covered by an undifferentiated `go vet ./...` at the root; each module needs its own invocation. The Next.js clients and TypeScript packages carry their own build, lint, and test contracts. A quality gate that treats those trees as one language will either miss work or become too noisy to trust.
+
+Local verification was only half the problem. The first real-host UAT deploy surfaced assumptions that local and rendered-chart checks had not: stateful database containers could not start with a blanket capability drop, isolated image builds needed complete per-service module sums, and the console's browser-origin guard needed the environment's own public URL at runtime. Passing tests was necessary. Feeding deployment findings back into source was the real closure condition.
 
 ## Approach
 
-*Repo layout — go.work with N services + M pkg/ + tool/, Next.js under clients/ts/, Python planned for inference-runner + fine-tuning-orchestrator. Root Makefile orchestrates vet/lint/test across all language subtrees because Go workspaces forbid `go vet ./...` from root.*
+The fix had four layers.
 
-*Engineering process: stack-profile `monorepo-polyglot` carve-out in process-gate (Lume pattern, n=1). Native git hooks via `.githooks/` because no root package.json. PR size budget 400/800.*
+**Makefile as the routing layer.** The root `Makefile` enumerates the Go workspace modules and routes vet, lint, race tests, and coverage through each module. Separate TypeScript targets build, lint, and test the client and package trees. `quality-gate-local` composes those checks with repository linting, so one command can be broad without pretending every subtree uses the same tool.
 
-## What shipped
+**Native git-boundary checks.** The repository has no root application package, so `.githooks/commit-msg` and `.githooks/pre-push` carry the conventional-commit and Trellis process-gate contracts without making a nested Next.js client own repository-wide policy. The pre-push hook blocks direct main pushes and delegates the actual verification to the same gate used elsewhere.
 
-*Concrete deliverables — list the services, the console scaffold, the validator pipeline. Be specific.*
+**UAT as a separate contract.** A dedicated Helm overlay and bring-up runbook describe the single-VM k3s shape explicitly: one-node NATS settings, environment-specific public URLs, mock inference, local Stripe, and the secrets the deployment does and does not require. The UAT hosts use publicly valid TLS, but the workload remains a pre-production environment.
 
-## Scope
+**Deployment findings returned to source.** The chart, image-build, and runtime-origin fixes were persisted rather than left as one-off cluster patches. That makes the next render and upgrade reproduce the tested shape instead of depending on operator memory.
 
-*What was and wasn't in scope. Branch protection on main: pending. Pre-commit deferred until polyglot validators hit Rule of Three.*
+## What reached UAT
+
+A real-host k3s UAT exposed the marketing site, console, and API gateway over TLS. A mock-inference request exercised the gateway, metering, and billing path, with spend and reconciliation checks observed in that environment. The exercise also produced durable source fixes for the chart and console runtime configuration.
+
+That is meaningful engineering evidence, but it is deliberately narrower than a production result. The inference runner was in mock mode, Stripe used the in-repository local provider, and the fine-tuning storage path remained outside the UAT scope.
+
+## Trade-offs
+
+**One repository over service-by-service repositories.** Cross-surface changes stay reviewable together, at the cost of maintaining an explicit routing layer for validation.
+
+**Mock providers inside UAT.** Mock inference and local Stripe let the team test service topology, request flow, metering, billing, and browser contracts without pretending GPU or payment-provider readiness. The trade is intentional: topology confidence now, provider proof later.
+
+**Single-node UAT over production-shaped high availability.** The environment was sized to expose integration and deployment defects economically. Replica and storage decisions in that overlay are UAT constraints, not production recommendations.
+
+## Honest scope
+
+This case study is about UAT and pre-production engineering. It makes no claim of customer traffic, adoption, revenue, a production deployment, live GPU inference, or live Stripe processing. The role claim is limited to engineering advisor for process and platform, and the technical claims stop at repository evidence plus the recorded UAT verification.

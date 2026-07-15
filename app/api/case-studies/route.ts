@@ -12,6 +12,7 @@ const ORDER: ReadonlyArray<string> = [
   'vericite',
   'bluehost-agents',
   'curat-money',
+  'clusterbid',
 ];
 
 export function GET() {

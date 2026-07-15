@@ -57,7 +57,7 @@ export const metadata: Metadata = {
     siteName: 'akaushik.org',
     title: 'Abhishek Kaushik — AI systems for businesses that haven’t met AI yet',
     description:
-      'Independent engineer building agent-native software. Case studies: Neev, VeriCite, Bluehost Agents, curat.money.',
+      'Independent engineer building agent-native software. Case studies: Neev, VeriCite, Bluehost Agents, curat.money, ClusterBid.',
   },
   twitter: {
     card: 'summary_large_image',

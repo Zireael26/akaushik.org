@@ -16,12 +16,6 @@ type CaseStudy = {
   draft?: boolean;
 };
 
-// TODO(clusterbid): skeleton MDX lives at content/case-studies/clusterbid.mdx
-// with `draft: true`. The CASE_STUDIES row + Reel mapping land together when
-// the case study comes off draft — adding the row now would require extending
-// the `ReelSlug` union in components/work/reels.tsx (currently a closed union:
-// 'neev' | 'vericite' | 'bluehost-agents' | 'curat-money') and shipping a
-// matching reel component, which is out of scope for the skeleton PR.
 export const CASE_STUDIES: ReadonlyArray<CaseStudy> = [
   {
     index: '01',
@@ -47,9 +41,8 @@ export const CASE_STUDIES: ReadonlyArray<CaseStudy> = [
     dek: 'A retrieval stack an institution can actually trust with its own words.',
     lede: (
       <>
-        Multi-tenant institutional RAG, migrating from Fastembed ONNX to Hugging
-        Face TEI for <code>BAAI/bge-reranker-v2-m3</code>. Qdrant as the
-        backbone, Ory for identity.
+        Multi-tenant institutional RAG, migrating from Fastembed ONNX to Hugging Face TEI for{' '}
+        <code>BAAI/bge-reranker-v2-m3</code>. Qdrant as the backbone, Ory for identity.
       </>
     ),
     spec: [
@@ -86,6 +79,20 @@ export const CASE_STUDIES: ReadonlyArray<CaseStudy> = [
       { term: 'Evidence of', def: 'Data pipeline to web product' },
     ],
   },
+  {
+    index: '05',
+    slug: 'clusterbid',
+    tag: 'UAT platform engineering',
+    year: '2026 — UAT',
+    title: 'ClusterBid',
+    dek: 'From monorepo checks to a real-host k3s UAT, with every mock and boundary named.',
+    lede: 'A Go-service and Next.js platform taken through root-level validation, Helm deployment, and a mock-inference metering-to-billing smoke — pre-production proof, not a production or customer outcome.',
+    spec: [
+      { term: 'Role', def: 'Engineering advisor · process & platform' },
+      { term: 'Stack', def: 'Go · Next.js · TypeScript · Helm · k3s' },
+      { term: 'Evidence of', def: 'Pre-production delivery · platform discipline' },
+    ],
+  },
 ];
 
 export function Work() {
@@ -100,7 +107,7 @@ export function Work() {
       <SectionHeader
         num="03"
         title="Selected work"
-        kicker="Four case studies, ordered by strategic weight. Each is a problem in the client's words, an approach, what shipped, and honest scope on what was and wasn't included."
+        kicker="Five case studies, ordered by strategic weight. Each is a problem in the client's words, an approach, what shipped, and honest scope on what was and wasn't included."
       />
       <ol className="case-list" role="list">
         {CASE_STUDIES.filter((c) => c.draft !== true).map((c) => (

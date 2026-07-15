@@ -26,6 +26,7 @@ This file follows the [llmstxt.org](https://llmstxt.org) format. It gives agents
 - [VeriCite](https://akaushik.org/work/vericite): Institutional RAG on top of Hugging Face TEI + Qdrant
 - [Bluehost Agents Framework](https://akaushik.org/work/bluehost-agents): Agent runtime powering Bluehost AI features
 - [curat.money](https://akaushik.org/work/curat-money): Product-engineering framing, financial data
+- [ClusterBid](https://akaushik.org/work/clusterbid): Pre-production engineering through real-host k3s UAT with mock inference and local Stripe; no production claim
 
 ## Contact
 
