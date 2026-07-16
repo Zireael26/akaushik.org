@@ -2,36 +2,218 @@ name: Refresh GitHub stats
 
 on:
   schedule:
-    - cron: '17 4 * * *'      # Daily 04:17 UTC
-  workflow_dispatch:        # also allow manual runs
+    # Daily 04:17 UTC
+    - cron: '17 4 * * *'
+  # repository_dispatch resolves this workflow from the repository's default
+  # branch. Do not consume client_payload in secret-bearing steps; the event is
+  # only a branch-safe manual trigger.
+  repository_dispatch:
+    types: [refresh-github-stats]
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: refresh-github-stats
+  cancel-in-progress: false
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
+      - name: Require stats automation credential
+        env:
+          GH_STATS_TOKEN: ${{ secrets.GH_STATS_TOKEN }}
+        run: |
+          if [[ -z "${GH_STATS_TOKEN:-}" ]]; then
+            echo "::error::GH_STATS_TOKEN is not configured; it must read the contribution sources and create the data-only automation PR."
+            exit 1
+          fi
+
       # actions/checkout@v4
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Prepare stable automation branch
+        id: branch
+        env:
+          BASE_BRANCH: ${{ github.event.repository.default_branch }}
+          BRANCH_NAME: automation/github-stats
+        run: |
+          git fetch origin "$BASE_BRANCH"
+          remote_sha="$(git ls-remote --heads origin "$BRANCH_NAME" | awk '{print $1}')"
+          echo "remote_sha=$remote_sha" >> "$GITHUB_OUTPUT"
+
+          # Never execute code from the persistent automation branch. Every
+          # run starts from the exact reviewed default-branch commit, then
+          # regenerates the one permitted data file before a lease-protected
+          # branch update.
+          git switch -C "$BRANCH_NAME" "origin/$BASE_BRANCH"
+          test "$(git rev-parse HEAD)" = "$(git rev-parse "origin/$BASE_BRANCH")"
+          git diff --quiet
+
+      # pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          standalone: true
+
       # actions/setup-node@v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          node-version: 22
+          node-version: 22.x
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
       - name: Fetch stats
         env:
-          # PAT with `read:user` + `repo` scope. Store as repo secret GH_STATS_TOKEN.
-          # Falls back to the default GITHUB_TOKEN if you don't need private-repo coverage.
-          GITHUB_TOKEN: ${{ secrets.GH_STATS_TOKEN || secrets.GITHUB_TOKEN }}
-        run: node scripts/fetch-github-stats.mjs
-      - name: Commit if changed
+          # This existing cross-organization PAT is intentionally treated as a
+          # privileged automation credential: classic `repo` scope is broader
+          # than read-only. It is exposed only after the checkout has been
+          # reset to the reviewed default-branch commit.
+          GITHUB_TOKEN: ${{ secrets.GH_STATS_TOKEN }}
+        run: pnpm stats:fetch
+
+      - name: Validate generated stats
         run: |
-          if [[ -n "$(git status --porcelain public/data/stats.json)" ]]; then
-            git config user.name  "stats-bot"
-            git config user.email "stats-bot@users.noreply.github.com"
-            git add public/data/stats.json
-            git commit -m "chore(stats): daily refresh"
-            git push
-          else
-            echo "No changes."
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+
+          const stats = JSON.parse(await readFile('public/data/stats.json', 'utf8'));
+          const errors = [];
+          const nonNegativeInteger = (value) => Number.isInteger(value) && value >= 0;
+
+          if (!Number.isFinite(Date.parse(stats.generatedAt))) errors.push('generatedAt');
+          if (stats.username !== 'Zireael26') errors.push('username');
+          if (stats.window !== 'last-365-days') errors.push('window');
+          if (stats.includesPrivate !== true) errors.push('includesPrivate');
+          if (!nonNegativeInteger(stats.totalContributions)) errors.push('totalContributions');
+          if (
+            !Array.isArray(stats.weeks) ||
+            stats.weeks.length < 52 ||
+            stats.weeks.length > 53 ||
+            !stats.weeks.every(nonNegativeInteger)
+          ) {
+            errors.push('weeks');
+          }
+          if (
+            !Array.isArray(stats.repos) ||
+            stats.repos.length !== 4 ||
+            !stats.repos.every(
+              (repo) =>
+                typeof repo.name === 'string' &&
+                typeof repo.label === 'string' &&
+                /^https:\/\/github\.com\//.test(repo.url) &&
+                (repo.commits12mo === null || nonNegativeInteger(repo.commits12mo)) &&
+                (repo.lastCommit === null || Number.isFinite(Date.parse(repo.lastCommit))),
+            )
+          ) {
+            errors.push('repos');
+          }
+
+          if (errors.length > 0) {
+            throw new Error(`Invalid generated stats fields: ${errors.join(', ')}`);
+          }
+          console.log(
+            `Validated ${stats.weeks.length} weeks and ${stats.repos.length} repositories.`,
+          );
+          NODE
+
+      - name: Detect stats change
+        id: changes
+        run: |
+          unexpected="$(git diff --name-only -- . ':!public/data/stats.json')"
+          if [[ -n "$unexpected" ]]; then
+            echo "::error::Stats refresh changed unexpected tracked files:"
+            printf '%s\n' "$unexpected"
+            exit 1
           fi
+
+          if git diff --quiet -- public/data/stats.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No stats changes."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Typecheck
+        if: steps.changes.outputs.changed == 'true'
+        run: pnpm typecheck
+
+      - name: Lint
+        if: steps.changes.outputs.changed == 'true'
+        run: pnpm lint
+
+      - name: Test
+        if: steps.changes.outputs.changed == 'true'
+        run: pnpm test
+
+      - name: Open automation pull request
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          BASE_BRANCH: ${{ github.event.repository.default_branch }}
+          BRANCH_NAME: automation/github-stats
+          REMOTE_BRANCH_SHA: ${{ steps.branch.outputs.remote_sha }}
+          GH_TOKEN: ${{ secrets.GH_STATS_TOKEN }}
+          PR_BODY: |
+            ## Why
+            Refresh the generated rolling GitHub contribution snapshot without allowing scheduled automation to write to protected `main`.
+
+            ## What changed
+            - Regenerated `public/data/stats.json` only.
+            - Reused the stable `automation/github-stats` branch so at most one automation PR remains open.
+
+            ## Test plan
+            - Validate the generated JSON contract.
+            - Run typecheck, lint, and unit tests before push.
+            - Require the repository's PR checks before merge.
+
+            ## Verification receipts
+            - Generated-payload validator: passed in this workflow run.
+            - `pnpm typecheck`: passed in this workflow run.
+            - `pnpm lint`: passed in this workflow run.
+            - `pnpm test`: passed in this workflow run.
+
+            ## Rollout / rollback
+            Merge after required checks pass. Revert the merge commit to restore the prior snapshot.
+
+            ## Agent review
+            Data-only automation below the code-review floor; deterministic validation and protected-branch CI are authoritative.
+
+            ## Follow-ups
+            None.
+        run: |
+          if [[ "$BRANCH_NAME" == "$BASE_BRANCH" ]]; then
+            echo "::error::Refusing to push the default branch."
+            exit 1
+          fi
+
+          git config user.name "stats-bot"
+          git config user.email "stats-bot@users.noreply.github.com"
+          git add public/data/stats.json
+          git commit -m "chore(stats): daily refresh"
+
+          gh auth setup-git
+          git push \
+            --force-with-lease="$BRANCH_NAME:$REMOTE_BRANCH_SHA" \
+            --set-upstream origin "$BRANCH_NAME"
+
+          existing_url="$(gh pr list --state open --base "$BASE_BRANCH" --head "$BRANCH_NAME" --json url --jq '.[0].url // empty')"
+          if [[ -n "$existing_url" ]]; then
+            gh pr edit "$existing_url" --body "$PR_BODY"
+            echo "Updated existing automation pull request: $existing_url"
+          else
+            gh pr create \
+              --base "$BASE_BRANCH" \
+              --head "$BRANCH_NAME" \
+              --title "chore(stats): daily refresh" \
+              --body "$PR_BODY"
+          fi
+
+          # The PAT-created pull request emits normal pull_request events, so
+          # CI, E2E, Lighthouse/Axe, and Vercel run on the exact updated head.

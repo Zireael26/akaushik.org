@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 # Cancel earlier in-progress runs for the same ref when a newer push lands,
 # so a push-storm doesn't queue five of these against the same commit.
@@ -54,10 +55,10 @@ jobs:
       # (next.config, package.json, etc. without an ADR/CHANGELOG reference)
       # gets caught even if someone bypassed the local hook.
       - name: Process gate (diff against main)
-        if: github.event_name == 'pull_request'
+        if: github.event_name != 'push'
         env:
-          BASE_REF: ${{ github.base_ref }}
-          PROCESS_GATE_DIFF_BASE: origin/${{ github.base_ref }}
+          BASE_REF: ${{ github.base_ref || github.event.repository.default_branch }}
+          PROCESS_GATE_DIFF_BASE: origin/${{ github.base_ref || github.event.repository.default_branch }}
         run: |
           git fetch origin "$BASE_REF" --depth=1
           pnpm process:check

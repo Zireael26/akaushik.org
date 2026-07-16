@@ -85,7 +85,7 @@ Existing `/api/case-studies`, Markdown alternates, `llms.txt`, and `llms-full.tx
 | 36  | `pnpm-lock.yaml`                                                              | modify                  | Keep package-manager engine metadata in sync if the engine edit changes the lockfile.                               |
 | 37  | `.github/workflows/stats.yml`                                                 | modify                  | Validate generated stats and push only an automation branch/PR, never `main`.                                       |
 | 37a | `.github/workflows/{ci,e2e,lighthouse}.yml`                                   | modify                  | Allow manual exact-head reruns while normal PAT-created pull-request events remain the primary automation proof.    |
-| 38  | `scripts/check-production.mjs`                                                | new                     | Check live routing, nonce CSP, contact integrity, agent surfaces, and TTFB thresholds.                              |
+| 38  | `scripts/check-production{,-lib,.test}.mjs`                                   | new                     | Provide the dependency-free live probe, shared validators, and focused unit contracts.                              |
 | 39  | `.github/workflows/production-smoke.yml`                                      | new                     | Run the production probe on a schedule and on demand.                                                               |
 | 40  | `public/favicon.svg`                                                          | new                     | Store the editable source for the portfolio mark.                                                                   |
 | 41  | `public/favicon.ico`                                                          | new/derived             | Serve a non-404 legacy favicon generated from the source mark.                                                      |
@@ -100,7 +100,7 @@ Existing `/api/case-studies`, Markdown alternates, `llms.txt`, and `llms-full.tx
 | 49  | `docs/adr/0005-playwright-over-cypress.md`                                    | modify                  | Record the actual desktop/mobile engine matrix and localhost CI target.                                             |
 | 49a | `CLAUDE.md` (`AGENTS.md` symlink target)                                      | modify                  | Correct the project content-root instruction from nonexistent `src/content/` to `content/`.                         |
 | 50  | `docs/adr/0007-r3f-9-bump.md`                                                 | modify                  | Mark the supersession by ADR-0012 without rewriting its historical decision.                                        |
-| 51  | `docs/adr/0015-post-launch-runtime-and-bundle-budget.md`                      | new                     | Record Node 22, the accepted measured script target, Wanderer delta, and monitor threshold.                         |
+| 51  | `docs/adr/0016-post-launch-runtime-and-bundle-budget.md`                      | new                     | Record Node 22, the accepted measured script target, Wanderer delta, and monitor threshold.                         |
 | 52  | `docs/BUNDLE_BUDGET.md`                                                       | modify                  | Replace the unresolved 150 KiB aspiration with the measured accepted ceiling and escalation rule.                   |
 | 53  | `docs/ROADMAP.md`                                                             | modify                  | Close duplicate MCP, Wanderer, reel, browser, and bundle entries against evidence.                                  |
 | 54  | `docs/wanderer-redesign-brief.md`                                             | modify                  | Record the conservative decisions and verified completion evidence.                                                 |
@@ -111,7 +111,7 @@ Existing `/api/case-studies`, Markdown alternates, `llms.txt`, and `llms-full.tx
 | 59  | `specs/002-audit-remediation-2/{spec,tasks}.md`                               | modify                  | Reconcile the merged remediation criteria with current proof.                                                       |
 | 60  | `audits/2026-07-13-audit.md`                                                  | modify                  | Add a closure annotation linking confirmed findings to the remediation specs/commits.                               |
 | 61  | `docs/agent-readiness-snapshots/2026-07-14.md`                                | new                     | Store fresh production routing, discovery, CSP/contact, and API evidence.                                           |
-| 62  | `docs/bundle-snapshots/2026-07-14-bundle.md`                                  | new                     | Store the fresh analyzer/Lighthouse transfer measurements and Wanderer delta.                                       |
+| 62  | `docs/bundle-snapshots/2026-07-14-bundle.md`                                  | new                     | Store Node 22 route/chunk measurements, Wanderer cost, and explicit analyzer/Lighthouse deferrals.                  |
 | 63  | `docs/CHANGELOG.md`                                                           | modify                  | Summarize the closure slices, proof commands, and external dispositions.                                            |
 | 64  | `specs/003-post-launch-closure/tasks.md`                                      | modify during execution | Tick only tasks whose implementation and verification receipts are complete.                                        |
 
@@ -185,7 +185,7 @@ Control-plane rollback contract:
 - **Decision:** Use a no-JavaScript horizontally scrollable mobile nav instead of a hamburger state machine.
   - **Why:** It preserves semantic links, keyboard access, and source order with minimal bundle and interaction risk.
   - **Rejected:** Hidden links (current defect) and a client-side menu (extra state and hydration).
-- **Decision:** Accept a measured script ceiling in ADR-0015 rather than preserve an already-invalid 150 KiB aspiration.
+- **Decision:** Accept a measured script ceiling in ADR-0016 rather than preserve an already-invalid 150 KiB aspiration.
   - **Why:** Raw Three.js is an explicit, measured design dependency under ADR-0012; the useful control is a small regression envelope around the fresh baseline.
   - **Rejected:** Removing the hero scene or leaving the budget permanently red.
 

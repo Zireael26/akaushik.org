@@ -11,7 +11,7 @@ export default defineConfig({
     },
   },
   test: {
-    include: ['**/*.test.{ts,tsx}'],
+    include: ['**/*.test.{ts,tsx,mjs}'],
     exclude: [
       '**/node_modules/**',
       '**/.next/**',
@@ -21,7 +21,9 @@ export default defineConfig({
     ],
     coverage: {
       provider: 'v8',
-      include: ['lib/**/*.ts'],
+      // The production monitor's validation/request core and full CLI contract
+      // are coverage-gated through an injected in-process transport.
+      include: ['lib/**/*.ts', 'scripts/check-production-lib.mjs', 'scripts/check-production.mjs'],
       // about-copy + services are pure data constants; stats reads JSON at
       // module load; mdx-options + structured-data fall back to defaults
       // that fire only inside RSC rendering. Skip the data-shaped modules

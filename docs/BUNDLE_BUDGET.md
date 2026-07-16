@@ -1,42 +1,76 @@
-# Bundle budget
+# Bundle and runtime budget
 
-**Aspirational target:** <= 150 KiB gzipped initial JS.
-**Ceiling enforced in CI today:** 400 KiB script-resource transferSize, `warn` severity, in both `lighthouserc.yml` and `lighthouserc.mobile.yml`.
-**Latest committed measurement (2026-07-04 audit, before Wanderer reinstatement):** 299,026 bytes (~292 KiB) script transferSize per Lighthouse `resource-summary` audit. That audited build was below the warning ceiling and still above the 150 KiB aspiration; it does not measure the reinstated Wanderer runtime.
+[ADR-0016](adr/0016-post-launch-runtime-and-bundle-budget.md) replaces the permanently-red 150 KiB aspiration with a measured operating budget. Historical snapshots keep their original metrics; do not compare their numbers without normalizing the method.
 
-> The 400 KiB ceiling is a noise-control ceiling, not the product target. The product target remains 150 KiB. The 2026-07-04 result is a pre-reinstatement baseline only: no post-reinstatement total or Wanderer byte delta is recorded yet, and spec-003 T9 owns that clean-head refresh.
+## Active budgets
 
-## Snapshots
+| Surface                            |                                           Budget or alert | Enforcement and response                                                                                                                                      |
+| ---------------------------------- | --------------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Build/runtime                      |                                               Node `22.x` | Build evidence is invalid under another major. CI and production automation must select Node 22.                                                              |
+| Normal-motion desktop home scripts |       **<= 350 KiB (358,400 B)** gzip response-body bytes | Active operating budget. Reduce, document a time-bounded exception, or supersede ADR-0016 when exceeded.                                                      |
+| Lighthouse script monitor          | **<= 400 KiB (409,600 B)** `resource-summary:script:size` | Warning-only in [desktop](../lighthouserc.yml) and [mobile](../lighthouserc.mobile.yml) configs. A warning requires investigation; it is not silently raised. |
+| Production homepage TTFB           |                        **< 2,500 ms median of 3 samples** | Scheduled alert threshold in [check-production.mjs](../scripts/check-production.mjs). No production pass is claimed by the local bundle snapshot.             |
 
-- **2026-07-04, audit-remediation baseline (pre-Wanderer reinstatement):** `docs/bundle-snapshots/2026-07-04-bundle.md`. Script transferSize 299,026 bytes. Desktop and mobile runs cleared the configured Lighthouse assertions; local mobile performance cleared the configured score but missed the stricter LCP aspiration at ~3.6s.
-- **2026-05-19, post-Phase-5:** `docs/bundle-snapshots/2026-05-19-bundle.md`. 377 KiB script, 786 KiB total transfer before the ADR-0012 raw-Three.js port.
-- **2026-04-20, Phase 3.3 (historical):** Top chunks were 69.4 KiB / 39.3 KiB / 38.6 KiB gzipped. Landing-page initial JS sat near the 150 KiB aspiration before the 3D and media surfaces landed.
+The 350 KiB budget counts local script response bodies declared by `/` plus scene chunks that a normal-motion desktop visit can load. It excludes route HTML, CSS, fonts, images, media, HTTP headers, and third-party scripts; those remain separately observable costs.
 
-## Method
+## Current baseline
 
-```
-pnpm build
-pnpm start
-npx --yes @lhci/cli@latest autorun \
-  --collect.url=http://localhost:3000/ \
-  --config=./lighthouserc.yml
-```
+The [2026-07-14 Node 22 snapshot](bundle-snapshots/2026-07-14-bundle.md) began from a live dirty checkout and was refreshed on 2026-07-15 from the clean, build-equivalent platform tree.
 
-Per-route initial JS is what Lighthouse CI's `resource-summary:script:size` asserts on. The script transferSize in the assertion is the gzipped wire-bytes Lighthouse observed during the run, not the disk size of chunks under `.next/static/chunks/`.
+| Route        | Route HTML, identity | Route HTML, gzip median | HTML-declared scripts |                   Conditional scene scripts |      Composed script body |
+| ------------ | -------------------: | ----------------------: | --------------------: | ------------------------------------------: | ------------------------: |
+| `/`          |            111,405 B |                32,279 B |             201,274 B | 141,580 B (`three` + AgentGraph + Wanderer) | **342,854 B (334.8 KiB)** |
+| `/work/neev` |             47,613 B |                16,379 B |             195,144 B |                 none; Wanderer is home-only |     195,144 B (190.6 KiB) |
+| `/writing`   |             36,297 B |                11,749 B |             194,538 B |                 none; Wanderer is home-only |     194,538 B (190.0 KiB) |
 
-## Server isolation (ADR-0004)
+These main routes are request-rendered (`ƒ`) because [ADR-0014](adr/0014-nonce-based-csp.md) requires a per-response nonce. They do not have route `.html` files under `.next/server/app`. The gzip HTML values are five-response medians because each nonce changes compression slightly.
 
-Shiki stays in the Node server bundle only. MDX compilation + syntax highlighting never reach the browser. Continue to verify this with `pnpm analyze` when MDX or syntax-highlighting dependencies change.
+“Composed script body” is arithmetic over measured local HTTP response bodies under the stated runtime gates. It is not a browser waterfall or Lighthouse `transferSize` result.
 
-## Current pressure
+## Scene budget
 
-1. `components/scene/AgentGraph.tsx` is raw `three`. ADR-0012 removed the framework layer and cut the prior 386,439-byte measurement to the ~290-300 KiB range, but the `three` runtime is still the dominant browser cost.
-2. `<Wanderer />` is mounted in `app/layout.tsx`, while `WandererCrane` is a `React.lazy` runtime requested only after the home-route, 861px viewport, reduced-motion, and runtime motion gates pass. The latest snapshot predates that reinstatement, so its transfer cost and any chunk sharing with `AgentGraph` remain unmeasured.
-3. HyperFrames writing-post + case-study loops are mostly media transfer rather than script transfer, but their poster/video choices still affect mobile LCP.
+| Chunk role           |       Raw | Local gzip body |
+| -------------------- | --------: | --------------: |
+| Shared raw `three`   | 548,509 B |       136,119 B |
+| AgentGraph component |   6,172 B |         2,662 B |
+| Wanderer component   |   6,475 B |         2,799 B |
 
-## Path back to 150 KiB
+All three are lazy chunks and are absent from the route HTML's `<script src>` set. [AgentGraphClient](../components/scene/AgentGraphClient.tsx) loads AgentGraph after hydration when motion is allowed. [WandererCraneClient](../components/scene/WandererCraneClient.tsx) additionally requires the home route and a viewport of at least 861 px.
 
-1. Capture a clean-head analyzer/Lighthouse measurement for the reinstated runtime, including an allowed desktop path and the gated mobile path; compare it with the 2026-07-04 baseline before assigning a Wanderer delta.
-2. Decide whether the measured raw-Three.js experience is worth the remaining gap over the aspiration.
-3. If the answer is no, prototype a smaller WebGL primitive or static/recorded hero treatment.
-4. Keep mobile LCP as the next user-facing performance target; the local 2026-07-04 run cleared configured category thresholds but missed the stricter <2.5s LCP aspiration.
+Wanderer therefore has two honest cost readings:
+
+- **Home:** 2,799 gzip bytes attributable to the Wanderer component after AgentGraph has already loaded shared `three`.
+- **Hypothetical first-scene cost:** 138,918 gzip bytes if a future route-policy change lets Wanderer load without AgentGraph. Current non-home routes load neither.
+
+The initial wrapper chunk and server-rendered SVG are shared with other code/HTML and were not isolated by a no-Wanderer counterfactual build. Do not label 2,799 bytes as the total reinstatement delta.
+
+## Measurement procedure
+
+1. Capture the current tracked and untracked, non-ignored source state. Record `HEAD` and say whether the checkout is dirty.
+2. Select Node 22 explicitly and run the production `pnpm build`; record the full exit code and route classification.
+3. Start that exact artifact with `pnpm start`.
+4. For `/`, `/work/neev`, and `/writing`, record identity HTML bytes, five gzip HTML samples, and every local `<script src>` response body with `Accept-Encoding: gzip`; verify non-home routes do not request scene chunks.
+5. Map scene modules to their emitted chunks. Report shared `three`, AgentGraph, and Wanderer separately; never add the shared chunk twice.
+6. Run Lighthouse separately when a Lighthouse-comparable number is required. Its `transferSize` result must not be substituted with gzip body arithmetic.
+
+Refresh the snapshot when any of these change: a client dependency, a client/server boundary, root layout scripts, scene loading policy, Next.js, compression/hosting behavior, or the Node major.
+
+## Escalation rules
+
+- Above 350 KiB by the local method: stop and explain the regression. Prefer reducing it; otherwise record an owner-approved exception or superseding ADR.
+- At or above the 400 KiB Lighthouse warning: do not raise the config in the same change merely to make CI quiet.
+- A new scene must report both first-scene cost (including shared dependencies) and incremental cost when another scene already loaded them.
+- A production TTFB alert is evidence of a runtime symptom, not proof of a bundle regression. Investigate server/network behavior separately.
+
+## Server and media isolation
+
+[ADR-0004](adr/0004-mdx-pipeline-and-bundle-isolation.md) keeps Shiki and MDX compilation in the Node server bundle. Verify that isolation with the analyzer when those dependencies or their import boundaries change.
+
+HyperFrames video/poster bytes are media, not script. They remain part of LCP and total-transfer review even though they do not count against the 350 KiB script budget.
+
+## Historical snapshots
+
+- [2026-07-14](bundle-snapshots/2026-07-14-bundle.md) — Node 22 production artifact; route HTML, declared scripts, and lazy scene chunks measured separately. No fresh Lighthouse or deployed-production run.
+- [2026-07-04](bundle-snapshots/2026-07-04-bundle.md) — Lighthouse script `transferSize` 299,026 bytes.
+- [2026-05-19](bundle-snapshots/2026-05-19-bundle.md) — Lighthouse script `transferSize` 386,439 bytes before the ADR-0012 raw-Three.js port.
+- 2026-04-20 — historical pre-scene chunk notes; retained for narrative only, not a comparable baseline.

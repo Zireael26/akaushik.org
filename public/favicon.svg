@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-labelledby="title">
+  <title>Abhishek Kaushik</title>
+  <rect width="24" height="24" rx="4.5" fill="#f5f1e8" />
+  <g fill="#13423d">
+    <circle cx="5" cy="12" r="2.2" />
+    <circle cx="19" cy="6" r="2.2" />
+    <circle cx="19" cy="18" r="2.2" />
+  </g>
+  <path
+    d="M 6.8 11 L 17 6.8 M 6.8 13 L 17 17.2"
+    fill="none"
+    stroke="#13423d"
+    stroke-linecap="round"
+    stroke-width="1.1"
+  />
+</svg>

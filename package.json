@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22.0.0",
+    "node": "22.x",
     "pnpm": ">=11.0.0"
   },
   "packageManager": "pnpm@11.9.0",
@@ -20,6 +20,7 @@
     "test:coverage": "vitest run --coverage",
     "prepare": "husky",
     "process:check": "node scripts/process-gate.mjs",
+    "production:check": "node scripts/check-production.mjs",
     "stats:fetch": "node scripts/fetch-github-stats.mjs",
     "render:work": "node scripts/hyperframes/render-all.mjs",
     "render:posters": "node scripts/hyperframes/generate-posters.mjs",
@@ -62,6 +63,7 @@
     "tsx": "^4.22.4",
     "typescript": "6.0.3",
     "vitest": "^4.1.9",
-    "wait-on": "^9.0.10"
+    "wait-on": "^9.0.10",
+    "yaml": "2.9.0"
   }
 }

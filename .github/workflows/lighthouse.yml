@@ -2,6 +2,7 @@ name: Lighthouse + Axe
 
 on:
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: lighthouse-${{ github.ref }}

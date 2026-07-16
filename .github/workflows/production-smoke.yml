@@ -1,0 +1,46 @@
+name: Production smoke
+
+on:
+  schedule:
+    # Daily 04:37 UTC
+    - cron: '37 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          # The monitor always executes reviewed default-branch probe code,
+          # including when a maintainer dispatches it manually.
+          ref: ${{ github.event.repository.default_branch }}
+
+      # pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          standalone: true
+
+      # actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22.x
+
+      - name: Check production safeguards
+        env:
+          PRODUCTION_BASE_URL: https://akaushik.org
+          PRODUCTION_LEGACY_URL: https://akaushik.dev
+          # ADR-0014 keeps per-request nonce rendering; 2500 ms is the explicit alert ceiling.
+          PRODUCTION_TTFB_THRESHOLD_MS: '2500'
+          # Per-attempt wall clock covers headers and complete response-body reads.
+          PRODUCTION_TIMEOUT_MS: '15000'
+        run: pnpm production:check
