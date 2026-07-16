@@ -13,7 +13,7 @@ import {
   validateHomepageNonce,
   validateRobotsSitemap,
 } from './check-production-lib.mjs';
-import { runProductionCheckCli, runProductionChecks } from './check-production.mjs';
+import { runProductionCheckCli, runProductionCheckEntrypoint } from './check-production.mjs';
 
 const repositoryRoot = new URL('../', import.meta.url);
 
@@ -254,20 +254,23 @@ describe('production smoke safeguards', () => {
 
     const log = vi.spyOn(console, 'log').mockImplementation(() => {});
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const previousExitCode = process.exitCode;
     try {
-      const outcome = await runProductionChecks(
-        {
-          baseUrl: new URL('https://akaushik.org/'),
-          legacyUrl: new URL('https://akaushik.dev/'),
-          ttfbThresholdMs: 2_500,
-          timeoutMs: 15_000,
-        },
-        request,
-      );
+      const entrypoint = new URL('file:///test/check-production.mjs');
+      await expect(
+        runProductionCheckEntrypoint({
+          argv: ['node', '/test/check-production.mjs'],
+          env: {},
+          moduleUrl: entrypoint.href,
+          requestImpl: request,
+        }),
+      ).resolves.toBe(true);
 
-      expect(outcome).toEqual({ passCount: 20, failures: [], exitCode: 0 });
+      expect(process.exitCode).toBe(0);
+      expect(log).toHaveBeenCalledWith('Production smoke complete: 20 passed, 0 failed.');
       expect(homepageRequestCount).toBe(3);
     } finally {
+      process.exitCode = previousExitCode;
       log.mockRestore();
       error.mockRestore();
     }
@@ -359,6 +362,29 @@ describe('production smoke safeguards', () => {
         'homepage',
       ),
     ).toThrow(/script-src-attr must be exactly 'none'/);
+
+    const unsafeAttributeFallback = new Response(null, {
+      headers: {
+        'content-security-policy':
+          `default-src 'unsafe-inline'; ` + `script-src-elem 'nonce-${nonce}' 'strict-dynamic'`,
+      },
+    });
+    expect(() =>
+      validateHomepageNonce(
+        { response: unsafeAttributeFallback, body: `<script nonce="${nonce}">ok()</script>` },
+        'homepage',
+      ),
+    ).toThrow(/script-src-attr fallback contains 'unsafe-inline'/);
+
+    expect(() =>
+      validateHomepageNonce(
+        {
+          response,
+          body: `<script data-note=" nonce=${nonce}">ok()</script>`,
+        },
+        'homepage',
+      ),
+    ).toThrow(/inline script 1 did not carry the response nonce/);
   });
 
   it('retries a transient response-body failure inside the request timeout', async () => {
@@ -423,10 +449,24 @@ describe('production smoke safeguards', () => {
         baseUrl,
         expected,
       ),
-    ).toThrow(/malformed parameters/);
+    ).toThrow(/parameter broken is missing =/);
     expect(() =>
       validateDiscoveryLinks(
         valid.replace('rel="describedby"', 'title="rel=describedby"'),
+        baseUrl,
+        expected,
+      ),
+    ).toThrow(/llms\.txt must be advertised exactly once/);
+    expect(
+      validateDiscoveryLinks(
+        valid.replace('rel="describedby"', 'title="Abhishek, \\"portfolio\\""; rel="describedby"'),
+        baseUrl,
+        expected,
+      ),
+    ).toBe(2);
+    expect(() =>
+      validateDiscoveryLinks(
+        valid.replace('rel="describedby"', "rel='describedby'"),
         baseUrl,
         expected,
       ),
@@ -468,6 +508,7 @@ describe('production smoke safeguards', () => {
       '<script>const markup = `<a href="mailto:hello@akaushik.org">x</a>`</script>',
       '<template><a href="mailto:hello@akaushik.org">x</a></template>',
       '<div data-copy="href=mailto:hello@akaushik.org">Contact</div>',
+      '<a data-note=" href=mailto:hello@akaushik.org">Contact</a>',
     ]) {
       expect(hasMailtoAnchor(body, 'hello@akaushik.org')).toBe(false);
     }

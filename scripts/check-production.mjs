@@ -666,7 +666,11 @@ export async function runProductionChecks(runOptions, requestImpl) {
   return { passCount, failures: [...failures], exitCode: failures.length > 0 ? 1 : 0 };
 }
 
-export async function runProductionCheckCli(args = process.argv.slice(2), env = process.env) {
+export async function runProductionCheckCli(
+  args = process.argv.slice(2),
+  env = process.env,
+  requestImpl,
+) {
   if (args.includes('--help')) {
     console.log(HELP);
     return 0;
@@ -681,10 +685,23 @@ export async function runProductionCheckCli(args = process.argv.slice(2), env = 
     return 2;
   }
 
-  const result = await runProductionChecks(runOptions);
+  const result = await runProductionChecks(runOptions, requestImpl);
   return result.exitCode;
 }
 
-if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
-  process.exitCode = await runProductionCheckCli();
+export async function runProductionCheckEntrypoint({
+  argv = process.argv,
+  env = process.env,
+  moduleUrl = import.meta.url,
+  requestImpl,
+  setExitCode = (exitCode) => {
+    process.exitCode = exitCode;
+  },
+} = {}) {
+  if (!argv[1] || pathToFileURL(argv[1]).href !== moduleUrl) return false;
+  const exitCode = await runProductionCheckCli(argv.slice(2), env, requestImpl);
+  setExitCode(exitCode);
+  return true;
 }
+
+await runProductionCheckEntrypoint();

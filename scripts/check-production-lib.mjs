@@ -131,29 +131,97 @@ export function assertSingleAttempt(result, label) {
   );
 }
 
-function parseLinkParameters(value) {
-  const parameters = new Map();
-  const pattern = /;\s*([!#$%&'*+.^_`|~0-9a-z-]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^;\s]+))/gi;
-  for (const match of value.matchAll(pattern)) {
-    const name = match[1].toLowerCase();
-    assertSmoke(!parameters.has(name), `Link field repeats the ${name} parameter`);
-    parameters.set(name, match[2] ?? match[3] ?? match[4]);
+function isHttpTokenCharacter(character) {
+  return /[!#$%&'*+\-.^_`|~0-9a-z]/i.test(character);
+}
+
+function skipOptionalWhitespace(value, start) {
+  let index = start;
+  while (index < value.length && (value[index] === ' ' || value[index] === '\t')) index += 1;
+  return index;
+}
+
+function parseLinkQuotedString(value, start) {
+  let index = start + 1;
+  let parsed = '';
+  while (index < value.length) {
+    const character = value[index];
+    if (character === '"') return { value: parsed, index: index + 1 };
+    if (character === '\\') {
+      assertSmoke(index + 1 < value.length, 'Link field ends with an incomplete quoted escape');
+      const escaped = value[index + 1];
+      assertSmoke(!/[\r\n]/.test(escaped), 'Link field quoted escape contains a line break');
+      parsed += escaped;
+      index += 2;
+      continue;
+    }
+    const codePoint = character.codePointAt(0);
+    assertSmoke(
+      character === '\t' || (codePoint >= 0x20 && codePoint !== 0x7f),
+      'Link field quoted value contains a control character',
+    );
+    parsed += character;
+    index += 1;
   }
-  const residue = value.replace(pattern, '').replace(/\s/g, '');
-  assertSmoke(residue.length === 0, `Link field contains malformed parameters: ${residue}`);
-  return parameters;
+  throw new Error('Link field contains an unterminated quoted value');
 }
 
 export function parseLinkHeader(value, baseUrl) {
   const entries = [];
-  const pattern = /<([^<>]+)>((?:\s*;\s*[^,]*)?)(?=\s*(?:,|$))/g;
-  for (const match of value.matchAll(pattern)) {
-    const parameters = parseLinkParameters(match[2]);
+  let index = 0;
+
+  while (index < value.length) {
+    index = skipOptionalWhitespace(value, index);
+    assertSmoke(
+      value[index] === '<',
+      `Link header contains malformed fields near: ${value.slice(index)}`,
+    );
+    const targetStart = index + 1;
+    const targetEnd = value.indexOf('>', targetStart);
+    assertSmoke(targetEnd !== -1, 'Link field target is missing its closing >');
+    const target = value.slice(targetStart, targetEnd);
+    assertSmoke(target.length > 0 && !target.includes('<'), 'Link field target is malformed');
+    index = targetEnd + 1;
+
+    const parameters = new Map();
+    while (index < value.length) {
+      index = skipOptionalWhitespace(value, index);
+      if (index >= value.length || value[index] === ',') break;
+      assertSmoke(
+        value[index] === ';',
+        `Link field contains malformed parameters near: ${value.slice(index)}`,
+      );
+      index = skipOptionalWhitespace(value, index + 1);
+
+      const nameStart = index;
+      while (index < value.length && isHttpTokenCharacter(value[index])) index += 1;
+      assertSmoke(index > nameStart, 'Link field contains a parameter without a valid name');
+      const name = value.slice(nameStart, index).toLowerCase();
+      assertSmoke(!parameters.has(name), `Link field repeats the ${name} parameter`);
+
+      index = skipOptionalWhitespace(value, index);
+      assertSmoke(value[index] === '=', `Link field parameter ${name} is missing =`);
+      index = skipOptionalWhitespace(value, index + 1);
+
+      let parameterValue;
+      if (value[index] === '"') {
+        const quoted = parseLinkQuotedString(value, index);
+        parameterValue = quoted.value;
+        index = quoted.index;
+      } else {
+        const valueStart = index;
+        while (index < value.length && isHttpTokenCharacter(value[index])) index += 1;
+        assertSmoke(index > valueStart, `Link field parameter ${name} has no valid value`);
+        parameterValue = value.slice(valueStart, index);
+      }
+      parameters.set(name, parameterValue);
+    }
+
     let url;
     try {
-      url = new URL(match[1], baseUrl);
+      url = new URL(target, baseUrl);
     } catch {
-      throw new Error(`Link target is not a valid URL: ${match[1]}`);
+      throw new Error(`Link target is not a valid URL: ${target}`);
     }
     entries.push({
       url,
@@ -163,10 +231,16 @@ export function parseLinkHeader(value, baseUrl) {
         .filter(Boolean),
       type: (parameters.get('type') ?? '').toLowerCase(),
     });
-  }
 
-  const residue = value.replace(pattern, '').replace(/[\s,]/g, '');
-  assertSmoke(residue.length === 0, `Link header contains malformed fields: ${residue}`);
+    index = skipOptionalWhitespace(value, index);
+    if (index >= value.length) break;
+    assertSmoke(
+      value[index] === ',',
+      `Link header contains malformed fields near: ${value.slice(index)}`,
+    );
+    index = skipOptionalWhitespace(value, index + 1);
+    assertSmoke(index < value.length, 'Link header ends with an empty field');
+  }
   return entries;
 }
 
@@ -256,13 +330,64 @@ function splitCspPolicies(value) {
     .filter(Boolean);
 }
 
+function parseHtmlAttributes(source) {
+  const attributes = new Map();
+  let index = 0;
+
+  while (index < source.length) {
+    while (index < source.length && /\s/.test(source[index])) index += 1;
+    if (index >= source.length) break;
+    if (source[index] === '/') {
+      index += 1;
+      while (index < source.length && /\s/.test(source[index])) index += 1;
+      assertSmoke(index === source.length, 'HTML tag contains content after its closing slash');
+      break;
+    }
+
+    const nameStart = index;
+    while (index < source.length && !/[\s"'<>\/=\x60]/.test(source[index])) index += 1;
+    assertSmoke(
+      index > nameStart,
+      `HTML tag contains a malformed attribute near: ${source.slice(index)}`,
+    );
+    const name = source.slice(nameStart, index).toLowerCase();
+    assertSmoke(!attributes.has(name), `HTML tag repeats the ${name} attribute`);
+
+    while (index < source.length && /\s/.test(source[index])) index += 1;
+    let value = '';
+    if (source[index] === '=') {
+      index += 1;
+      while (index < source.length && /\s/.test(source[index])) index += 1;
+      assertSmoke(index < source.length, `HTML attribute ${name} has no value`);
+
+      const quote = source[index];
+      if (quote === '"' || quote === "'") {
+        const valueStart = index + 1;
+        const valueEnd = source.indexOf(quote, valueStart);
+        assertSmoke(valueEnd !== -1, `HTML attribute ${name} has an unterminated quoted value`);
+        value = source.slice(valueStart, valueEnd);
+        index = valueEnd + 1;
+      } else {
+        const valueStart = index;
+        while (index < source.length && !/\s/.test(source[index])) {
+          assertSmoke(
+            !/["'<=\x60>]/.test(source[index]),
+            `HTML attribute ${name} contains an invalid unquoted character`,
+          );
+          index += 1;
+        }
+        assertSmoke(index > valueStart, `HTML attribute ${name} has no value`);
+        value = source.slice(valueStart, index);
+      }
+    }
+    attributes.set(name, value);
+  }
+
+  return attributes;
+}
+
 function attributeValue(attributes, name) {
-  const pattern = new RegExp(
-    `(?:^|\\s)${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s"'=<>\\x60]+))`,
-    'i',
-  );
-  const match = attributes.match(pattern);
-  return match?.[1] ?? match?.[2] ?? match?.[3] ?? null;
+  return parseHtmlAttributes(attributes).get(name.toLowerCase()) ?? null;
 }
 
 function scriptElements(body) {
@@ -290,12 +415,6 @@ export function validateHomepageNonce(sample, label) {
     const scriptSource = cspDirective(policy, 'script-src');
     const scriptElementSource = cspDirective(policy, 'script-src-elem');
     const scriptAttributeSource = cspDirective(policy, 'script-src-attr');
-    if (scriptAttributeSource) {
-      assertSmoke(
-        /^script-src-attr\s+'none'\s*$/i.test(scriptAttributeSource),
-        `${policyLabel} script-src-attr must be exactly 'none' when present`,
-      );
-    }
     const effectiveDirectives = [
       ...(scriptSource ? [['script-src', scriptSource]] : []),
       ...(scriptElementSource ? [['script-src-elem', scriptElementSource]] : []),
@@ -324,6 +443,20 @@ export function validateHomepageNonce(sample, label) {
       const nonce = nonceSources[0][1];
       assertSmoke(nonce.length > 0, `${directiveLabel} nonce is empty`);
       policyNonces.push(nonce);
+    }
+
+    if (scriptAttributeSource) {
+      assertSmoke(
+        /^script-src-attr\s+'none'\s*$/i.test(scriptAttributeSource),
+        `${policyLabel} script-src-attr must be exactly 'none' when present`,
+      );
+    } else {
+      const attributeFallback = scriptSource || cspDirective(policy, 'default-src');
+      assertSmoke(attributeFallback, `${policyLabel} has no effective script-src-attr fallback`);
+      assertSmoke(
+        !/(?:^|\s)'unsafe-inline'(?:\s|$)/i.test(attributeFallback),
+        `${policyLabel} script-src-attr fallback contains 'unsafe-inline'`,
+      );
     }
   }
 
