@@ -22,19 +22,55 @@ function requestHeaders(request: NextApiRequest): Headers {
 }
 
 async function readRawBody(request: NextApiRequest): Promise<string | null> {
-  const chunks: Buffer[] = [];
-  let size = 0;
-  let tooLarge = false;
-  for await (const chunk of request) {
-    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
-    size += buffer.byteLength;
-    if (size > MAX_REQUEST_BYTES) {
-      tooLarge = true;
-    } else if (!tooLarge) {
-      chunks.push(buffer);
-    }
-  }
-  return tooLarge ? null : Buffer.concat(chunks).toString('utf8');
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    let size = 0;
+    let settled = false;
+
+    const detachReader = () => {
+      request.off('data', onData);
+      request.off('end', onEnd);
+      request.off('error', onError);
+      request.off('aborted', onAborted);
+    };
+    const settle = (result: string | null) => {
+      if (settled) return;
+      settled = true;
+      detachReader();
+      resolve(result);
+    };
+    const fail = (error: Error) => {
+      if (settled) return;
+      settled = true;
+      detachReader();
+      reject(error);
+    };
+    const onData = (chunk: Buffer | string) => {
+      const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+      size += buffer.byteLength;
+      if (size <= MAX_REQUEST_BYTES) {
+        chunks.push(buffer);
+        return;
+      }
+
+      // The response can be decided as soon as the limit is crossed. Drain the
+      // remaining socket bytes in the background without retaining or awaiting them.
+      const ignoreDrainError = () => undefined;
+      const stopIgnoringDrainErrors = () => request.off('error', ignoreDrainError);
+      request.on('error', ignoreDrainError);
+      request.once('close', stopIgnoringDrainErrors);
+      settle(null);
+      request.resume();
+    };
+    const onEnd = () => settle(Buffer.concat(chunks).toString('utf8'));
+    const onError = (error: Error) => fail(error);
+    const onAborted = () => fail(new Error('request body stream aborted'));
+
+    request.once('end', onEnd);
+    request.once('error', onError);
+    request.once('aborted', onAborted);
+    request.on('data', onData);
+  });
 }
 
 async function sendResponse(
@@ -57,6 +93,6 @@ export default async function handler(
 ): Promise<void> {
   const method = request.method?.toUpperCase() ?? 'GET';
   const headers = requestHeaders(request);
-  const rawBody = method === 'POST' ? await readRawBody(request) : '';
+  const rawBody = method === 'POST' ? () => readRawBody(request) : '';
   await sendResponse(request, response, await handleMcpHttpRequest(method, headers, rawBody));
 }

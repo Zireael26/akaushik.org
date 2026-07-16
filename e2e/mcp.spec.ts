@@ -484,14 +484,18 @@ test.describe('MCP Streamable HTTP endpoint', () => {
     }
   });
 
-  test('origin-checks raw unsupported methods at the Node request boundary', async ({ baseURL }) => {
+  test('origin-checks forwarded unsupported methods at the Node request boundary', async ({
+    baseURL,
+  }) => {
     if (!baseURL) throw new Error('Playwright baseURL is required for the raw HTTP probe.');
 
-    const crossOrigin = await rawRequest(baseURL, 'TRACE', 'https://evil.example');
+    // Vercel rejects TRACE at ingress; PROPFIND is the black-box-verified method
+    // that reaches this same application boundary in preview deployments.
+    const crossOrigin = await rawRequest(baseURL, 'PROPFIND', 'https://evil.example');
     expect(crossOrigin.status).toBe(403);
     expect(JSON.parse(crossOrigin.body).error.code).toBe(-32600);
 
-    const sameOrigin = await rawRequest(baseURL, 'TRACE', 'https://akaushik.org');
+    const sameOrigin = await rawRequest(baseURL, 'PROPFIND', 'https://akaushik.org');
     expect(sameOrigin.status).toBe(405);
     expect(JSON.parse(sameOrigin.body).error.code).toBe(-32601);
     expect(sameOrigin.headers['x-content-type-options']).toBe('nosniff');

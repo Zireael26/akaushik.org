@@ -1,6 +1,6 @@
 # Agent Readiness — Alignment Spec
 
-**Status:** Implemented; production MCP WAF receipt pending (§5.3)
+**Status:** Runtime implemented; production MCP WAF and deploy-triggered external Agent Readiness validation pending (§§5.3, 8)
 **Author:** Claude (synthesis from Cloudflare's Agent Readiness score + related open standards)
 **Last updated:** 2026-07-15
 **Companion to:** `PRD.md` (this spec is a hard requirement, not a nice-to-have)
@@ -290,7 +290,7 @@ Skip in v1 — the site has no authenticated endpoints. Document the omission ex
 
 ### 6.3 MCP endpoint and site/scanner discovery metadata
 
-The portfolio MCP release candidate targets `https://akaushik.org/api/mcp`. It must not be promoted as live until the required production rate-limit receipt in §5.3 is complete. It is implemented in the existing Next.js application with no SDK, second deployment target, authentication, session state, or mutable capability. The document at `/.well-known/mcp.json` is explicitly labeled site/scanner-specific because MCP does not define that discovery path or its JSON shape. It advertises the endpoint, current revision `2025-11-25`, bounded compatibility support, Streamable HTTP transport, and exact tool definitions.
+The portfolio MCP release candidate targets `https://akaushik.org/api/mcp`. It must not be promoted as live until the required production rate-limit receipt in §5.3 is complete. The scheduled production monitor intentionally requires discovery status `live`, so it remains red while the card is `ready-pending-rate-limit`; do not weaken that promotion gate before the WAF receipt. The runtime is implemented in the existing Next.js application with no SDK, second deployment target, authentication, session state, or mutable capability. The document at `/.well-known/mcp.json` is explicitly labeled site/scanner-specific because MCP does not define that discovery path or its JSON shape. It advertises the endpoint, current revision `2025-11-25`, bounded compatibility support, Streamable HTTP transport, and exact tool definitions.
 
 Transport contract:
 
@@ -301,7 +301,7 @@ Transport contract:
 - On requests after initialization, explicit `MCP-Protocol-Version` values may be `2025-11-25`, `2025-06-18`, or `2025-03-26`. An omitted header is accepted as the protocol-defined `2025-03-26` fallback. Any other explicit value returns HTTP 400 and `-32602`.
 - Every valid JSON-RPC call without an `id` is a notification, including request-shaped methods such as `tools/list` and `tools/call`. Applicable methods are still dispatched, but success and error responses are suppressed. A single notification or notification-only fallback batch returns HTTP 202 with no body. String IDs and integer numeric IDs are accepted; null, fractional, boolean, object, and array IDs are invalid requests.
 - Malformed JSON alone returns `-32700`. Parsed JSON that is not a valid request object returns `-32600`.
-- `GET`, `HEAD`, `PUT`, `PATCH`, and `DELETE` pass through the same transport validation before returning HTTP 405; this server does not offer a server-initiated SSE stream. The endpoint uses a raw Pages API adapter and is excluded from `proxy.ts`, because Next's Fetch `Request` boundary rejects methods such as `TRACE` before proxy or App Router code can validate `Origin`. Any unsupported method that reaches the function therefore returns 403 for a foreign Origin and 405 otherwise instead of a framework 500, while reproducing the site's discovery and security response headers. Vercel preview ingress itself rejects `TRACE` with 405 `NOT_ALLOWED` before the function; that platform response contains no MCP data. A forwarded `PROPFIND` request was black-box verified to reach the adapter and receive its JSON-RPC Origin rejection. `OPTIONS` returns HTTP 204. The server is stateless and never issues `MCP-Session-Id`.
+- `GET`, `HEAD`, `PUT`, `PATCH`, and `DELETE` pass through the same transport validation before returning HTTP 405; this server does not offer a server-initiated SSE stream. The endpoint uses a raw Pages API adapter and is excluded from `proxy.ts`, because Next's Fetch `Request` boundary rejects methods such as `TRACE` before proxy or App Router code can validate `Origin`. Methods reaching the Node boundary are Origin-checked first and protocol-version-checked second: failures return 403 or 400; otherwise unsupported methods return 405, with the site's discovery and security response headers. Vercel preview ingress itself rejects `TRACE` with 405 `NOT_ALLOWED` before the function; that platform response contains no MCP data. A forwarded `PROPFIND` request was black-box verified to reach the adapter and receive its JSON-RPC Origin rejection. Valid `OPTIONS` returns HTTP 204. The server is stateless and never issues `MCP-Session-Id`.
 - Server clients may omit `Origin`. If `Origin` is present, it must equal `https://akaushik.org`; every other origin is rejected with HTTP 403 and no permissive wildcard CORS response.
 - JSON-RPC errors are `-32700` (parse error), `-32600` (invalid request), `-32601` (method not found), `-32602` (invalid params), and redacted `-32603` (internal error).
 
@@ -411,8 +411,8 @@ All of the above is implementable in under a day of focused work once the scaffo
 Three layers, mirroring how we handle accessibility and performance:
 
 1. **Build-time unit tests.** Snapshot the generated `robots.txt`, `/llms.txt`, `/llms-full.txt`, `/.well-known/api-catalog`, and `/api/openapi.json`; run `pnpm vitest run lib/mcp.test.ts` for JSON-RPC, origin, tool-schema, and draft-denial coverage. Fail the build if any required field or invariant disappears.
-2. **Preview-deploy check.** After every Vercel preview, a CI script curls each canonical URL with `Accept: text/markdown`, `Accept: text/html`, and `Accept: application/json` variants and asserts the expected content type. It also curls `.md` alternates and runs `pnpm exec playwright test e2e/mcp.spec.ts e2e/agent-readiness.spec.ts --project=chromium-desktop` against the preview.
-3. **External validation — two paths.**
+2. **CI integration check.** GitHub Actions builds and starts the production app on the runner at `http://localhost:3000`, then runs the Playwright suite, including `e2e/mcp.spec.ts` and `e2e/agent-readiness.spec.ts`. This proves the application boundary, not Vercel ingress behavior. Separate manual PR-preview probes observed Vercel `TRACE` → 405 `NOT_ALLOWED` and forwarded `PROPFIND` → MCP 403; CI does not assert either preview path.
+3. **Planned external validation — two paths, not yet wired to deploy.**
    - **Web UI:** run `isitagentready.com` against the live URL after every production deploy. Persist a dated screenshot of the report in `docs/agent-readiness-snapshots/YYYY-MM-DD.png`.
    - **Programmatic via the tool's own MCP server:** `isitagentready.com` exposes a stateless MCP server at `https://isitagentready.com/.well-known/mcp.json` with a `scan_site` tool over Streamable HTTP. Wire this into the deploy gate so the latest score and any newly-failed checks are captured as JSON in CI artifacts. This is the version we trust as a regression gate; the screenshot is for the changelog.
 

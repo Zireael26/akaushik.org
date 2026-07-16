@@ -192,6 +192,6 @@ export const config = {
   // to pass through so Pattern B can rewrite them, so we can't use the usual
   // "exclude paths with a dot" shortcut.
   matcher: [
-    '/((?!api/mcp(?:/|$)|_next/static|_next/image|favicon.ico|init-theme\\.js|.*\\.(?:png|jpg|jpeg|webp|avif|svg|ico|css|js|woff|woff2|ttf|otf|txt|xml|json)$).*)',
+    '/((?!api/mcp/?$|_next/static|_next/image|favicon.ico|init-theme\\.js|.*\\.(?:png|jpg|jpeg|webp|avif|svg|ico|css|js|woff|woff2|ttf|otf|txt|xml|json)$).*)',
   ],
 };

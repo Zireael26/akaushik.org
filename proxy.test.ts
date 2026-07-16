@@ -91,19 +91,26 @@ describe('proxy Markdown canonical links', () => {
 
 describe('proxy matcher', () => {
   it('leaves the raw MCP transport outside Fetch Request construction', () => {
-    expect(
-      unstable_doesMiddlewareMatch({
-        config,
-        nextConfig: {},
-        url: 'https://akaushik.org/api/mcp',
-      }),
-    ).toBe(false);
-    expect(
-      unstable_doesMiddlewareMatch({
-        config,
-        nextConfig: {},
-        url: 'https://akaushik.org/api/mcpx',
-      }),
-    ).toBe(true);
+    for (const url of ['https://akaushik.org/api/mcp', 'https://akaushik.org/api/mcp/']) {
+      expect(
+        unstable_doesMiddlewareMatch({
+          config,
+          nextConfig: {},
+          url,
+        }),
+        url,
+      ).toBe(false);
+    }
+
+    for (const url of ['https://akaushik.org/api/mcpx', 'https://akaushik.org/api/mcp/child']) {
+      expect(
+        unstable_doesMiddlewareMatch({
+          config,
+          nextConfig: {},
+          url,
+        }),
+        url,
+      ).toBe(true);
+    }
   });
 });
