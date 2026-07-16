@@ -57,7 +57,7 @@ function forbiddenOrigin(origin: string | null): Response | null {
 export async function handleMcpHttpRequest(
   method: string,
   headers: Headers,
-  rawBody = '',
+  rawBody: string | (() => Promise<string>) = '',
 ): Promise<Response> {
   const normalizedMethod = method.toUpperCase();
   const origin = headers.get('origin');
@@ -71,7 +71,8 @@ export async function handleMcpHttpRequest(
     }
     let message: unknown;
     try {
-      message = JSON.parse(rawBody);
+      const body = typeof rawBody === 'function' ? await rawBody() : rawBody;
+      message = JSON.parse(body);
     } catch {
       return jsonResponse(
         jsonRpcError(null, JSON_RPC_ERROR_CODES.PARSE_ERROR, 'Parse error.'),

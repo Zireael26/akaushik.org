@@ -4,7 +4,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request): Promise<Response> {
-  return handleMcpHttpRequest(request.method, request.headers, await request.text());
+  return handleMcpHttpRequest(request.method, request.headers, () => request.text());
 }
 
 export function GET(request: Request): Promise<Response> {
