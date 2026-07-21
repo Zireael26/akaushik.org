@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "stableTypeOrdering": true,
     "target": "ES2022",
     "lib": [
       "dom",

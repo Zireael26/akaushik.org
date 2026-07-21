@@ -4,6 +4,12 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ## [Unreleased]
 
+### Changed
+
+- 2026-07-21 — Converged on Node 24.18.0, pnpm 11.9.0, Tailwind 4.3.3,
+  and the fleet TS7/TS6 side-by-side compiler arrangement; `tsc` now runs
+  native TypeScript 7 while API tooling retains published TypeScript 6.0.2.
+
 ### Added
  - 2026-07-15 — Published the ClusterBid case study as an explicitly pre-production engineering record: five-study index/API/agent-corpus parity, a static no-media reel, and bounded UAT claims that name mock inference, local Stripe, and the absence of production/customer outcomes. Added exact content and surface tests and removed the completed `docs/RELEASE_SCHEDULE.md` backlog.
  - 2026-07-15 — Wanderer browser verification: replaced the historical skip/vacuous checks with real-canvas, forced no-WebGL fallback, render-pixel ceiling, route/breakpoint, client-navigation, dominant-pose, stored motion-off/bootstrap, gated-chunk, runtime teardown/restore, reduced-motion, and hydration/error assertions across the scoped Playwright projects.
