@@ -28,6 +28,13 @@ This file follows the [llmstxt.org](https://llmstxt.org) format. It gives agents
 - [curat.money](https://akaushik.org/work/curat-money): Product-engineering framing, financial data
 - [ClusterBid](https://akaushik.org/work/clusterbid): Pre-production engineering through real-host k3s UAT with mock inference and local Stripe; no production claim
 
+## MCP
+
+- Endpoint: https://akaushik.org/api/mcp
+- Protocol: MCP 2025-11-25 over stateless Streamable HTTP; bounded compatibility for 2025-06-18 and the 2025-03-26 missing-header fallback
+- Tools: \`lookup_case_study({slug})\` for published case studies; \`get_availability({})\` for current public availability
+- Discovery: https://akaushik.org/.well-known/mcp.json
+
 ## Contact
 
 - Email: hello@akaushik.org
@@ -38,7 +45,7 @@ This file follows the [llmstxt.org](https://llmstxt.org) format. It gives agents
 
 - [Full site content](https://akaushik.org/llms-full.txt)
 - [Agent skills index](https://akaushik.org/.well-known/agent-skills/index.json)
-- [MCP server card](https://akaushik.org/.well-known/mcp.json)
+- [Site/scanner MCP discovery metadata](https://akaushik.org/.well-known/mcp.json)
 `;
 
 export function GET() {
