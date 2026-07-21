@@ -126,11 +126,12 @@ function McpToolsBlock() {
       </p>
       <p className="api-docs-description">
         Every POST must use <code>Content-Type: application/json</code> and an <code>Accept</code>{' '}
-        header listing both <code>application/json</code> and <code>text/event-stream</code>.
+        header listing both <code>application/json</code> and <code>text/event-stream</code>; request
+        bodies are capped at 1 MiB before parsing.
         Responses with bodies use JSON. Every no-id call is dispatched as a notification without a
         response: a single notification or all-notification batch receives 202.
-        This server issues no <code>MCP-Session-Id</code>; GET, HEAD, PUT, PATCH, and DELETE return
-        405, and OPTIONS returns 204.
+        This server issues no <code>MCP-Session-Id</code>; GET, HEAD, PUT, PATCH, DELETE, and other
+        unsupported methods return 405, and OPTIONS returns 204.
       </p>
       <p className="api-docs-description">
         JSON-RPC errors are <code>-32700</code> parse error, <code>-32600</code> invalid request,{' '}
