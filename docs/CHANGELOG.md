@@ -6,6 +6,9 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-07-21 — Reconciled Claude and Codex hook copies and settings with the
+  complete Trellis inventory, including the shared autonomy library; refreshed
+  the generated machine-local inheritance ignore block.
 - 2026-07-21 — Converged on Node 24.18.0, pnpm 11.9.0, Tailwind 4.3.3,
   and the fleet TS7/TS6 side-by-side compiler arrangement; `tsc` now runs
   native TypeScript 7 while API tooling retains published TypeScript 6.0.2.
