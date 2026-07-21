@@ -6,6 +6,8 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-07-21 — Aligned `@types/node` to 24.13.3 so compile-time APIs match the
+  fleet's pinned Node 24 runtime.
 - 2026-07-21 — Reconciled Claude and Codex hook copies and settings with the
   complete Trellis inventory, including the shared autonomy library; refreshed
   the generated machine-local inheritance ignore block.
