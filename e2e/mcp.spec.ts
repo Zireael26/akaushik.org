@@ -1,4 +1,7 @@
 import { expect, test, type APIRequestContext } from '@playwright/test';
+import { request as httpRequest } from 'node:http';
+import type { IncomingHttpHeaders } from 'node:http';
+import { request as httpsRequest } from 'node:https';
 
 const PROTOCOL_VERSION = '2025-11-25';
 const SUPPORTED_PROTOCOL_VERSIONS = ['2025-11-25', '2025-06-18', '2025-03-26'] as const;
@@ -26,6 +29,31 @@ async function postRpc(
   return request.post('/api/mcp', {
     headers: { ...MCP_HEADERS, ...headers },
     data: body,
+  });
+}
+
+function rawRequest(
+  baseURL: string,
+  method: string,
+  origin: string,
+): Promise<{ status: number; body: string; headers: IncomingHttpHeaders }> {
+  const url = new URL('/api/mcp', baseURL);
+  const request = url.protocol === 'https:' ? httpsRequest : httpRequest;
+
+  return new Promise((resolve, reject) => {
+    const outgoing = request(url, { method, headers: { Origin: origin } }, (response) => {
+      const chunks: Buffer[] = [];
+      response.on('data', (chunk: Buffer) => chunks.push(chunk));
+      response.on('end', () => {
+        resolve({
+          status: response.statusCode ?? 0,
+          body: Buffer.concat(chunks).toString('utf8'),
+          headers: response.headers,
+        });
+      });
+    });
+    outgoing.on('error', reject);
+    outgoing.end();
   });
 }
 
@@ -236,6 +264,17 @@ test.describe('MCP Streamable HTTP endpoint', () => {
     expect((await batch.json()).error.code).toBe(-32600);
   });
 
+  test('rejects request bodies above the transport limit before JSON parsing', async ({
+    request,
+  }) => {
+    const oversized = await request.post('/api/mcp', {
+      headers: MCP_HEADERS,
+      data: Buffer.from(JSON.stringify({ padding: 'x'.repeat(1024 * 1024) })),
+    });
+    expect(oversized.status()).toBe(413);
+    await expect(oversized.json()).resolves.toMatchObject({ error: { code: -32600 } });
+  });
+
   test('supports batches only for the 2025-03-26 fallback', async ({ request }) => {
     const fallback = await request.post('/api/mcp', {
       headers: {
@@ -266,7 +305,7 @@ test.describe('MCP Streamable HTTP endpoint', () => {
         { jsonrpc: '2.0', method: 'tools/list' },
       ],
     });
-    expect(notificationOnly.status()).toBe(204);
+    expect(notificationOnly.status()).toBe(202);
     expect((await notificationOnly.body()).byteLength).toBe(0);
 
     const oversized = await request.post('/api/mcp', {
@@ -443,5 +482,24 @@ test.describe('MCP Streamable HTTP endpoint', () => {
         expect((await invalidVersion.json()).error.code).toBe(-32602);
       }
     }
+  });
+
+  test('origin-checks forwarded unsupported methods at the Node request boundary', async ({
+    baseURL,
+  }) => {
+    if (!baseURL) throw new Error('Playwright baseURL is required for the raw HTTP probe.');
+
+    // Vercel rejects TRACE at ingress; PROPFIND is the black-box-verified method
+    // that reaches this same application boundary in preview deployments.
+    const crossOrigin = await rawRequest(baseURL, 'PROPFIND', 'https://evil.example');
+    expect(crossOrigin.status).toBe(403);
+    expect(JSON.parse(crossOrigin.body).error.code).toBe(-32600);
+
+    const sameOrigin = await rawRequest(baseURL, 'PROPFIND', 'https://akaushik.org');
+    expect(sameOrigin.status).toBe(405);
+    expect(JSON.parse(sameOrigin.body).error.code).toBe(-32601);
+    expect(sameOrigin.headers['x-content-type-options']).toBe('nosniff');
+    expect(sameOrigin.headers['content-security-policy']).toContain("default-src 'none'");
+    expect(sameOrigin.headers.link).toContain('</.well-known/mcp.json>');
   });
 });

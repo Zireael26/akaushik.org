@@ -1,6 +1,9 @@
 import { CANONICAL_ORIGIN } from './canonical';
 import { getAllPosts, getPost } from './content';
 import type { Post } from './content';
+import { isAllowedMcpOrigin } from './mcp-origin';
+
+export { isAllowedMcpOrigin } from './mcp-origin';
 
 export const MCP_PROTOCOL_VERSION = '2025-11-25';
 export const MCP_FALLBACK_PROTOCOL_VERSION = '2025-03-26';
@@ -116,8 +119,7 @@ export type McpDispatchResult =
 
 export type McpPayloadDispatchResult =
   | McpDispatchResult
-  | { status: 200; body: Array<JsonRpcSuccessResponse | JsonRpcErrorResponse> }
-  | { status: 204; body: null };
+  | { status: 200; body: Array<JsonRpcSuccessResponse | JsonRpcErrorResponse> };
 
 export type McpHttpError = {
   status: 400 | 403 | 406 | 415;
@@ -210,10 +212,6 @@ function jsonRpcSuccess(
   result: Record<string, unknown>,
 ): JsonRpcSuccessResponse {
   return { jsonrpc: '2.0', id, result };
-}
-
-export function isAllowedMcpOrigin(origin: string | null): boolean {
-  return origin === null || origin === CANONICAL_ORIGIN;
 }
 
 function acceptedMediaTypes(accept: string | null): Set<string> {
@@ -532,6 +530,6 @@ export function handleMcpPayload(
     if (result.body !== null) responses.push(result.body);
   }
 
-  if (responses.length === 0) return { status: 204, body: null };
+  if (responses.length === 0) return { status: 202, body: null };
   return { status: 200, body: responses };
 }

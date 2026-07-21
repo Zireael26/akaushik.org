@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { AGENT_DISCOVERY_LINK_HEADER } from './lib/agent-discovery';
 
 /**
  * Agent-readiness proxy.
@@ -25,18 +26,6 @@ import { NextResponse, type NextRequest } from 'next/server';
  * has been flaky with header-based rewrites on streaming responses (Risk
  * R4), so if it misbehaves, Pattern B still satisfies the scan.
  */
-
-const LINK_HEADER = [
-  '</llms.txt>; rel="describedby"; type="text/markdown"',
-  '</llms-full.txt>; rel="describedby"; type="text/markdown"',
-  '</sitemap.xml>; rel="sitemap"; type="application/xml"',
-  '</.well-known/agent-skills/index.json>; rel="describedby"; type="application/json"',
-  '</.well-known/mcp.json>; rel="describedby"; type="application/json"',
-  '</.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json"',
-  // RFC 8631: service-desc (machine-readable spec) + service-doc (human page).
-  '</api/openapi.json>; rel="service-desc"; type="application/json"',
-  '</api/docs>; rel="service-doc"; type="text/html"',
-].join(', ');
 
 // Paths that have a `.md` alternate. The set is small and deliberate — adding
 // an entry means the path must also have an `/md/route.ts` handler.
@@ -96,7 +85,7 @@ function buildResponseHeaders(
   productionSecurityHeaders: Record<string, string>,
 ): Headers {
   const headers = new Headers();
-  headers.set('Link', LINK_HEADER);
+  headers.set('Link', AGENT_DISCOVERY_LINK_HEADER);
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   headers.set('X-Robots-Tag', 'index, follow');
@@ -203,6 +192,6 @@ export const config = {
   // to pass through so Pattern B can rewrite them, so we can't use the usual
   // "exclude paths with a dot" shortcut.
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|init-theme\\.js|.*\\.(?:png|jpg|jpeg|webp|avif|svg|ico|css|js|woff|woff2|ttf|otf|txt|xml|json)$).*)',
+    '/((?!api/mcp/?$|_next/static|_next/image|favicon.ico|init-theme\\.js|.*\\.(?:png|jpg|jpeg|webp|avif|svg|ico|css|js|woff|woff2|ttf|otf|txt|xml|json)$).*)',
   ],
 };

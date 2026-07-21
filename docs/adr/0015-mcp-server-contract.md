@@ -27,7 +27,8 @@ the existing Next.js application.
   `tools/list`, and `tools/call`.
 - POST requests require JSON content and an `Accept` header listing both
   `application/json` and `text/event-stream`. Responses use JSON; valid
-  notifications receive HTTP 202 with no body.
+  notifications receive HTTP 202 with no body. Request bodies are capped at
+  1 MiB before JSON parsing.
 - GET, HEAD, PUT, PATCH, and DELETE return 405 after the same protocol and origin
   validation. The server emits no unsolicited messages, opens no SSE stream, and
   issues no session identifier.
@@ -36,7 +37,7 @@ the existing Next.js application.
 - JSON-RPC array batches are accepted only on the `2025-03-26` compatibility
   path, where the transport revision permits them, and are capped at 32 calls
   before dispatch. Empty batches remain invalid, notification-only batches receive
-  HTTP 204, and later protocol revisions reject arrays. Every no-id call is
+  HTTP 202, and later protocol revisions reject arrays. Every no-id call is
   dispatched as a notification where applicable, including request-shaped
   methods, and produces no JSON-RPC response. Numeric request IDs must be
   integers. Protocol failures use the standard `-32700`, `-32600`, `-32601`,
@@ -54,6 +55,19 @@ production gate.
 
 The runtime implementation remains dependency-free. The official MCP Inspector
 is pinned as a verification client, not added to production dependencies.
+
+The adapter uses a Pages API route with body parsing disabled. `/api/mcp` is
+excluded from `proxy.ts`, because the Fetch `Request` constructor used by the
+App Router/proxy path rejects raw methods such as `TRACE` before application
+code can validate `Origin`. Any method that reaches the Node request boundary
+therefore receives the same Origin/protocol checks: failures return 403 or 400,
+while otherwise-unsupported methods return 405 instead of a framework 500.
+Vercel's preview ingress rejects `TRACE` itself with 405
+`NOT_ALLOWED` before the function; that platform-owned path never reaches the
+MCP server. A forwarded custom method (`PROPFIND`) was observed reaching the
+adapter and receiving its JSON-RPC Origin rejection. The adapter reproduces the
+site's discovery and security response headers directly so the matcher exclusion
+does not weaken responses that reach the function.
 
 ## Discovery and documentation
 
