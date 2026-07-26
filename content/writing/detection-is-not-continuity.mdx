@@ -1,0 +1,89 @@
+---
+title: "Detection is not continuity"
+dek: Three failures on one machine made the same point: a system that notices it is broken and then stops has only relocated the failure.
+date: 2026-07-26
+---
+
+# Detection is not continuity
+
+> Three failures on one machine made the same point: a system that notices it is broken and then stops has only relocated the failure.
+
+This morning, a local router told me it had handled 1,416 requests with zero errors. At the same time, agents behind it were losing responses mid-stream.
+
+The number was accurate. That was the problem.
+
+The same session turned up two more versions of that mistake in the [process layer I run around coding agents](/writing/trellis-1-0-rc). A disk janitor could identify a clean, pushed worktree and still delete it while somebody was working inside. The obvious fallback for a failed model lane would keep agents moving by silently spending a different quota pool. Each system could see enough to claim health or recovery. None could carry the work through without moving the damage somewhere less visible.
+
+---
+
+## Zero meant exactly what the counter said
+
+The router split requests across two model lanes. Its `errors` counter incremented on two events: an HTTP response at 400 or above, or a socket error. That sounds broad until the upstream returns 200, starts a valid stream, and then sends an in-band SSE error frame.
+
+That request satisfied the counter's definition of success. The HTTP status was 200. The socket had not failed. When the client received the error frame and closed the connection, the router counted the close as `aborted`, which assigned ownership to the client.
+
+An upstream failure became a successful request followed by a badly behaved client.
+
+So the dashboard could report 1,416 requests and zero errors while streams were dying. An earlier version of the same bug had reported 102 requests and zero errors while responses were being truncated. I had two clean summaries from two broken systems because both summaries watched the handshake and ignored what happened inside the stream.
+
+The fix starts with naming the real event. An in-band upstream error is an upstream failure even when the HTTP envelope says 200. The upstream frame caused the later client disconnect. The router has to carry that distinction into its counters and logs or the next investigation begins with evidence that points in the wrong direction. A counter is evidence only about its increment condition.
+
+---
+
+## The directory was clean and occupied
+
+The disk janitor had a more physical version of the same hole. It reaped old worktrees after checking their git state: the tree had to be clean, then either merged or pushed. That protected uncommitted work and branches that existed only on one machine. Nothing in the gate checked whether a running process had its current directory inside the tree.
+
+`docs/adr/2026-07-16-scheduled-safe-worktree-reap.md` had already described the exact case. A clean, pushed, unmerged tree can still be the working directory of a live unit. The document chose merged-ness as a deliberate proxy for "nobody is in there" and left live-process scanning out as slower, macOS-specific machinery.
+
+The prediction sat in the repository for ten days. Then a 1.0 GB worktree passed every deletion gate while five processes had their current directory inside it.
+
+Git state answered recoverability. The gate was silent about whether the work was still in progress, which left the person using the directory outside the safety model.
+
+The repair lives in `scripts/lib/disk-janitor-lib.sh`. One host-wide `lsof -n -P -Fn` snapshot per scan finds current directories and open handles under every candidate tree. On this machine it costs 0.21 seconds. The command runs under a five-second alarm, and any missing tool, timeout, empty result, or nonzero exit blocks deletion. Then the janitor takes a fresh snapshot immediately before each individual removal, because a process can enter a tree after the plan is built and before the action runs.
+
+---
+
+## The fallback that would have hidden the outage
+
+When the foreign lane goes down, the obvious repair is server-side substitution. Route the request to the first-party model, preserve the API shape, and let the running agent continue.
+
+That would improve availability and make the system less honest.
+
+The two lanes exist partly to separate quota pools. A silent fallback spends the first-party subscription without telling the caller, the logs, or the operator. The request appears recovered. The first visible symptom arrives later as a rate limit in an unrelated session, with no direct trail back to the outage that consumed the quota.
+
+I did not have to speculate about that failure. Four agents typed for the foreign lane turned out to be running the first-party model. A spawn-time parameter overrode the agent definition, and those four agents produced every first-party rate limit I saw that day. The system had already run the accidental version of silent fallback. It looked like continuity at the request boundary and like random quota exhaustion everywhere else.
+
+Promoting that accident into router policy would make the bug harder to detect and impossible for the caller to control.
+
+The degradation belongs at the caller. The router should report that the foreign lane is unavailable. The caller can then stop, retry later, reduce the unit, or choose the first-party model under an explicit policy. Whatever it chooses has to be visible and logged. Crossing a model or quota boundary is a decision, not a transport detail.
+
+---
+
+## The negative result belongs in the same ledger
+
+The same discipline has to work in the other direction. A bug report claimed that Codex rollout files were writing hard enough to damage SSDs. The claim sounded plausible because the files were large and growing.
+
+I checked the write pattern and the rate. The files are append-only. They grew by 215 MB per day. Against a 300 TBW drive, that is 0.026 percent of the rated write endurance per year.
+
+It does not reproduce.
+
+The files may still be an occupancy problem. Across rollouts larger than 5 MB, base64-encoded PNGs accounted for 38.4 percent of the bytes. But occupancy is not wear. Treating the frightening claim as true would have produced a fix for the wrong problem, just as treating zero errors as health delayed the fix for a real one.
+
+---
+
+## What I got wrong
+
+I trusted the word `errors` before reading the predicate beneath it. The counter answered a narrower question than I assumed. The class fix is to define operational metrics by the events they count and inspect the blind spots before using the headline number as evidence.
+
+I accepted a proxy after the design had already named its failure mode. Merged or pushed was useful git evidence and silent about occupancy. The ten-day gap between prediction and incident was not a discovery period. It was an implementation debt with a countdown.
+
+And I nearly treated invisible substitution as resilience. The quota split made that fallback a transfer of cost and failure ownership. The completed request hid the cost, which surfaced later as a rate limit in an unrelated session.
+
+---
+
+## The next failure should leave better evidence
+
+I now read operational counters by their predicates and inspect who owns an ambiguous disconnect. Destructive action gets a live-state check at the moment it fires; a fallback that crosses a model or quota boundary stays with the caller and leaves a log entry.
+
+I will know this is working when the next lane outage leaves a visible degraded receipt and no surprise first-party rate limit, and when the next janitor scan skips a clean but occupied tree.
