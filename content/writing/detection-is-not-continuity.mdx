@@ -1,89 +1,109 @@
 ---
-title: "Detection is not continuity"
-dek: Three failures on one machine made the same point: a system that notices it is broken and then stops has only relocated the failure.
-date: 2026-07-26
+title: "One session, two model families: GPTx in Trellis"
+dek: GPTx lets me run Claude and GPT agents inside one Trellis session, with the same tools and worktree, separate model lanes, and a reviewer from the other family.
+date: 2026-07-27
 ---
 
-# Detection is not continuity
+# One session, two model families: GPTx in Trellis
 
-> Three failures on one machine made the same point: a system that notices it is broken and then stops has only relocated the failure.
+> GPTx lets me run Claude and GPT agents inside one Trellis session, with the same tools and worktree, separate model lanes, and a reviewer from the other family.
 
-This morning, a local router told me it had handled 1,416 requests with zero errors. At the same time, agents behind it were losing responses mid-stream.
+In the acceptance run for GPTx, a Claude orchestrator started two workers in the same session. One was Claude. The other was GPT-5.6 Sol. Both read the repository, changed real files, and reported back through the ordinary agent interface. Then Claude sent a follow-up to the GPT worker. The same agent resumed with the same id and remembered the work it had already done.
 
-The number was accurate. That was the problem.
+That last sentence is the feature.
 
-The same session turned up two more versions of that mistake in the [process layer I run around coding agents](/writing/trellis-1-0-rc). A disk janitor could identify a clean, pushed worktree and still delete it while somebody was working inside. The obvious fallback for a failed model lane would keep agents moving by silently spending a different quota pool. Each system could see enough to claim health or recovery. None could carry the work through without moving the damage somewhere less visible.
+I have been using a second model family with Trellis for a while. The earlier arrangement, which I described as the second engine in [the loop-era post](/writing/trellis-loop-era), launched Codex as a child process with a frozen work order. Useful, but still a relay. It could edit and return a receipt. It could not remain a named teammate, receive another message, participate in a dynamic workflow, or ask an Opus agent for advice halfway through a unit.
 
----
-
-## Zero meant exactly what the counter said
-
-The router split requests across two model lanes. Its `errors` counter incremented on two events: an HTTP response at 400 or above, or a socket error. That sounds broad until the upstream returns 200, starts a valid stream, and then sends an in-band SSE error frame.
-
-That request satisfied the counter's definition of success. The HTTP status was 200. The socket had not failed. When the client received the error frame and closed the connection, the router counted the close as `aborted`, which assigned ownership to the client.
-
-An upstream failure became a successful request followed by a badly behaved client.
-
-So the dashboard could report 1,416 requests and zero errors while streams were dying. An earlier version of the same bug had reported 102 requests and zero errors while responses were being truncated. I had two clean summaries from two broken systems because both summaries watched the handshake and ignored what happened inside the stream.
-
-The fix starts with naming the real event. An in-band upstream error is an upstream failure even when the HTTP envelope says 200. The upstream frame caused the later client disconnect. The router has to carry that distinction into its counters and logs or the next investigation begins with evidence that points in the wrong direction. A counter is evidence only about its increment condition.
+GPTx moves that second engine into the working session.
 
 ---
 
-## The directory was clean and occupied
+## The model is selected per agent
 
-The disk janitor had a more physical version of the same hole. It reaped old worktrees after checking their git state: the tree had to be clean, then either merged or pushed. That protected uncommitted work and branches that existed only on one machine. Nothing in the gate checked whether a running process had its current directory inside the tree.
+The old `claudex` path changed the model for the whole Claude Code process. The main loop became GPT, every subagent became GPT, and anything pinned to Sonnet or Opus failed because the proxy only understood the OpenAI side. A cross-model review quietly became GPT reviewing GPT. That session also disabled tool search and clamped tool concurrency to protect the GPT endpoint, so Claude paid for limits it did not need.
 
-`docs/adr/2026-07-16-scheduled-safe-worktree-reap.md` had already described the exact case. A clean, pushed, unmerged tree can still be the working directory of a live unit. The document chose merged-ness as a deliberate proxy for "nobody is in there" and left live-process scanning out as slower, macOS-specific machinery.
+GPTx leaves Claude in charge. A small local router reads the `model` field on each request. Claude model ids go straight to Anthropic as byte-for-byte traffic. A closed list of GPT and Codex ids goes to the local Codex proxy. Unknown ids stay on the Anthropic lane.
 
-The prediction sat in the repository for ten days. Then a 1.0 GB worktree passed every deletion gate while five processes had their current directory inside it.
+The default matters. New Claude aliases, internal agents, and paths I have not seen before do not get diverted because a regular expression was too ambitious.
 
-Git state answered recoverability. The gate was silent about whether the work was still in progress, which left the person using the directory outside the safety model.
+The Claude side keeps its subscription OAuth, prompt-cache controls, beta headers, long-context flag, and effort setting. None of those requests is translated into another provider's shape. The Claude credential never enters the Codex proxy either. On the other lane, the proxy supplies its own Codex OAuth and translates only the GPT request.
 
-The repair lives in `scripts/lib/disk-janitor-lib.sh`. One host-wide `lsof -n -P -Fn` snapshot per scan finds current directories and open handles under every candidate tree. On this machine it costs 0.21 seconds. The command runs under a five-second alarm, and any missing tool, timeout, empty result, or nonzero exit blocks deletion. Then the janitor takes a fresh snapshot immediately before each individual removal, because a process can enter a tree after the plan is built and before the action runs.
-
----
-
-## The fallback that would have hidden the outage
-
-When the foreign lane goes down, the obvious repair is server-side substitution. Route the request to the first-party model, preserve the API shape, and let the running agent continue.
-
-That would improve availability and make the system less honest.
-
-The two lanes exist partly to separate quota pools. A silent fallback spends the first-party subscription without telling the caller, the logs, or the operator. The request appears recovered. The first visible symptom arrives later as a rate limit in an unrelated session, with no direct trail back to the outage that consumed the quota.
-
-I did not have to speculate about that failure. Four agents typed for the foreign lane turned out to be running the first-party model. A spawn-time parameter overrode the agent definition, and those four agents produced every first-party rate limit I saw that day. The system had already run the accidental version of silent fallback. It looked like continuity at the request boundary and like random quota exhaustion everywhere else.
-
-Promoting that accident into router policy would make the bug harder to detect and impossible for the caller to control.
-
-The degradation belongs at the caller. The router should report that the foreign lane is unavailable. The caller can then stop, retry later, reduce the unit, or choose the first-party model under an explicit policy. Whatever it chooses has to be visible and logged. Crossing a model or quota boundary is a decision, not a transport detail.
+From the operator side there is no GPTx command. I start `claude` as usual. The model on an agent definition decides the route. Because the settings and agent files live at user scope, the same workers are available from every repository on the machine. Availability is not adoption; Trellis policy still decides when to use one.
 
 ---
 
-## The negative result belongs in the same ledger
+## GPT workers are ordinary Trellis workers
 
-The same discipline has to work in the other direction. A bug report claimed that Codex rollout files were writing hard enough to damage SSDs. The claim sounded plausible because the files were large and growing.
+`gpt-mid` and `gpt-sol` use the same model, GPT-5.6 Sol, at different effort levels. They inherit the normal agent tools, permissions, git state, worktree, and reporting rules. A GPT worker can search the tree, edit several files, run a compiler, call the test suite, return structured output, or join a parallel workflow. It can also become a named teammate and keep working after a `SendMessage` follow-up.
 
-I checked the write pattern and the rate. The files are append-only. They grew by 215 MB per day. Against a 300 TBW drive, that is 0.026 percent of the rated write endurance per year.
+I choose between the two agents by looking at the oracle around the task.
 
-It does not reproduce.
+`gpt-mid` runs at medium effort. It gets bounded implementation with a strong external check: a failing test, a type checker, a schema, a deterministic repro. It also gets mechanical volume. The worker contract tells it to run that oracle every time and hand the unit back if a real design decision appears.
 
-The files may still be an occupancy problem. Across rollouts larger than 5 MB, base64-encoded PNGs accounted for 38.4 percent of the bytes. But occupancy is not wear. Treating the frightening claim as true would have produced a fix for the wrong problem, just as treating zero errors as health delayed the fix for a real one.
+`gpt-sol` runs at xhigh effort. I use it when the oracle is weak or missing, or when the unit carries a decision that is expensive to reverse. Root-cause work that survived the first pass belongs here. So does security-sensitive analysis. Importance alone is a poor routing rule; a large mechanical change with a good compiler still belongs at medium.
 
----
+There is no cheap GPT rung below medium on this installation. That is deliberate. The expensive mistake was sending mechanical work to xhigh until the Codex window disappeared, not failing to squeeze one more tier out of it.
 
-## What I got wrong
-
-I trusted the word `errors` before reading the predicate beneath it. The counter answered a narrower question than I assumed. The class fix is to define operational metrics by the events they count and inspect the blind spots before using the headline number as evidence.
-
-I accepted a proxy after the design had already named its failure mode. Merged or pushed was useful git evidence and silent about occupancy. The ten-day gap between prediction and incident was not a discovery period. It was an implementation debt with a countdown.
-
-And I nearly treated invisible substitution as resilience. The quota split made that fallback a transfer of cost and failure ownership. The completed request hid the cost, which surfaced later as a rate limit in an unrelated session.
+Dynamic workflows can set the agent type, effort, and output schema directly. The acceptance run fanned out three GPT agents and received three schema-valid results, while Claude handled orchestration and synthesis in the same session. Tool calls and structured output each crossed the router twice without any workflow-specific adapter.
 
 ---
 
-## The next failure should leave better evidence
+## Review crosses the model boundary
 
-I now read operational counters by their predicates and inspect who owns an ambiguous disconnect. Destructive action gets a live-state check at the moment it fires; a fallback that crosses a model or quota boundary stays with the caller and leaves a log entry.
+The most useful part of a second model family is the disagreement, so GPTx carries an explicit rule: no GPT self-review when the point of the pass is cross-model review.
 
-I will know this is working when the next lane outage leaves a visible degraded receipt and no surprise first-party rate limit, and when the next janitor scan skips a clean but occupied tree.
+`gpt-sol-reviewer` is a read-only GPT agent for work written by Claude. It can inspect the diff and run tests, but it has no edit tool. Its report has to name a concrete failure with a file and line. If GPT produced the work, the reviewer stops. A second invocation of the same model is still the same set of assumptions wearing a fresh context window.
+
+The reverse path uses `opus-advisor`. GPT workers cannot call Claude Code's built-in advisor tool; the dispatcher exposes the name and then refuses the call. I replaced that dead end with a real, read-only Opus subagent. A GPT worker can consult it before committing to an approach, receive advice in the transcript, and act on that advice. The advisor cannot edit, run shell commands, delegate again, or disappear behind an opaque tool result.
+
+This required nested agents, which broadens the process for every subagent. The containment lives in each agent definition: `opus-advisor` has no agent tool, while GPT workers get exactly one useful nested path. The transcript is the improvement. I can read the question, the advice, and what the worker did next.
+
+---
+
+## GPTx carries its own operating surface
+
+Foreign model ids come with a practical problem: Claude Code does not know their real context window. In the first long runs it let GPT agents pass 188,000 tokens without compacting, then the upstream rejected the request.
+
+GPTx sets a 160,000-token ceiling for non-Claude models. The runtime begins compaction around 127,000, leaving room below the measured upstream limit. In the proof run, a GPT agent compacted once at 133,576 tokens, fell to 14,320, and finished the task. Setting the ceiling to 100,000 was worse: ordinary multi-file work hit repeated compactions until the run died. The larger number came from measurement, not optimism.
+
+The statusline shows the current lane state beside the session. Green reads `gptx ✓`. Separate states report an uncertified upgrade, a Codex cooldown, a dead proxy, or a failed GPT lane. A local detail page carries request counts, in-flight work, failures, model lanes, the largest request, and the longest gap between stream chunks.
+
+After a Claude Code upgrade, the router watches both the client version and the union of beta flags it has seen. A change marks GPTx unverified. `gptx-doctor --certify` then checks the router, a real Claude request, a GPT completion, a GPT tool round trip, and GPT structured output before recording a new baseline. Exit code 2 means the Codex quota is cooling down; it does not pretend that a spent window is a broken upgrade.
+
+There is an escape hatch that starts a session against Anthropic directly. It uses a settings override because Claude Code's settings environment outranks the shell environment. Removing a shell variable looks plausible and does nothing here. I tested that too.
+
+---
+
+## One lane can fail without spending the other
+
+GPTx keeps the two quota pools separate. If the Codex proxy is down, the GPT agent receives a visible failure and the Claude session keeps working. The router does not swap in Claude to make the request appear successful.
+
+I already ran the accidental version of that fallback. A spawn-time model override sent four supposed GPT agents to Claude, and those four agents produced every Claude rate limit I saw that day. Invisible substitution repaired the immediate unit by moving its cost into an unrelated session.
+
+So the caller owns degradation. It can stop, retry later, shrink the unit, or choose Claude under an explicit policy. Crossing a model and quota boundary leaves a receipt.
+
+The same rule applies in the other direction. GPTx never needs the Claude OAuth credential, and the Claude lane does not depend on the Codex proxy being healthy. One local process can still fail, but it cannot quietly turn two subscriptions into one shared and untraceable budget.
+
+---
+
+## What broke after rollout
+
+The first router metrics watched the HTTP envelope and the socket. An upstream could return 200, start a valid event stream, then send an in-band error. The dashboard counted success. At one point it showed 1,416 requests and zero errors while agents were losing responses.
+
+The transport had a second bad habit: after a stream had started, an upstream failure could append a JSON error object to the event stream and then close it. That manufactured a malformed final event on top of the original failure.
+
+The fixes are narrow. Mid-stream failure now destroys the connection so the client sees a shape it can retry. The router retries once only when no response byte has reached the client. Dedicated outbound sockets are recycled on a schedule suited to long model turns. Counters now separate cuts, aborts, retries, and upstream errors, including an error delivered inside a 200 response.
+
+Those bugs deserved a section. They did not deserve the previous article.
+
+---
+
+## The boundary is still private
+
+GPTx is an instance-private Trellis feature today. The router, agent definitions, doctor, and operating notes do not sync to the public template. GPT-5.6 Sol is the only GPT model I run through it, and the Codex OAuth translation surface is unofficial.
+
+Publishing the implementation as a template feature would hand other people a machine-specific setup whose most important dependency has no stable public contract. I am willing to own that on my workstation. I will not call it portable because the local acceptance suite is green.
+
+Here is the line I can sign today. On this Trellis instance, Claude orchestrates GPT workers through the ordinary agent interface. I can name and resume them, place them in a schema-bound workflow, send Claude's work to a GPT reviewer, or let a GPT worker consult Opus. Their context compacts before the measured ceiling. If the GPT lane dies, the failure stays visible.
+
+I will revisit the public boundary when the transport becomes official or when I can replace it without changing the agent contract. Until then, the next test is mundane: watch the mixed-agent receipts accumulate and see whether the effort rule keeps both quota pools useful through a full month.
