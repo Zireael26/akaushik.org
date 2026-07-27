@@ -11,6 +11,7 @@ import {
 } from './content';
 
 const DRAFT_FIXTURE_SLUG = '_test-draft';
+const UNLISTED_WRITING_SLUG = 'detection-is-not-continuity';
 const PUBLISHED_CASE_STUDY_SLUGS = [
   'neev',
   'vericite',
@@ -158,8 +159,11 @@ describe('content — getAllPosts', () => {
     }
   });
 
-  it('matches getPostSlugs in length and order when drafts are included', () => {
-    const posts = getAllPosts('writing', { includeDrafts: true });
+  it('matches getPostSlugs in length and order when drafts and unlisted posts are included', () => {
+    const posts = getAllPosts('writing', {
+      includeDrafts: true,
+      includeUnlisted: true,
+    });
     const slugs = getPostSlugs('writing');
     expect(posts.map((p) => p.slug)).toEqual(slugs);
   });
@@ -203,6 +207,34 @@ describe('content — drafts', () => {
     if (!post) throw new Error('expected draft fixture');
     expect((post.frontmatter as { draft?: unknown }).draft).toBe(true);
     expect(typeof (post.frontmatter as { draft?: unknown }).draft).toBe('boolean');
+  });
+});
+
+describe('content — unlisted writing', () => {
+  it('excludes unlisted posts from collection listings by default', () => {
+    expect(getAllPosts('writing').some((p) => p.slug === UNLISTED_WRITING_SLUG)).toBe(false);
+    expect(
+      getAllPostsWithReadingTime('writing').some((p) => p.slug === UNLISTED_WRITING_SLUG),
+    ).toBe(false);
+  });
+
+  it('includes unlisted posts only when explicitly requested', () => {
+    expect(
+      getAllPosts('writing', { includeUnlisted: true }).some(
+        (p) => p.slug === UNLISTED_WRITING_SLUG,
+      ),
+    ).toBe(true);
+    expect(
+      getAllPostsWithReadingTime('writing', { includeUnlisted: true }).some(
+        (p) => p.slug === UNLISTED_WRITING_SLUG,
+      ),
+    ).toBe(true);
+  });
+
+  it('keeps the exact post readable by slug', () => {
+    const post = getPost('writing', UNLISTED_WRITING_SLUG);
+    expect(post?.frontmatter.unlisted).toBe(true);
+    expect(post?.frontmatter.title).toBe('Detection is not continuity');
   });
 });
 

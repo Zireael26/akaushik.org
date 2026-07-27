@@ -88,7 +88,6 @@ function buildResponseHeaders(
   headers.set('Link', AGENT_DISCOVERY_LINK_HEADER);
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  headers.set('X-Robots-Tag', 'index, follow');
   Object.entries(productionSecurityHeaders).forEach(([name, value]) => {
     headers.set(name, value);
   });

@@ -1,16 +1,19 @@
 # GPTx blog rewrite
 
 **Date:** 2026-07-27
-**Target:** `content/writing/detection-is-not-continuity.mdx`
-**Publication:** Replace in place at `/writing/detection-is-not-continuity`
+**Targets:** `content/writing/detection-is-not-continuity.mdx` and
+`content/writing/gptx-in-trellis.mdx`
+**Publication:** Keep the original post direct-link-only and publish GPTx at
+`/writing/gptx-in-trellis`
 
 ## Editorial decision
 
-Replace the incident-led post with a capability-led account of GPTx in Trellis.
-Keep the existing slug so published links continue to resolve. Change the title,
-dek, date, and body.
+Restore the incident-led post at its original slug and mark it unlisted, so the
+existing URL continues to resolve without appearing in collection-backed
+discovery surfaces or search indexes. Publish the capability-led GPTx account as
+a separate editorial unit at the durable `gptx-in-trellis` slug.
 
-Working title: **One session, two model families: GPTx in Trellis**
+Title: **GPTx in Trellis: one session, two model families**
 
 The originally proposed word `harness` is replaced with `session` because the
 repository writing validator treats it as generic AI-era vocabulary. `Session`
@@ -50,6 +53,18 @@ transport behavior. It should stay below roughly 15 percent of the article.
 Close on a testable boundary: GPTx remains private until its unofficial transport
 surface becomes stable enough to publish without handing template users a brittle
 machine-specific setup.
+
+## Discovery contract
+
+`unlisted: true` is a writing-frontmatter contract, not a component exception.
+Default collection loaders exclude unlisted posts, which removes the old article
+from the writing index, home page, sitemap, JSON API, and agent corpus. Exact-slug
+loads remain valid so its HTML, Markdown alternate, and Open Graph image continue
+to work.
+
+The HTML metadata and Markdown response both emit `noindex, nofollow`. Detail-route
+static parameters explicitly include unlisted posts so direct links are production
+artifacts rather than runtime accidents.
 
 ## Voice and quality gates
 

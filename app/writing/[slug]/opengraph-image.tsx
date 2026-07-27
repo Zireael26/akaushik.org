@@ -10,7 +10,9 @@ export const contentType = 'image/png';
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return getAllPosts('writing').map((post) => ({ slug: post.slug }));
+  return getAllPosts('writing', { includeUnlisted: true }).map((post) => ({
+    slug: post.slug,
+  }));
 }
 
 export default async function OGImage({ params }: { params: Promise<{ slug: string }> }) {

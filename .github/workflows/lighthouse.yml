@@ -73,7 +73,9 @@ jobs:
           artifactName: lighthouse-results-mobile
 
       - name: Install axe-core CLI
-        run: npm install -g @axe-core/cli@4
+        run: |
+          chrome_major="$(google-chrome --version | sed -E 's/.* ([0-9]+)\..*/\1/')"
+          npm install -g @axe-core/cli@4 "chromedriver@${chrome_major}"
 
       # Gate armed: home.spec.ts's WCAG axe test passes with 0 violations
       # (verified T5 audit remediation), so this step now fails the build
@@ -82,6 +84,7 @@ jobs:
         run: |
           axe http://localhost:3000/ http://localhost:3000/work/neev http://localhost:3000/writing \
             --exit \
+            --chromedriver-path "$(command -v chromedriver)" \
             --tags wcag2a,wcag2aa,wcag21a,wcag21aa
 
       - name: Stop server

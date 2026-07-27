@@ -20,7 +20,9 @@ const WRITING_LOOPS: Partial<Record<string, WritingLoopSlug>> = {
 };
 
 export function generateStaticParams() {
-  return getAllPosts('writing').map((post) => ({ slug: post.slug }));
+  return getAllPosts('writing', { includeUnlisted: true }).map((post) => ({
+    slug: post.slug,
+  }));
 }
 
 export async function generateMetadata({
@@ -35,6 +37,7 @@ export async function generateMetadata({
   return {
     title: fm.title,
     description: fm.dek,
+    robots: fm.unlisted === true ? { index: false, follow: false } : undefined,
     alternates: { canonical: `/writing/${slug}` },
     openGraph: {
       url: canonical(`/writing/${slug}`),

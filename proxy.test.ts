@@ -87,6 +87,14 @@ describe('proxy Markdown canonical links', () => {
 
     expect(response.headers.get('link')).not.toContain('rel="canonical"');
   });
+
+  it('leaves crawler policy to the destination route', () => {
+    const response = proxy(
+      new NextRequest('https://akaushik.org/writing/detection-is-not-continuity.md'),
+    );
+
+    expect(response.headers.has('x-robots-tag')).toBe(false);
+  });
 });
 
 describe('proxy matcher', () => {
