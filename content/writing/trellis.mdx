@@ -1,18 +1,18 @@
 ---
 title: "Trellis: An Engineering Process for AI Coding Agents"
-dek: How I run six projects with one rulebook, nine hooks, and a fleet of weekly audits — and why I open-sourced it.
+dek: How I run six projects with one rulebook, nine hooks, and a fleet of weekly audits, and why I open-sourced it.
 date: 2026-05-11
 ---
 
 # Trellis: An Engineering Process for AI Coding Agents
 
-> How I run six projects with one rulebook, nine hooks, and a fleet of weekly audits — and why I open-sourced it.
+> How I run six projects with one rulebook, nine hooks, and a fleet of weekly audits, and why I open-sourced it.
 
 ## The problem nobody warns you about
 
 The first time a coding agent writes production code for you it feels like a superpower. The tenth time, you start seeing the pattern in the corners it cuts: pushed straight to `main`, marked a task done while the tests never ran, summarised what it meant to do instead of what it did, force-pushed over an hour of your work to "clean things up."
 
-These are not model bugs. They are gaps in the process around the model — the gaps human teams closed over decades with branch protection, code review, commit conventions, CI, and a hundred smaller rituals. An agent inherits none of that by default. You have to build the scaffolding yourself.
+These are not model bugs. They are gaps in the process around the model, the same gaps human teams closed over decades with branch protection, code review, commit conventions, CI, and a hundred smaller rituals. An agent inherits none of that by default. You have to build the scaffolding yourself.
 
 I have spent the last three months doing exactly that, in the open, across six of my projects. The result is **Trellis**: a parent/child engineering-process regime for Claude Code and Codex. One source of truth for cross-cutting rules, nine canonical hooks that make those rules mechanically enforceable, and a fleet of scheduled audits that keeps every project honest week after week.
 
@@ -24,15 +24,15 @@ The public, forkable template: [github.com/Zireael26/trellis](https://github.com
 
 ## The shape of the system
 
-![Trellis architecture — parent control plane, project inheritance, three-tier hook enforcement, and the scheduled audit fleet](/images/writing/trellis-architecture.svg)
+![Trellis architecture: parent control plane, project inheritance, three-tier hook enforcement, and the scheduled audit fleet](/images/writing/trellis-architecture.svg)
 
 At the top is a single **control plane** repo. It owns the parent rules (`core-rules/CLAUDE.md`), the hook specifications (`hooks.md`), the inheritance contract (`inheritance.md`), the registry of active projects (`registry.md`), and a `deferred.md` for rules that haven't earned their place yet.
 
 Every project in the registry inherits from the control plane through symlinks. `.claude/rules/trellis.md` for Claude Code, `.agents/rules/trellis.md` for Codex, both pointing at the same canonical file. Projects only carry what's actually project-specific: their own `CLAUDE.md`, a `gotchas.md`, and a `context-log.md` the hooks maintain automatically across sessions.
 
-Inside each project sits a three-tier hook stack. Tier one runs on every agent turn with a budget of three seconds. Tier two runs on `Stop` with ninety seconds, and that is where "done" gets verified. Tier three is the git boundary — pre-commit, commit-msg, pre-push — the backstop if the agent slipped past everything else.
+Inside each project sits a three-tier hook stack. Tier one runs on every agent turn with a budget of three seconds. Tier two runs on `Stop` with ninety seconds, and that is where "done" gets verified. Tier three is the git boundary: pre-commit, commit-msg, and pre-push. It is the backstop if the agent slipped past everything else.
 
-Every week, ten scheduled audits sweep the whole registry and write timestamped reports back into the control plane. Drift, bypasses, vulnerabilities, test rot, dependency posture — everything surfaces in dated markdown I can grep, diff, and quote in a commit message.
+Every week, ten scheduled audits sweep the whole registry and write timestamped reports back into the control plane. Drift, bypasses, vulnerabilities, test rot, and dependency posture all surface in dated markdown I can grep, diff, and quote in a commit message.
 
 The rest of this post is what's load-bearing about that arrangement.
 
@@ -48,9 +48,9 @@ A few tests that kept me honest whenever I was tempted to add another rule or a 
 
 **Receipts over self-reporting.** "Done" means the agent attaches the verification command, the exit code, and the diff lines that prove the change. "It works" without receipts isn't done. `stop-verify` enforces the checks; the presentation discipline is on the agent.
 
-**Small surface, deep discipline.** The parent layer is intentionally small — under 5 KB for the rules file, nine hooks, ten audits. Anything broader belongs in a project. Keeps the contract legible to humans and LLMs both, and keeps the drift surface narrow enough to actually watch.
+**Small surface, deep discipline.** The parent layer is intentionally small: under 5 KB for the rules file, nine hooks, ten audits. Anything broader belongs in a project. Keeps the contract legible to humans and LLMs both, and keeps the drift surface narrow enough to actually watch.
 
-**Harness-safe by default.** Everything works in Claude Code *and* Codex. The two harnesses use different hook envelopes, so canonical implementations live separately under `core-rules/hooks/` and `core-rules/codex/`. The policy intent is identical: same rule, same enforcement, whichever agent is driving.
+**Claude Code and Codex stay aligned.** The two agent environments use different hook envelopes, so canonical implementations live separately under `core-rules/hooks/` and `core-rules/codex/`. The policy intent is identical: same rule, same enforcement, whichever agent is driving.
 
 ---
 
@@ -62,17 +62,17 @@ The **fast-local** tier (every turn, sub-second budget) stops the catastrophic s
 
 The **heavy-gated** tier (on `Stop`, ≤90s budget) is where "done" gets adjudicated. `stop-verify` enforces the receipts rule. It scans the `TodoWrite` list and blocks if anything is `in_progress` or `pending`, then runs typecheck → lint → fast tests across the whole repo. On failure the agent gets a sliced error (first 30 lines for compile errors, last 30 for test output) and is told to fix it before claiming completion. `code-review-subagent` dispatches a read-only review agent against the current diff on edit-heavy turns (≥3 files or ≥200 lines). `ui-verify` boots the dev server, screenshots the affected route, and blocks if a UI-visible change shipped without that proof.
 
-The **git-boundary** tier is the durable backstop. Husky's pre-commit runs `lint-staged` on staged files. `commit-msg` enforces Conventional Commits with a project-configured scope allowlist. `pre-push` blocks direct pushes to `main` across every registered project and reruns the typecheck/lint/test triad. There is an emergency override (`TRELLIS_ALLOW_MAIN_PUSH=1`); every invocation has to be documented in a commit trailer or `gotchas.md`. For projects without a `package.json` — Unity, Rust, Go, Python-only — the same enforcement lands in native git hooks under `.githooks/`.
+The **git-boundary** tier is the durable backstop. Husky's pre-commit runs `lint-staged` on staged files. `commit-msg` enforces Conventional Commits with a project-configured scope allowlist. `pre-push` blocks direct pushes to `main` across every registered project and reruns the typecheck/lint/test triad. There is an emergency override (`TRELLIS_ALLOW_MAIN_PUSH=1`); every invocation has to be documented in a commit trailer or `gotchas.md`. For projects without a `package.json` (Unity, Rust, Go, or Python-only), the same enforcement lands in native git hooks under `.githooks/`.
 
-Three tiers because each one covers a different failure mode. Fast-local catches mistakes mid-turn while context is still warm. Heavy-gated catches "claims done but isn't" at session boundaries. Git-boundary catches anything that happened outside a Claude turn entirely — manual amends, rebases, force-pushes from another terminal.
+Three tiers because each one covers a different failure mode. Fast-local catches mistakes mid-turn while context is still warm. Heavy-gated catches "claims done but isn't" at session boundaries. Git-boundary catches anything that happened outside a Claude turn entirely: manual amends, rebases, and force-pushes from another terminal.
 
 ---
 
 ## The process-gate skill
 
-Hooks fire automatically. Sometimes I want to ask the agent explicitly — *is this branch mergeable yet?* — and have it answer in a format I trust.
+Hooks fire automatically. Sometimes I want to ask the agent explicitly, *is this branch mergeable yet?*, and have it answer in a format I trust.
 
-That's the **process-gate** skill. Canonical implementation under `core-rules/skills/process-gate/`, symlinked into every project's `.claude/skills/` and `.agents/skills/`. On invocation it runs six gates — PR hygiene, secrets, bypass markers, tests and coverage, docs discipline, and any stack-specific validators the project declares — and emits a fixed-shape verdict block:
+That's the **process-gate** skill. Canonical implementation under `core-rules/skills/process-gate/`, symlinked into every project's `.claude/skills/` and `.agents/skills/`. On invocation it runs six gates: PR hygiene, secrets, bypass markers, tests and coverage, docs discipline, and any stack-specific validators the project declares. Then it emits a fixed-shape verdict block:
 
 ```
 PR hygiene:        ✅ pass
@@ -105,9 +105,9 @@ The audits aren't only observability. They're the reason the system stays discip
 
 Four things I didn't appreciate when I started.
 
-Process work is leverage, not overhead. Every hour spent making the system catch its own drift bought back ten over the following month. The pre-push guard alone has caught at least three force-push-to-main attempts that would have cost half a day each.
+Process work pays back. Every hour spent making the system catch its own drift bought back ten over the following month. The pre-push guard alone has caught at least three force-push-to-main attempts that would have cost half a day each.
 
-The Rule of Three matters more than any individual rule. I deleted several "obviously good" parent rules in the first month because the second project disagreed about the right shape. Three witnesses isn't bureaucracy — it's the cheapest defence against locking in the wrong abstraction.
+The Rule of Three matters more than any individual rule. I deleted several "obviously good" parent rules in the first month because the second project disagreed about the right shape. Three witnesses isn't bureaucracy; it is the cheapest defence against locking in the wrong abstraction.
 
 Receipts beat eloquence. I trust the diff and the exit code. I no longer trust a trailing summary that says "I've fixed the bug and all tests pass." Half the work of building Trellis was unlearning the instinct to read summaries and believe them.
 

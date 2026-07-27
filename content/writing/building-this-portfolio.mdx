@@ -1,12 +1,12 @@
 ---
 title: Building this portfolio
-dek: Why the site ships with the same process I'd bring to a client engagement — PRD, ADRs, ROADMAP, process-gate, agent-readiness, the whole thing in the open.
+dek: Why the site ships with the same process I'd bring to a client engagement. PRD, ADRs, ROADMAP, process-gate, agent-readiness, the whole thing in the open.
 date: 2026-04-21
 ---
 
 # Building this portfolio
 
-> Why the site ships with the same process I'd bring to a client engagement — PRD, ADRs, ROADMAP, process-gate, agent-readiness, the whole thing in the open.
+> Why the site ships with the same process I'd bring to a client engagement. PRD, ADRs, ROADMAP, process-gate, agent-readiness, the whole thing in the open.
 
 A portfolio is supposed to show the work. The trouble is that *showing* the work usually means showing the surface: the typography, the case studies, the tagline. The decisions underneath are what matter, and they don't fit in a screenshot.
 
@@ -14,12 +14,12 @@ So this one is built differently. Same process I'd use on a paid client engageme
 
 ## The receipts
 
-- [`docs/PRD.md`](https://github.com/Zireael26/akaushik.org/blob/main/docs/PRD.md) — product requirements. What the site has to do, who it's for, what a good reading experience looks like for the MSME owner *and* the senior engineer.
-- [`docs/ROADMAP.md`](https://github.com/Zireael26/akaushik.org/blob/main/docs/ROADMAP.md) — phased delivery plan. Six phases from scaffold to launch; each phase is a set of one-PR slices.
-- [`docs/adr/`](https://github.com/Zireael26/akaushik.org/tree/main/docs/adr) — architecture decisions, numbered and dated. Seven so far. Each captures what was decided, what was considered, and why.
-- [`docs/AGENT_READINESS.md`](https://github.com/Zireael26/akaushik.org/blob/main/docs/AGENT_READINESS.md) — the contract for agent crawlers. llms.txt, sitemap, RFC 8288 Link headers, content negotiation on `Accept: text/markdown`, api-catalog, Agent Skills. Implementation in Phase 4.
-- [`docs/CHANGELOG.md`](https://github.com/Zireael26/akaushik.org/blob/main/docs/CHANGELOG.md) — every shipped change, categorised, referencing the PR that landed it.
-- [`scripts/process-gate.mjs`](https://github.com/Zireael26/akaushik.org/blob/main/scripts/process-gate.mjs) — the pre-commit hook that refuses to let me commit code without a CHANGELOG entry (R1), structural changes without an ADR (R2), or epic changes without a ROADMAP update (R3). It ran on every one of the 30+ PRs that built the site.
+- [`docs/PRD.md`](https://github.com/Zireael26/akaushik.org/blob/main/docs/PRD.md): product requirements. What the site has to do, who it's for, what a good reading experience looks like for the MSME owner *and* the senior engineer.
+- [`docs/ROADMAP.md`](https://github.com/Zireael26/akaushik.org/blob/main/docs/ROADMAP.md): phased delivery plan. Six phases from scaffold to launch; each phase is a set of one-PR slices.
+- [`docs/adr/`](https://github.com/Zireael26/akaushik.org/tree/main/docs/adr): architecture decisions, numbered and dated. Seven so far. Each captures what was decided, what was considered, and why.
+- [`docs/AGENT_READINESS.md`](https://github.com/Zireael26/akaushik.org/blob/main/docs/AGENT_READINESS.md): the contract for agent crawlers. llms.txt, sitemap, RFC 8288 Link headers, content negotiation on `Accept: text/markdown`, api-catalog, Agent Skills. Implementation in Phase 4.
+- [`docs/CHANGELOG.md`](https://github.com/Zireael26/akaushik.org/blob/main/docs/CHANGELOG.md): every shipped change, categorised, referencing the PR that landed it.
+- [`scripts/process-gate.mjs`](https://github.com/Zireael26/akaushik.org/blob/main/scripts/process-gate.mjs): the pre-commit hook that refuses to let me commit code without a CHANGELOG entry (R1), structural changes without an ADR (R2), or epic changes without a ROADMAP update (R3). It ran on every one of the 30+ PRs that built the site.
 
 ## Why this way
 
@@ -39,13 +39,13 @@ Both readers can get what they came for without the other's material getting in 
 
 **MDX with server-only compilation and Shiki bundle isolation** (ADR-0004). `next-mdx-remote@6` compiles MDX inside React Server Components; Shiki never reaches the client bundle. `pnpm analyze` re-verifies the isolation every PR.
 
-**Content negotiation, Pattern A and Pattern B** (ADR-0006). Every page has a `.md` alternate at `/page.md` (Pattern B, load-bearing) and responds to `Accept: text/markdown` at the canonical URL (Pattern A, additive). Passes isitagentready.com's content-negotiation check on both axes — and loses neither if one misbehaves.
+**Content negotiation, Pattern A and Pattern B** (ADR-0006). Every page has a `.md` alternate at `/page.md` (Pattern B, load-bearing) and responds to `Accept: text/markdown` at the canonical URL (Pattern A, additive). Passes isitagentready.com's content-negotiation check on both axes and loses neither if one misbehaves.
 
 **The Wanderer crane port** (slice 5.1c). 221 lines of vanilla Three.js in the reference design, ported directly into a `useEffect`-driven scene rather than R3F: the crane is a fixed-position full-document scene driven by document scroll, and wrapping that through R3F primitives reads worse than the direct port. Eight named POSES, IntersectionObserver-driven pose dispatch, damp lerp, scroll-velocity rotation, wing flap, pointer parallax. Bail-out to SVG fallback if the first frame takes more than 80 ms.
 
 ## What's still to do
 
-Launch isn't done. It's done enough to ship. The open follow-ups live in `docs/ROADMAP.md` — the honest list, with items like "tighten the JS bundle back toward 150 KiB once the bundle-analyzer audit identifies which preloaded chunk is blowing past the target," "write a real `/api/docs` page," and "run the isitagentready.com scan against prod and persist the screenshot to `docs/agent-readiness-snapshots/`."
+Launch isn't done. It's done enough to ship. The open follow-ups live in `docs/ROADMAP.md`: the honest list, with items like "tighten the JS bundle back toward 150 KiB once the bundle-analyzer audit identifies which preloaded chunk is blowing past the target," "write a real `/api/docs` page," and "run the isitagentready.com scan against prod and persist the screenshot to `docs/agent-readiness-snapshots/`."
 
 None of those are in the "shouldn't launch without this" pile. They're the work that comes after launch, which is where most real engagements live anyway.
 
