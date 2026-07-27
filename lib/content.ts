@@ -22,6 +22,7 @@ export type WritingFrontmatter = {
   date: string;
   readingTime?: string;
   draft?: boolean;
+  unlisted?: boolean;
 };
 
 export type FrontmatterFor<T extends ContentType> = T extends 'case-studies'
@@ -188,9 +189,10 @@ export function getPost<T extends ContentType>(
 
 export function getAllPosts<T extends ContentType>(
   type: T,
-  options?: { includeDrafts?: boolean },
+  options?: { includeDrafts?: boolean; includeUnlisted?: boolean },
 ): Array<Omit<Post<T>, 'content'>> {
   const includeDrafts = options?.includeDrafts ?? false;
+  const includeUnlisted = options?.includeUnlisted ?? false;
   return getPostSlugs(type)
     .map((slug) => {
       const post = getPost(type, slug);
@@ -199,9 +201,8 @@ export function getAllPosts<T extends ContentType>(
     })
     .filter((p): p is NonNullable<typeof p> => p !== null)
     .filter((p) => {
-      if (includeDrafts) return true;
-      const fm = p.frontmatter as { draft?: boolean };
-      return fm.draft !== true;
+      const fm = p.frontmatter as { draft?: boolean; unlisted?: boolean };
+      return (includeDrafts || fm.draft !== true) && (includeUnlisted || fm.unlisted !== true);
     });
 }
 
@@ -211,9 +212,10 @@ export function getAllPosts<T extends ContentType>(
 // only need frontmatter (sitemap, /api/writing, llms.txt).
 export function getAllPostsWithReadingTime<T extends ContentType>(
   type: T,
-  options?: { includeDrafts?: boolean },
+  options?: { includeDrafts?: boolean; includeUnlisted?: boolean },
 ): Array<Omit<Post<T>, 'content'> & { readingTime: string }> {
   const includeDrafts = options?.includeDrafts ?? false;
+  const includeUnlisted = options?.includeUnlisted ?? false;
   return getPostSlugs(type)
     .map((slug) => {
       const post = getPost(type, slug);
@@ -224,8 +226,7 @@ export function getAllPostsWithReadingTime<T extends ContentType>(
     })
     .filter((p): p is NonNullable<typeof p> => p !== null)
     .filter((p) => {
-      if (includeDrafts) return true;
-      const fm = p.frontmatter as { draft?: boolean };
-      return fm.draft !== true;
+      const fm = p.frontmatter as { draft?: boolean; unlisted?: boolean };
+      return (includeDrafts || fm.draft !== true) && (includeUnlisted || fm.unlisted !== true);
     });
 }

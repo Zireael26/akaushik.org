@@ -62,6 +62,14 @@ describe('writing/[slug] generateMetadata', () => {
     expect(meta.twitter?.title).toBe('Notes on bringing AI to an MSME');
   });
 
+  it('marks an unlisted direct-link post noindex and nofollow', async () => {
+    const meta = await generateMetadata({
+      params: Promise.resolve({ slug: 'detection-is-not-continuity' }),
+    });
+
+    expect(meta.robots).toEqual({ index: false, follow: false });
+  });
+
   it('emits page-specific BreadcrumbList JSON-LD', async () => {
     const page = await WritingPost({ params: Promise.resolve({ slug: 'ai-for-msme' }) });
     const json = findJsonLd(page, 'ld-json-breadcrumb-writing-ai-for-msme');

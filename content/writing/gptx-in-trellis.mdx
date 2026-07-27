@@ -1,0 +1,109 @@
+---
+title: 'GPTx in Trellis: one session, two model families'
+dek: GPTx lets me run Claude and GPT agents inside one Trellis session, with the same tools and worktree, separate model lanes, and a reviewer from the other family.
+date: 2026-07-27
+---
+
+# GPTx in Trellis: one session, two model families
+
+> GPTx lets me run Claude and GPT agents inside one Trellis session, with the same tools and worktree, separate model lanes, and a reviewer from the other family.
+
+In the acceptance run for GPTx, a Claude orchestrator started two workers in the same session. One was Claude. The other was GPT-5.6 Sol. Both read the repository, changed real files, and reported back through the ordinary agent interface. Then Claude sent a follow-up to the GPT worker. The same agent resumed with the same id and remembered the work it had already done.
+
+That last sentence is the feature.
+
+I have been using a second model family with Trellis for a while. The earlier arrangement, which I described as the second engine in [the loop-era post](/writing/trellis-loop-era), launched Codex as a child process with a frozen work order. Useful, but still a relay. It could edit and return a receipt. It could not remain a named teammate, receive another message, participate in a dynamic workflow, or ask an Opus agent for advice halfway through a unit.
+
+GPTx moves that second engine into the working session.
+
+---
+
+## The model is selected per agent
+
+The old `claudex` path changed the model for the whole Claude Code process. The main loop became GPT, every subagent became GPT, and anything pinned to Sonnet or Opus failed because the proxy only understood the OpenAI side. A cross-model review quietly became GPT reviewing GPT. That session also disabled tool search and clamped tool concurrency to protect the GPT endpoint, so Claude paid for limits it did not need.
+
+GPTx leaves Claude in charge. A small local router reads the `model` field on each request. Claude model ids go straight to Anthropic as byte-for-byte traffic. A closed list of GPT and Codex ids goes to the local Codex proxy. Unknown ids stay on the Anthropic lane.
+
+The default matters. New Claude aliases, internal agents, and paths I have not seen before do not get diverted because a regular expression was too ambitious.
+
+The Claude side keeps its subscription OAuth, prompt-cache controls, beta headers, long-context flag, and effort setting. None of those requests is translated into another provider's shape. The Claude credential never enters the Codex proxy either. On the other lane, the proxy supplies its own Codex OAuth and translates only the GPT request.
+
+From the operator side there is no GPTx command. I start `claude` as usual. The model on an agent definition decides the route. Because the settings and agent files live at user scope, the same workers are available from every repository on the machine. Availability is not adoption; Trellis policy still decides when to use one.
+
+---
+
+## GPT workers are ordinary Trellis workers
+
+`gpt-mid` and `gpt-sol` use the same model, GPT-5.6 Sol, at different effort levels. They inherit the normal agent tools, permissions, git state, worktree, and reporting rules. A GPT worker can search the tree, edit several files, run a compiler, call the test suite, return structured output, or join a parallel workflow. It can also become a named teammate and keep working after a `SendMessage` follow-up.
+
+I choose between the two agents by looking at the oracle around the task.
+
+`gpt-mid` runs at medium effort. It gets bounded implementation with a strong external check: a failing test, a type checker, a schema, a deterministic repro. It also gets mechanical volume. The worker contract tells it to run that oracle every time and hand the unit back if a real design decision appears.
+
+`gpt-sol` runs at xhigh effort. I use it when the oracle is weak or missing, or when the unit carries a decision that is expensive to reverse. Root-cause work that survived the first pass belongs here. So does security-sensitive analysis. Importance alone is a poor routing rule; a large mechanical change with a good compiler still belongs at medium.
+
+There is no cheap GPT rung below medium on this installation. That is deliberate. The expensive mistake was sending mechanical work to xhigh until the Codex window disappeared, not failing to squeeze one more tier out of it.
+
+Dynamic workflows can set the agent type, effort, and output schema directly. The acceptance run fanned out three GPT agents and received three schema-valid results, while Claude handled orchestration and synthesis in the same session. Tool calls and structured output each crossed the router twice without any workflow-specific adapter.
+
+---
+
+## Review crosses the model boundary
+
+The most useful part of a second model family is the disagreement, so GPTx carries an explicit rule: no GPT self-review when the point of the pass is cross-model review.
+
+`gpt-sol-reviewer` is a read-only GPT agent for work written by Claude. It can inspect the diff and run tests, but it has no edit tool. Its report has to name a concrete failure with a file and line. If GPT produced the work, the reviewer stops. A second invocation of the same model is still the same set of assumptions wearing a fresh context window.
+
+The reverse path uses `opus-advisor`. GPT workers cannot call Claude Code's built-in advisor tool; the dispatcher exposes the name and then refuses the call. I replaced that dead end with a real, read-only Opus subagent. A GPT worker can consult it before committing to an approach, receive advice in the transcript, and act on that advice. The advisor cannot edit, run shell commands, delegate again, or disappear behind an opaque tool result.
+
+This required nested agents, which broadens the process for every subagent. The containment lives in each agent definition: `opus-advisor` has no agent tool, while GPT workers get exactly one useful nested path. The transcript is the improvement. I can read the question, the advice, and what the worker did next.
+
+---
+
+## GPTx carries its own operating surface
+
+Foreign model ids come with a practical problem: Claude Code does not know their real context window. In the first long runs it let GPT agents pass 188,000 tokens without compacting, then the upstream rejected the request.
+
+GPTx sets a 160,000-token ceiling for non-Claude models. The runtime begins compaction around 127,000, leaving room below the measured upstream limit. In the proof run, a GPT agent compacted once at 133,576 tokens, fell to 14,320, and finished the task. Setting the ceiling to 100,000 was worse: ordinary multi-file work hit repeated compactions until the run died. The larger number came from measurement, not optimism.
+
+The statusline shows the current lane state beside the session. Green reads `gptx ✓`. Separate states report an uncertified upgrade, a Codex cooldown, a dead proxy, or a failed GPT lane. A local detail page carries request counts, in-flight work, failures, model lanes, the largest request, and the longest gap between stream chunks.
+
+After a Claude Code upgrade, the router watches both the client version and the union of beta flags it has seen. A change marks GPTx unverified. `gptx-doctor --certify` then checks the router, a real Claude request, a GPT completion, a GPT tool round trip, and GPT structured output before recording a new baseline. Exit code 2 means the Codex quota is cooling down; it does not pretend that a spent window is a broken upgrade.
+
+There is an escape hatch that starts a session against Anthropic directly. It uses a settings override because Claude Code's settings environment outranks the shell environment. Removing a shell variable looks plausible and does nothing here. I tested that too.
+
+---
+
+## One lane can fail without spending the other
+
+GPTx keeps the two quota pools separate. If the Codex proxy is down, the GPT agent receives a visible failure and the Claude session keeps working. The router does not swap in Claude to make the request appear successful.
+
+I already ran the accidental version of that fallback. A spawn-time model override sent four supposed GPT agents to Claude, and those four agents produced every Claude rate limit I saw that day. Invisible substitution repaired the immediate unit by moving its cost into an unrelated session.
+
+So the caller owns degradation. It can stop, retry later, shrink the unit, or choose Claude under an explicit policy. Crossing a model and quota boundary leaves a receipt.
+
+The same rule applies in the other direction. GPTx never needs the Claude OAuth credential, and the Claude lane does not depend on the Codex proxy being healthy. One local process can still fail, but it cannot quietly turn two subscriptions into one shared and untraceable budget.
+
+---
+
+## What broke after rollout
+
+The first router metrics watched the HTTP envelope and the socket. An upstream could return 200, start a valid event stream, then send an in-band error. The dashboard counted success. At one point it showed 1,416 requests and zero errors while agents were losing responses.
+
+The transport had a second bad habit: after a stream had started, an upstream failure could append a JSON error object to the event stream and then close it. That manufactured a malformed final event on top of the original failure.
+
+The fixes are narrow. Mid-stream failure now destroys the connection so the client sees a shape it can retry. The router retries once only when no response byte has reached the client. Dedicated outbound sockets are recycled on a schedule suited to long model turns. Counters now separate cuts, aborts, retries, and upstream errors, including an error delivered inside a 200 response.
+
+Those bugs deserved a section. They did not deserve the previous article.
+
+---
+
+## The boundary is still private
+
+GPTx is an instance-private Trellis feature today. The router, agent definitions, doctor, and operating notes do not sync to the public template. GPT-5.6 Sol is the only GPT model I run through it, and the Codex OAuth translation surface is unofficial.
+
+Publishing the implementation as a template feature would hand other people a machine-specific setup whose most important dependency has no stable public contract. I am willing to own that on my workstation. I will not call it portable because the local acceptance suite is green.
+
+Here is the line I can sign today. On this Trellis instance, Claude orchestrates GPT workers through the ordinary agent interface. I can name and resume them, place them in a schema-bound workflow, send Claude's work to a GPT reviewer, or let a GPT worker consult Opus. Their context compacts before the measured ceiling. If the GPT lane dies, the failure stays visible.
+
+I will revisit the public boundary when the transport becomes official or when I can replace it without changing the agent contract. Until then, the next test is mundane: watch the mixed-agent receipts accumulate and see whether the effort rule keeps both quota pools useful through a full month.
