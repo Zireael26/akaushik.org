@@ -6,6 +6,11 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-07-27 — Reframed `gptx-in-trellis` around the capability it ships:
+  Claude Code remains the primary session and orchestration surface while GPTx
+  makes selected GPT workers first-class agents inside it. Corrected “Trellis
+  session” terminology; Trellis is the project control plane and inherited
+  process layer around Claude Code and Codex sessions.
 - 2026-07-27 — Added `unlisted` writing frontmatter for posts that should remain
   reachable by exact URL without appearing in the writing index, home page,
   sitemap, JSON API, or agent corpus. Unlisted HTML and Markdown responses emit
