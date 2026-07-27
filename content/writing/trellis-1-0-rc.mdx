@@ -1,12 +1,12 @@
 ---
 title: "Trellis 1.0-rc: making the process enforce itself"
-dek: The last gap was not a missing rule. It was no guarantee the rules ran the same way in every harness, on every layer, on every project. Here is how I closed it.
+dek: The last gap was not a missing rule. It was no guarantee the rules ran the same way in Claude Code and Codex, at every layer, on every project. Here is how I closed it.
 date: 2026-06-03
 ---
 
 # Trellis 1.0-rc: making the process enforce itself
 
-> The last gap was not a missing rule. It was no guarantee the rules ran the same way in every harness, on every layer, on every project. Here is how I closed it.
+> The last gap was not a missing rule. It was no guarantee the rules ran the same way in Claude Code and Codex, at every layer, on every project. Here is how I closed it.
 
 I have written about [Trellis](/writing/trellis) twice before. The first post laid out the shape: one control plane, project inheritance through symlinks, three tiers of hooks, a fleet of weekly audits. The second was a [gap analysis](/writing/best-practices-into-trellis) against Anthropic's large-codebase guide and the ten changes I shipped to close the gaps.
 
@@ -24,23 +24,23 @@ The clearest way to explain the work is as a grid.
 
 Down one axis are the three layers where enforcement can happen. **Skills** are the on-demand capabilities an agent loads to do a job the right way: the spec pipeline, the process gate, the builder skill that turns a plan into commits. **Hooks** are turn-level. They fire while the agent is working, before and after edits, and at the Stop boundary where "done" gets adjudicated. **Gates** are the git boundary: pre-commit, commit-msg, and the pre-push that decides whether a branch is allowed to leave the machine.
 
-Across the other axis are the two harnesses I actually run, Claude Code and Codex. They use different hook envelopes and different directory conventions, so the same policy has to exist twice, in two shapes, kept in lockstep.
+Across the other axis are the two agent environments I actually run, Claude Code and Codex. They use different hook envelopes and different directory conventions, so the same policy has to exist twice, in two shapes, kept in lockstep.
 
-Six cells. The honest state a month ago was that some were solid, some were half-wired, and a couple were enforced in one harness but not the other. A rule that blocks an edit to an unread file might exist for Claude Code and be missing for Codex. A merge gate might run the full check suite under husky and a weaker version under native git hooks. None of these were dramatic holes. They were exactly the kind of small asymmetry an audit flags as drift and that you keep meaning to fix.
+Six cells. The honest state a month ago was that some were solid, some were half-wired, and a couple were enforced in Claude Code but not Codex, or the reverse. A rule that blocks an edit to an unread file might exist for Claude Code and be missing for Codex. A merge gate might run the full check suite under husky and a weaker version under native git hooks. None of these were dramatic holes. They were exactly the kind of small asymmetry an audit flags as drift and that you keep meaning to fix.
 
-The program I just finished was a systematic pass over every cell, thirteen phases, each one taking a single capability and making it identical across both harnesses and enforced at the right layer. Not new features. Closing the distance between a rule that exists and a rule that fires, in every cell of the grid.
+The program I just finished was a systematic pass over every cell, thirteen phases, each one taking a single capability and making it identical in both clients and enforced at the right layer. Not new features. Closing the distance between a rule that exists and a rule that fires, in every cell of the grid.
 
 ---
 
 ## What actually shipped
 
-Four of the thirteen phases are worth describing, because they show where the cross-harness work actually bites.
+Four of the thirteen phases are worth describing, because they show where the cross-client work actually bites.
 
 **The re-read guard.** A PreToolUse hook, `reread-guard`, that blocks an edit to any file the agent has not read in the current session. Agents edit stale files more than you would like: the file changed under them, or they are working from a mental model two turns out of date, and the edit lands on the wrong lines. The Claude Code version was the easy half. The phase was building the Codex mirror so the same block fires whichever agent is driving, and proving both behave the same.
 
-**The builder skill.** Trellis already had the spec pipeline for planning work. What it lacked was a single load-bearing skill for the build step itself, the one that turns an approved plan into commits without stepping outside the process. Making that skill canonical, and making it resolve identically in both harnesses, was its own phase.
+**The builder skill.** Trellis already had the spec pipeline for planning work. What it lacked was a single load-bearing skill for the build step itself, the one that turns an approved plan into commits without stepping outside the process. Making that skill canonical, and making it resolve identically in both clients, was its own phase.
 
-**The cross-harness merge gate.** The phase I care about most. The pre-push hook is the durable backstop I described in the first post, the thing that catches a problem even when every earlier layer was bypassed. What changed is that it stopped meaning three different things depending on how a project wired its hooks. Husky for the Node projects, native git hooks under `.githooks/` for the ones without a `package.json`, and a couple of clones, clusterbid-console among them, where the wiring had quietly drifted. The phase put all of it behind one canonical gate that runs the same process-gate check regardless of plumbing, plus a tool that re-points each project at it safely, skipping anything with a custom pre-push it does not recognize instead of stomping on it.
+**The shared merge gate.** The phase I care about most. The pre-push hook is the durable backstop I described in the first post, the thing that catches a problem even when every earlier layer was bypassed. What changed is that it stopped meaning three different things depending on how a project wired its hooks. Husky for the Node projects, native git hooks under `.githooks/` for the ones without a `package.json`, and a couple of clones, clusterbid-console among them, where the wiring had quietly drifted. The phase put all of it behind one canonical gate that runs the same process-gate check regardless of plumbing, plus a tool that re-points each project at it safely, skipping anything with a custom pre-push it does not recognize instead of stomping on it.
 
 **The doctor.** All of this needs something that can answer the question I could not answer a month ago, so the program leaned on the doctor, the two-tier health check I shipped back in 0.7 and pointed at the whole registry. Tier zero checks the control plane itself: on main, clean, synced with origin. If the source of truth is dirty, every project downstream is inheriting unversioned rules, so that check fails loud. Tier one then walks every registered project and verifies the inheritance end to end: rules resolve to canonical, the hook copies match, the settings wiring is present, the Codex parity artifacts exist, the pre-push points at the real gate.
 
@@ -74,7 +74,7 @@ The third was portability. A shell idiom that works on the macOS system bash, ve
 
 ## What "release candidate" means here, and what it does not
 
-The matrix is complete. Every cell is enforced, in both harnesses, at the right layer. The doctor reports green across all seven projects and the canonical control plane. The rollout tooling has been run against every project in the registry, and the public template carries the same code the private control plane runs.
+The matrix is complete. Every cell is enforced, in both clients, at the right layer. The doctor reports green across all seven projects and the canonical control plane. The rollout tooling has been run against every project in the registry, and the public template carries the same code the private control plane runs.
 
 That is enough to call a candidate. It is not enough to call it 1.0.
 

@@ -6,6 +6,11 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-07-27 — Reviewed all 14 writing sources against the current site voice
+  and AI-tell checks. Nine older posts received a prose-only pass that removed
+  dash-heavy scaffolding, label-first bullets, and vague filler while
+  preserving their technical claims and publication dates. Also aligned older
+  Trellis pieces with the Claude Code/Codex session and control-plane model.
 - 2026-07-27 — Reframed `gptx-in-trellis` around the capability it ships:
   Claude Code remains the primary session and orchestration surface while GPTx
   makes selected GPT workers first-class agents inside it. Corrected “Trellis
