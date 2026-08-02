@@ -6,6 +6,10 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-08-02 — Adopted the spec-023 port-only local-infrastructure contract:
+  native development, production, and isolated Playwright servers use `3100`;
+  startup preflights the fixed port through shared infrastructure while the
+  explicit `services: {}` declaration starts no shared services.
 - 2026-07-27 — Reviewed all 14 writing sources against the current site voice
   and AI-tell checks. Nine older posts received a prose-only pass that removed
   dash-heavy scaffolding, label-first bullets, and vague filler while

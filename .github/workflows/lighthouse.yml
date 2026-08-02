@@ -40,20 +40,20 @@ jobs:
 
       - name: Start server
         run: |
-          nohup pnpm start > server.log 2>&1 &
+          nohup pnpm exec next start --port 3100 > server.log 2>&1 &
           echo $! > server.pid
 
       - name: Wait for server ready
-        run: pnpm exec wait-on http://localhost:3000 --timeout 60000
+        run: pnpm exec wait-on http://localhost:3100 --timeout 60000
 
       - name: Lighthouse (desktop)
         # treosh/lighthouse-ci-action@v11
         uses: treosh/lighthouse-ci-action@72f881228236981b625ed765b928efb1786a1f55
         with:
           urls: |
-            http://localhost:3000/
-            http://localhost:3000/work/neev
-            http://localhost:3000/writing
+            http://localhost:3100/
+            http://localhost:3100/work/neev
+            http://localhost:3100/writing
           configPath: ./lighthouserc.yml
           uploadArtifacts: true
           temporaryPublicStorage: true
@@ -64,9 +64,9 @@ jobs:
         uses: treosh/lighthouse-ci-action@72f881228236981b625ed765b928efb1786a1f55
         with:
           urls: |
-            http://localhost:3000/
-            http://localhost:3000/work/neev
-            http://localhost:3000/writing
+            http://localhost:3100/
+            http://localhost:3100/work/neev
+            http://localhost:3100/writing
           configPath: ./lighthouserc.mobile.yml
           uploadArtifacts: true
           temporaryPublicStorage: true
@@ -82,7 +82,7 @@ jobs:
       # on regression instead of only reporting.
       - name: Axe-core scan
         run: |
-          axe http://localhost:3000/ http://localhost:3000/work/neev http://localhost:3000/writing \
+          axe http://localhost:3100/ http://localhost:3100/work/neev http://localhost:3100/writing \
             --exit \
             --chromedriver-path "$(command -v chromedriver)" \
             --tags wcag2a,wcag2aa,wcag21a,wcag21aa
