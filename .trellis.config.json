@@ -1,0 +1,11 @@
+{
+  "gptx": {
+    "comment": "Spec 030. Enables GPTX cross-family routing doctrine for this project. Requires both a Claude and a Codex subscription plus the central Trellis install. routing: absent or malformed resolves CLOSED to default_family \"balanced\", share_floor 0.4, and orchestrator_inline_max_lines absent - behaviour byte-identical to a spec-028 Trellis.",
+    "enabled": true,
+    "routing": {
+      "default_family": "gpt",
+      "share_floor": 0.8,
+      "orchestrator_inline_max_lines": 40
+    }
+  }
+}
