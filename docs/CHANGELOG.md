@@ -6,6 +6,11 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-08-09 — Applied the scheduled dependency-currency patch for Next.js and
+  `eslint-config-next` from 16.2.10 to 16.2.12, keeping the existing Next 16.2
+  architecture and release-age policy governed by ADR-0001 and ADR-0010.
+  Frozen install, typecheck, lint, 176 unit tests, and the 70-page production
+  build remain green.
 - 2026-08-02 — Adopted the spec-023 port-only local-infrastructure contract:
   native development, production, and isolated Playwright servers use `3100`;
   startup preflights the fixed port through shared infrastructure while the
@@ -56,6 +61,11 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Security
 
+- 2026-08-09 — Raised the reproducible transitive security floors to
+  `brace-expansion` 1.1.18/5.0.9, `js-yaml` 4.3.1, Nano ID 3.3.17, PostCSS
+  8.5.23, and Sharp 0.35.3. The Sharp override crosses Next.js 16.2.12's
+  declared optional `0.34.x` range; frozen install, dependency audit, unit
+  coverage, and the production image-optimization build gate that exception.
 - 2026-07-21 — Patched brace-expansion 1.x/5.x and aligned PostCSS 8.5.13;
   the regenerated pnpm graph has no dependency advisories.
 - 2026-07-13 — Nonce-based CSP (`docs/adr/0014-nonce-based-csp.md`, supersedes the T7 CSP in ADR-0013): dropped `script-src 'unsafe-inline'` in favor of a per-request nonce. `proxy.ts` generates a fresh nonce (`btoa(crypto.randomUUID())`) per request, builds `script-src 'self' 'nonce-<n>' 'strict-dynamic' https://static.cloudflareinsights.com`, sets it on both the request headers (so Next stamps its inline hydration scripts) and the response; `app/layout.tsx` reads the nonce via `headers()` and passes it to `/init-theme.js` + the Cloudflare beacon. `style-src 'unsafe-inline'` retained (Next inline styles). **Tradeoff (operator-approved):** reading request headers opts the HTML pages (`/`, `/work/[slug]`, `/writing`, `/writing/[slug]`) into dynamic rendering — no CDN static caching; the `.md` route handlers stay SSG. Verified on a production build via real headless-Chromium over four routes: 0 CSP violations, 0 hydration errors, home canvas mounts (hydration intact), every inline script carries the nonce, no `'unsafe-inline'` in `script-src`, nonce unique per request. `pnpm test` 81/81.
