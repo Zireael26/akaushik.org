@@ -6,6 +6,11 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-08-09 — Applied the scheduled dependency-currency patch for Next.js and
+  `eslint-config-next` from 16.2.10 to 16.2.12, keeping the existing Next 16.2
+  architecture and release-age policy governed by ADR-0001 and ADR-0010.
+  Frozen install, typecheck, lint, 176 unit tests, and the 70-page production
+  build remain green.
 - 2026-08-02 — Adopted the spec-023 port-only local-infrastructure contract:
   native development, production, and isolated Playwright servers use `3100`;
   startup preflights the fixed port through shared infrastructure while the

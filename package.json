@@ -34,7 +34,7 @@
     "ci:serve": "pnpm build && pnpm start"
   },
   "dependencies": {
-    "next": "16.2.10",
+    "next": "16.2.12",
     "next-mdx-remote": "^6.0.0",
     "react": "19.2.7",
     "react-dom": "19.2.7",
@@ -59,7 +59,7 @@
     "autoprefixer": "^10.5.2",
     "@typescript/native": "npm:typescript@7.0.2",
     "eslint": "9.39.2",
-    "eslint-config-next": "16.2.10",
+    "eslint-config-next": "16.2.12",
     "husky": "^9.1.7",
     "postcss": "8.5.13",
     "prettier": "^3.9.4",
