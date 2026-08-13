@@ -6,6 +6,15 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-08-13 — Closed the unblocked entries of the phase-2 AEO spec. The
+  63 million MSME figure now carries its source (National Sample Survey Office,
+  2017) in both the homepage About paragraph and the Neev case study, with the
+  two wordings reconciled; the Zero to Hero mentions link the author's own
+  course index and name author, course, and medium inline;
+  `writing/ai-for-msme` gains five H2 sections and three H3s that each name
+  MSME, distributor, or Neev; and `/work` renders the lede and spec rows per
+  entry, taking its visible text from 126 to 349 words. A2 (distributor
+  quotation) and the A4.2 outcome metrics remain open on operator input.
 - 2026-08-09 — Applied the scheduled dependency-currency patch for Next.js and
   `eslint-config-next` from 16.2.10 to 16.2.12, keeping the existing Next 16.2
   architecture and release-age policy governed by ADR-0001 and ADR-0010.
