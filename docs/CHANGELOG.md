@@ -15,6 +15,8 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   MSME, distributor, or Neev; and `/work` renders the lede and spec rows per
   entry, taking its visible text from 126 to 349 words. A2 (distributor
   quotation) and the A4.2 outcome metrics remain open on operator input.
+  Publication stays on the established MDX pipeline in ADR-0004; this change
+  does not alter its loader, frontmatter, or rendering architecture.
 - 2026-08-09 — Applied the scheduled dependency-currency patch for Next.js and
   `eslint-config-next` from 16.2.10 to 16.2.12, keeping the existing Next 16.2
   architecture and release-age policy governed by ADR-0001 and ADR-0010.
