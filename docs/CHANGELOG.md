@@ -70,6 +70,10 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Security
 
+- 2026-08-13 — Upgraded Next.js and its build tooling to 16.3.0, aligned
+  PostCSS at 8.5.26, refreshed vulnerable transitive dependency floors, and
+  replaced the temporary TypeScript 6 package alias with the official 6.0.2
+  release required by Next.js builds. TypeScript 7 remains the comparison lane.
 - 2026-08-09 — Raised the reproducible transitive security floors to
   `brace-expansion` 1.1.18/5.0.9, `js-yaml` 4.3.1, Nano ID 3.3.17, PostCSS
   8.5.23, and Sharp 0.35.3. The Sharp override crosses Next.js 16.2.12's
