@@ -41,10 +41,21 @@ export default function WorkIndex() {
           {CASE_STUDIES.filter((c) => c.draft !== true).map((c) => (
             <li key={c.slug} className="work-index-item">
               <span className="case-index">{c.index}</span>
-              <Link href={`/work/${c.slug}`} className="work-index-link">
-                <h2 className="work-index-item-title">{c.title}</h2>
-                <p className="work-index-item-dek">{c.dek}</p>
-              </Link>
+              <div className="work-index-body">
+                <Link href={`/work/${c.slug}`} className="work-index-link">
+                  <h2 className="work-index-item-title">{c.title}</h2>
+                  <p className="work-index-item-dek">{c.dek}</p>
+                </Link>
+                <p className="work-index-item-lede">{c.lede}</p>
+                <dl className="work-index-item-spec">
+                  {c.spec.map((s) => (
+                    <div key={s.term}>
+                      <dt>{s.term}</dt>
+                      <dd>{s.def}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
               <span className="case-year">{c.year}</span>
             </li>
           ))}
