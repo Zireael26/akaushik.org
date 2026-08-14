@@ -17,6 +17,11 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   quotation) and the A4.2 outcome metrics remain open on operator input.
   Publication stays on the established MDX pipeline in ADR-0004; this change
   does not alter its loader, frontmatter, or rendering architecture.
+- 2026-08-14 — Process-gate readiness for the daily stats snapshot:
+  `public/data/stats.json` remains subject to ADR-0013's public-data
+  truthfulness requirement. Its reviewed-main, lease-protected PR workflow is
+  specified in `specs/003-post-launch-closure`; no generator, schedule, or
+  payload behavior changed.
 - 2026-08-09 — Applied the scheduled dependency-currency patch for Next.js and
   `eslint-config-next` from 16.2.10 to 16.2.12, keeping the existing Next 16.2
   architecture and release-age policy governed by ADR-0001 and ADR-0010.
