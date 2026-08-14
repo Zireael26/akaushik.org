@@ -27,6 +27,12 @@ test.describe('Work — cards and detail routes', () => {
     await page.goto('/work');
     await expect(page.getByRole('link', { name: /ClusterBid/i })).toBeVisible();
 
+    // /work renders the lede + spec rows, not just the tagline, so the index
+    // entry stands on its own as a retrieval unit.
+    const indexEntry = page.locator('.work-index-item', { hasText: 'ClusterBid' });
+    await expect(indexEntry).toContainText('Engineering advisor · process & platform');
+    await expect(indexEntry).toContainText('pre-production');
+
     await page.goto('/work/clusterbid');
     const article = page.locator('article.work-detail-body');
     await expect(article.getByRole('heading', { level: 1 })).toHaveText('ClusterBid');
