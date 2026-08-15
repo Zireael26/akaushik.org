@@ -15,10 +15,17 @@ You are the `seo-weekly-draft` task source for akaushik.org. When registered and
 
 Use one Bash session for all command blocks below. Record one exact branch and worktree path for the run; never substitute a glob. A rerun on the same date must resume that branch rather than create another draft.
 
+Start the session with the working directory anywhere inside this repository. A worktree is fine: `REPO_ROOT` below is derived from the git *common* directory, so it resolves to the canonical checkout that owns the worktree rather than to the worktree itself. The registered prompt supplies a starting location; the derivation, not the prompt, decides the root.
+
 ```bash
 set -euo pipefail
 
-readonly REPO_ROOT=/Users/abhishek/projects/personal/akaushik.org
+# Canonical checkout root, derived from the git common directory rather than the
+# working tree: --show-toplevel returns the WORKTREE root when run inside a
+# worktree, while --git-common-dir points at the owning checkout's .git from
+# anywhere in the repo. No machine-absolute path is recorded here, so this
+# contract travels with the repo and survives being run from a worktree.
+readonly REPO_ROOT="$(dirname "$(cd "$(git rev-parse --git-common-dir)" && pwd -P)")"
 readonly GH_REPO=Zireael26/akaushik.org
 readonly RUN_DATE="$(date +%Y%m%d)"
 readonly POST_DATE="$(date +%F)"

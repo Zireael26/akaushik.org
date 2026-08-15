@@ -42,7 +42,7 @@ A representative `git commit` invocation:
 - `node:child_process` (`execFileSync`) — runs the git invocation.
 - Husky ≥9 — installs `.husky/pre-commit` and wires git hooksPath. `pnpm prepare` (run on install) bootstraps Husky.
 - `lint-staged` — optional sibling formatter step. The hook checks for its binary before invoking; absence is non-fatal.
-- Trellis pre-push guard — installed separately, blocks direct push to `main`. Out of scope here.
+- GitHub branch protection on `main` — server-side, not a file in this repo. Blocks direct push, requires a PR, and requires the `verify`, `test`, and `audit` checks green (strict, admins included). Out of scope here.
 
 ## Test commands
 
@@ -77,7 +77,7 @@ To exercise an end-to-end failure: stage a `.ts` file under `app/` without touch
 
 ## Out of scope
 
-- Push-time guards (the Trellis pre-push hook blocking direct push to `main`) — separate hook, separate concern.
+- Push-time guards. Direct push to `main` is refused by GitHub branch protection, server-side — there is no pre-push hook in this repo to read or bypass. Separate mechanism, separate concern.
 - CI-side checks beyond reuse of the same script — see `.github/workflows/` if CI starts emitting different verdicts than the local hook.
 - Doc content quality (CHANGELOG style, ADR template adherence) — the gate only checks that the file is staged, not what it says.
 
