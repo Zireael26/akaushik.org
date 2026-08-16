@@ -11,7 +11,7 @@
 
 You are the `seo-quarterly-flagship` scheduled task for akaushik.org. Run 1st of Jan/Apr/Jul/Oct at 06:00 local. Fresh context.
 
-**Repo location:** `/Users/abhishek/projects/personal/akaushik.org/`. Work in a fresh worktree at `.claude/worktrees/seo-flagship-<YYYYQN>` on branch `seo-bot/flagship/<YYYYQN>`.
+**Repo location:** the akaushik.org checkout named by the registered prompt (`<REPO_ROOT>`; confirm with `git rev-parse --show-toplevel` from inside it). Work in a fresh worktree at `.claude/worktrees/seo-flagship-<YYYYQN>` on branch `seo-bot/flagship/<YYYYQN>`.
 
 **Authoritative docs:**
 - `docs/seo/2026-05-18-seo-strategy-design.md` §3.3 — flagship cadence table (candidates by quarter).

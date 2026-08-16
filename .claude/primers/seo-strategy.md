@@ -46,7 +46,7 @@ How discovery + automation thread together:
 - **Internal code:** `lib/canonical.ts`, `lib/structured-data.ts`, `components/seo/JsonLdScript.tsx`, `app/sitemap.ts`, `app/robots.txt/route.ts`, and `proxy.ts` for Link headers plus Markdown negotiation.
 - **Tooling (used by task sources when registered):** `gh` CLI for PR creation; `curl` for redirect health; `linkinator` or equivalent for internal-link audit; `validator.schema.org` HTTP API; Lighthouse (npm package or pnpm script).
 - **Registration model:** `REGISTER.md` supplies one-time bootstrap prompts that re-read the committed source templates on every run. Prompt behavior is repo-driven; registration, cadence, and enabled/paused state are scheduler-driven.
-- **Observed registration state (2026-07-15):** `/Users/abhishek/.claude/scheduled-tasks/` is absent and `STATUS.md` H10 remains pending. No active Cowork registration is evidenced by the repo or expected local task store; confirm in the scheduler before relying on any cadence.
+- **Observed registration state (2026-07-15):** `$HOME/.claude/scheduled-tasks/` is absent and `STATUS.md` H10 remains pending. No active Cowork registration is evidenced by the repo or expected local task store; confirm in the scheduler before relying on any cadence.
 - **Related primers:** `agent-readiness-contract` (LLM/agent surfaces already shipped), `og-image-generation` (per-page OG images; extend per spec §4.7), `mdx-content-pipeline` (drives content + listing endpoints feeding `llms-full.txt`).
 
 ## Test commands
@@ -71,7 +71,7 @@ curl -s https://akaushik.org/llms-full.txt | wc -c    # byte-size growth = conte
 
 # Inspect repository sources; this does not prove active registration
 rg --files docs/seo/scheduled-tasks
-test -d /Users/abhishek/.claude/scheduled-tasks && echo present || echo absent
+test -d "$HOME/.claude/scheduled-tasks" && echo present || echo absent
 # Confirm active/enabled state in the scheduler itself before relying on a cadence.
 ```
 
@@ -80,7 +80,7 @@ test -d /Users/abhishek/.claude/scheduled-tasks && echo present || echo absent
 - **Source is not registration.** Files under `docs/seo/scheduled-tasks/` are inert templates until a scheduler registration exists and is enabled. Never infer active health from source files or empty STATUS sections.
 - **Cowork-only scheduling.** If these tasks are registered in Cowork, they fire only while the app is open (or on next launch for deferred runs). The daily redirect check is the most cadence-sensitive.
 - **Fresh-context tasks.** Every registered run starts with no memory of prior conversations or runs. Source templates MUST remain self-contained: repo, exact branch/worktree policy, files to read, writes, commit/push sequence, PR behavior, and failure reporting.
-- **Never push to main.** Trellis `pre-push` also blocks direct-to-main, but every registered run must use its exact `seo-bot/...` branch and PR flow. Editorial review is the gate.
+- **Never push to main.** GitHub branch protection on `main` refuses direct pushes server-side (PR required; `verify`/`test`/`audit` must pass; admins included) — do not expect a local hook to catch it, there is none in this repo. Every registered run must still use its exact `seo-bot/...` branch and PR flow. Editorial review is the gate.
 - **Wikidata deletion risk.** First-pass entries for non-famous individuals get deleted by editors as "non-notable." Cite akaushik.org/about + LinkedIn + Bluehost team page + any external press as references. Re-submit with additional sources if deleted.
 - **GSC Change of Address from `developerabhishek.live` is no longer on the table.** Registration lapsed 2026-05-19 (ADR-0003 Outcome) — there is no source property to verify or redirect from. Equity recovery relies on `sameAs` Wikidata + sitemap re-submission + on-site signals only.
 - **Canonical NAP block.** Lives in `STATUS.md §2`. Editing it changes what the drift monitor compares against — keep deliberately current. Empty fields = "ignore this `sameAs`" (TODO until filled).

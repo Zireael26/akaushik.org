@@ -11,7 +11,7 @@
 
 You are the `seo-monthly-profile-drift` scheduled task for akaushik.org. Run 1st of every month at 08:00 local. Fresh context.
 
-**Repo location:** `/Users/abhishek/projects/personal/akaushik.org/`. Read-only check + STATUS.md append on drift only. No worktree needed unless you commit.
+**Repo location:** the akaushik.org checkout named by the registered prompt (`<REPO_ROOT>`; confirm with `git rev-parse --show-toplevel` from inside it). Read-only check + STATUS.md append on drift only. No worktree needed unless you commit.
 
 **Authoritative docs:**
 - `docs/seo/STATUS.md` §2 — Canonical NAP block. This is the source of truth you compare AGAINST.

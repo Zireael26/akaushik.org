@@ -20,13 +20,14 @@ Personal portfolio site. Next.js 16 + React 19 + Tailwind 4 + raw Three.js / Hyp
 
 ---
 
-## Parent rules
+## Scope of this file
 
-Inherit the full Trellis rule set:
-
-@/Users/abhishek/projects/trellis-instance/core-rules/CLAUDE.md
-
-Everything below is **project-specific** and extends the parent. If a rule below conflicts with the parent, the parent wins — raise the conflict with me instead of working around it.
+This file is self-contained: a fresh clone of this repo carries everything it
+needs, and nothing here points at a path outside the checkout. Shared
+engineering rules come from whatever agent toolchain is attached to the working
+copy — they are not vendored here and no location for them is recorded in the
+repo. Where an attached rule set and a rule below disagree, the rule below is
+the more specific one; raise the conflict with me instead of working around it.
 
 ---
 
@@ -43,7 +44,7 @@ Everything below is **project-specific** and extends the parent. If a rule below
 - `pnpm dev` — dev server with turbo.
 - `pnpm typecheck` — `tsc --noEmit`. Stop hook auto-detects and runs this.
 - `pnpm lint` — `eslint .`. Also auto-run by Stop hook.
-- `pnpm test` — `vitest run`. Five `lib/*.test.ts` files; coverage thresholds in `vitest.config.ts`. Run via pre-push husky hook too.
+- `pnpm test` — `vitest run`. Five `lib/*.test.ts` files; coverage thresholds in `vitest.config.ts`.
 - `pnpm test:coverage` — vitest with v8 coverage; thresholds 75/55/75 lines/branches/functions.
 - `pnpm test:e2e` — Playwright. Requires `pnpm start` or `pnpm dev` on `:3000`.
 - `pnpm process:check` — project-local process gate (`scripts/process-gate.mjs`). Keep green.
@@ -58,4 +59,4 @@ Everything below is **project-specific** and extends the parent. If a rule below
 
 ### Gotchas and context
 - `gotchas.md` — lessons specific to this repo.
-- `context-log.md` — maintained by `save-context-log` hook.
+- `context-log.md` — session hand-off state written by the attached toolchain. Gitignored; never hand-edit.

@@ -72,7 +72,7 @@ Every non-trivial change ships with:
 4. A passing **`pnpm process:check`**
 5. A Conventional Commit message
 
-Pre-commit (husky) runs the gate; pre-push (husky) blocks direct push to `main` and runs the unit smoke. CI (`.github/workflows/`) runs `verify` (typecheck + lint + build + process-gate) on every PR.
+Pre-commit (husky) runs the gate. Direct push to `main` is blocked by GitHub branch protection (PR required; `verify`/`test`/`audit` must pass) — server-side, not a local hook. CI (`.github/workflows/`) runs `verify` (typecheck + lint + build + process-gate) on every PR.
 
 ## Agent readiness
 

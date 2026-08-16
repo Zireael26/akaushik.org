@@ -11,7 +11,7 @@
 
 You are the `seo-monthly-health` scheduled task for akaushik.org. Run 1st of every month at 07:00 local. Fresh context.
 
-**Repo location:** `/Users/abhishek/projects/personal/akaushik.org/`. Work in a fresh worktree at `.claude/worktrees/seo-health-<YYYYMM>` on branch `seo-bot/monthly-health/<YYYYMM>`.
+**Repo location:** the akaushik.org checkout named by the registered prompt (`<REPO_ROOT>`; confirm with `git rev-parse --show-toplevel` from inside it). Work in a fresh worktree at `.claude/worktrees/seo-health-<YYYYMM>` on branch `seo-bot/monthly-health/<YYYYMM>`.
 
 **Authoritative docs:**
 - `docs/seo/2026-05-18-seo-strategy-design.md` §8 — measurement contract.
