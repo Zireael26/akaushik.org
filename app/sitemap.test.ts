@@ -26,4 +26,13 @@ describe('sitemap', () => {
     const home = entries.find((e) => e.url === 'https://akaushik.org/');
     expect(home?.lastModified).toBeInstanceOf(Date);
   });
+
+  it('publishes GPTx and omits the unlisted direct-link post', () => {
+    expect(entries.some((e) => e.url === 'https://akaushik.org/writing/gptx-in-trellis')).toBe(
+      true,
+    );
+    expect(
+      entries.some((e) => e.url === 'https://akaushik.org/writing/detection-is-not-continuity'),
+    ).toBe(false);
+  });
 });

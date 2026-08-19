@@ -1,21 +1,21 @@
 ---
 title: What I learned building micrograd and makemore from scratch
-dek: A foundations-first reading of Karpathy's Zero to Hero — why re-implementing the thing is the only way to understand the thing.
+dek: A foundations-first reading of Karpathy's Zero to Hero, and why re-implementing the thing is the only way to understand the thing.
 date: 2026-04-15
 ---
 
 # What I learned building micrograd and makemore from scratch
 
-> A foundations-first reading of Karpathy's Zero to Hero — why re-implementing the thing is the only way to understand the thing.
+> A foundations-first reading of Karpathy's Zero to Hero, and why re-implementing the thing is the only way to understand the thing.
 
 You can watch a video on a topic, nod along, feel the concept land, and move on. Or you can close the video and type the thing yourself. The two feel identical in the moment. They aren't.
 
-Karpathy's *Zero to Hero* runs from scalar-valued autograd to a transformer. I did both passes: watched first, rebuilt second. The rebuild was slower, more frustrating, and the only pass that counted.
+Andrej Karpathy's video course [Neural Networks: Zero to Hero](https://karpathy.ai/zero-to-hero.html) runs from scalar-valued autograd to a transformer. I did both passes: watched first, rebuilt second. The rebuild was slower, more frustrating, and the only pass that counted.
 
-Micrograd is the smaller project — a reverse-mode autodiff engine over scalars. Every value is a node, every op builds the graph, `backward()` walks the graph in topological order and accumulates gradients. The implementation fits in a few hundred lines. The understanding doesn't. Until you've traced a gradient through manual backprop yourself, "PyTorch handles broadcasting" stays an abstraction. It does handle it. You only own that fact after you've been the one handling it.
+Micrograd is the smaller project, a reverse-mode autodiff engine over scalars. Every value is a node, every op builds the graph, `backward()` walks the graph in topological order and accumulates gradients. The implementation fits in a few hundred lines. The understanding doesn't. Until you've traced a gradient through manual backprop yourself, "PyTorch handles broadcasting" stays an abstraction. It does handle it. You only own that fact after you've been the one handling it.
 
 Makemore extends the lesson: bigram counts, MLP, BatchNorm, WaveNet-style dilated convolutions, a character-level transformer. One new idea per step. The point isn't to implement them all at once but to hold the previous idea in your head while you add the next. The sequencing is the pedagogy.
 
 After building them I stopped treating gradient flow as magic substrate and started reading it like a data structure. That makes a real difference when you're debugging a production model that won't converge.
 
-The rest of the writing on this site applies the same habit — foundations before abstraction — to production stacks. Agent frameworks, embedding pipelines, operational AI for businesses that haven't deployed it before.
+The rest of the writing on this site applies the same foundations-before-abstraction habit to production stacks. Agent frameworks, embedding pipelines, operational AI for businesses that haven't deployed it before.

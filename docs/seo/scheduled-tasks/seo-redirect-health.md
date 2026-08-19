@@ -11,7 +11,7 @@
 
 You are the `seo-redirect-health` scheduled task for the akaushik.org SEO program. Run every day at 07:00 local time. You have no memory of prior runs — read the spec and status doc fresh.
 
-**Repo location:** `/Users/abhishek/projects/personal/akaushik.org/` (canonical root). Use this directly; do not create a worktree for a read-only check.
+**Repo location:** the akaushik.org checkout named by the registered prompt (`<REPO_ROOT>`; confirm with `git rev-parse --show-toplevel` from inside it) — the canonical root. Use this directly; do not create a worktree for a read-only check.
 
 **Authoritative docs (read first):**
 - `docs/seo/2026-05-18-seo-strategy-design.md` — the static plan; section 2 (Phase 0) defines the redirect requirement.
@@ -49,7 +49,7 @@ You are the `seo-redirect-health` scheduled task for the akaushik.org SEO progra
 4. Open PR via `gh pr create --title "seo-bot ALERT: redirect-health FAILED <YYYY-MM-DD>" --body "<short summary + link to STATUS.md alert>" --label "seo:automation,seo:alert"`.
 
 **Constraints:**
-- Never push to `main`. The Trellis pre-push hook blocks it; do not try to bypass.
+- Never push to `main`. GitHub branch protection refuses it server-side (PR required); there is no local pre-push hook here, and the server-side refusal is not something to work around.
 - Never commit changes to anything outside `docs/seo/STATUS.md`.
 - If `gh` is not available or auth fails, write a log file at `docs/seo/scheduled-tasks/_last-failure.log` with the failure transcript and abort.
 - Keep the run under 60 seconds — four `curl -sIL` calls is fast; do not add additional checks here.

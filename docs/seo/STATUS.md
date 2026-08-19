@@ -112,7 +112,7 @@ _Seeded 2026-05-19 with 50 slots across the five pillars (msme, agents, rag, eng
 
 Five repository source templates live under [`scheduled-tasks/`](./scheduled-tasks/); [`REGISTER.md`](./scheduled-tasks/REGISTER.md) contains one-time registration bootstraps that re-read those sources each run. Editing a source template changes behavior without updating a separate registered prompt. Scheduler controls are needed only for registration, cadence, and enabled/paused state.
 
-**Registration audit (2026-07-15):** `/Users/abhishek/.claude/scheduled-tasks/` is absent, and H10 remains pending. This repo therefore does not evidence an active Cowork registration. Treat the rows below as intended schedules and source status until the scheduler itself confirms otherwise.
+**Registration audit (2026-07-15):** `$HOME/.claude/scheduled-tasks/` is absent, and H10 remains pending. This repo therefore does not evidence an active Cowork registration. Treat the rows below as intended schedules and source status until the scheduler itself confirms otherwise.
 
 | Task ID                     | Cadence         | Last run | Status        | Notes                                                    |
 | --------------------------- | --------------- | -------- | ------------- | -------------------------------------------------------- |

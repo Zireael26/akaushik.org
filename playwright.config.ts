@@ -10,7 +10,7 @@ import { defineConfig, devices } from '@playwright/test';
 // scroll, theme toggle, reduced-motion honoring. No internal state, no
 // brittle selectors, no waiting for specific CSS-animated frames.
 
-const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3100';
 const IS_CI = !!process.env.CI;
 
 export default defineConfig({
@@ -60,7 +60,7 @@ export default defineConfig({
     : {
         command: 'pnpm dev',
         url: BASE_URL,
-        reuseExistingServer: true,
+        reuseExistingServer: false,
         timeout: 120_000,
       },
 });

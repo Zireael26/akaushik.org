@@ -1,5 +1,6 @@
 #!/usr/bin/env sh
-# SE Core canonical pre-commit + akaushik.org project appendix.
+# akaushik.org pre-commit: run the project's own process gate over staged changes.
+# See docs/adr/0002-process-gate-policy.md; CI re-runs the same gate against main.
 set -e
 
 command -v node >/dev/null 2>&1 || { echo "[pre-commit] node unavailable; skipping"; exit 0; }
@@ -14,11 +15,5 @@ run_script() {
   else                                             npm run "$1"
   fi
 }
-
-if [ -x ./node_modules/.bin/lint-staged ]; then
-  ./node_modules/.bin/lint-staged
-else
-  echo "[pre-commit] lint-staged not installed - skipping"
-fi
 
 if has_script process:check; then run_script process:check; fi

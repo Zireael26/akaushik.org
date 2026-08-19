@@ -1,22 +1,22 @@
 ---
 title: "Stack profiles: where the engineering process bends without breaking"
-dek: How Lume (Unity) and ClusterBid (polyglot Go+TS+Python) each forced a new stack-profile carve-out — and what that taught me about the Rule of Three.
+dek: How Lume (Unity) and ClusterBid (polyglot Go+TS+Python) each forced a new stack-profile carve-out, and what that taught me about the Rule of Three.
 date: 2026-05-22
 ---
 
 # Where the engineering process bends without breaking
 
-> How Lume (Unity) and ClusterBid (polyglot Go+TS+Python) each forced a new stack-profile carve-out — and what that taught me about the Rule of Three.
+> How Lume (Unity) and ClusterBid (polyglot Go+TS+Python) each forced a new stack-profile carve-out, and what that taught me about the Rule of Three.
 
 ## Six gates and a pressure valve
 
-I wrote about [Trellis](/writing/trellis) two weeks ago — the parent/child engineering-process regime that sits in front of every coding agent I run. The shortest version: one rulebook, nine hooks, ten weekly audits, and a `process-gate` skill that emits a verdict block before any PR can merge.
+I wrote about [Trellis](/writing/trellis) two weeks ago, the parent/child engineering-process regime that sits in front of every coding agent I run. The shortest version: one rulebook, nine hooks, ten weekly audits, and a `process-gate` skill that emits a verdict block before any PR can merge.
 
 The skill runs six canonical gates. PR hygiene checks Conventional Commits, branch names, and size budgets. Secrets scans the diff. Bypass markers catches `--no-verify`, force-push, and the `TRELLIS_ALLOW_MAIN_PUSH=1` override. Tests and coverage runs the project's typecheck / lint / fast-test triad. Docs discipline confirms the change carries a CHANGELOG entry, an ADR if it should, and any required gotchas update.
 
-That's five. The sixth is the stack profile — and it's the only one that doesn't ship with a fixed implementation. The canonical layer says "run the validators the project declares." The project says, in `local.config.sh`, what those validators are.
+That's five. The sixth is the stack profile. It is the only one that doesn't ship with a fixed implementation. The canonical layer says "run the validators the project declares." The project says, in `local.config.sh`, what those validators are.
 
-For most rules this asymmetry would be a smell. No secrets, no force-push to `main`, no marking a task done while tests fail — those are universal, and a universal rule should have a universal implementation. But some checks are genuinely stack-shaped. Unity projects need to confirm every asset has a paired `.meta` file. Go workspaces need a `vet` loop that fans into each module because `go vet ./...` from the workspace root is unsupported. A Next.js portfolio site needs a design-token validator that wouldn't make sense anywhere else. The underlying constraint is different in each case, so one canonical script can't catch all three.
+For most rules this asymmetry would be a smell. No secrets, no force-push to `main`, no marking a task done while tests fail. Those are universal, and a universal rule should have a universal implementation. But some checks are genuinely stack-shaped. Unity projects need to confirm every asset has a paired `.meta` file. Go workspaces need a `vet` loop that fans into each module because `go vet ./...` from the workspace root is unsupported. A Next.js portfolio site needs a design-token validator that wouldn't make sense anywhere else. The underlying constraint is different in each case, so one canonical script can't catch all three.
 
 The stack-profile slot is the pressure valve. It lets the parent layer stay small without pretending the world is uniform.
 
@@ -24,9 +24,9 @@ The stack-profile slot is the pressure valve. It lets the parent layer stay smal
 
 ## Lume: the first carve-out
 
-Lume is a 3D Unity game I onboarded in late April. It's the first Trellis project with no Node runtime, no `package.json`, no pnpm anywhere in the tree. Husky doesn't apply — its whole bootstrap assumes a JS package manager. The hook stack had to land somewhere else.
+Lume is a 3D Unity game I onboarded in late April. It's the first Trellis project with no Node runtime, no `package.json`, no pnpm anywhere in the tree. Husky doesn't apply because its whole bootstrap assumes a JS package manager. The hook stack had to land somewhere else.
 
-The somewhere-else is native git hooks. `git config core.hooksPath = .githooks`, scripts under `.githooks/`, executable bit set. The canonical commit-msg validator and pre-push guard get copied in and lightly adapted — replacing the husky-flavored package-runner tail with direct shell calls. That part wasn't novel; native git hooks were already documented as the fallback for Rust, Go, and Python projects.
+The somewhere-else is native git hooks. `git config core.hooksPath = .githooks`, scripts under `.githooks/`, executable bit set. The canonical commit-msg validator and pre-push guard get copied in and lightly adapted, replacing the husky-flavored package-runner tail with direct shell calls. That part wasn't novel; native git hooks were already documented as the fallback for Rust, Go, and Python projects.
 
 What was novel was the stack profile. Lume declares it explicitly:
 
@@ -39,7 +39,7 @@ PROCESS_GATE_STACK_VALIDATORS=(
 )
 ```
 
-The validators are project-local. Lume is the only Unity project I run, which means n=1, which means the Rule of Three says nothing canonical ships under `unity` yet. The reference under `core-rules/skills/process-gate/references/stack-profiles.md` documents the profile and lists the candidate validators — but the scripts themselves live inside Lume's tree, not in the parent.
+The validators are project-local. Lume is the only Unity project I run, which means n=1, which means the Rule of Three says nothing canonical ships under `unity` yet. The reference under `core-rules/skills/process-gate/references/stack-profiles.md` documents the profile and lists the candidate validators, but the scripts themselves live inside Lume's tree, not in the parent.
 
 The same constraint applies a layer down. `.githooks/` carries `commit-msg` and `pre-push` only. No `.githooks/pre-commit` until Unity-specific pre-commit validators reach Rule of Three (n≥2). The canonical six gates still run server-side via the process-gate skill on PR, so the gap doesn't weaken anything that ships. It just means I don't get to bake "every commit must have a paired meta file" into a pre-commit hook based on one project's preferences.
 
@@ -51,11 +51,11 @@ That restraint is the point. The first time I touched a Unity-shaped problem, th
 
 ClusterBid Console onboarded a few weeks later. The shape is harder: Go workspace with five services plus three `pkg/*` libraries and a `tools/` tree, a Next.js frontend under `clients/` and `ts/`, and Python planned for GPU runners under `services/inference-runner` and `services/fine-tuning-orchestrator`. Three production languages, one repository, one CI surface, one process gate.
 
-No root `package.json`, so husky is out — same fallback as Lume, `core.hooksPath = .githooks`. The interesting part is what `pre-push` does next. The Trellis PR-flow guard runs first, blocking direct push to `main` with the documented override. Then the hook calls `make vet && make lint`. The Makefile is the entire reason this works: it owns the language-specific fan-out, so the hook itself stays language-agnostic.
+No root `package.json`, so husky is out. It uses the same fallback as Lume, `core.hooksPath = .githooks`. The interesting part is what `pre-push` does next. The Trellis PR-flow guard runs first, blocking direct push to `main` with the documented override. Then the hook calls `make vet && make lint`. The Makefile is the entire reason this works: it owns the language-specific fan-out, so the hook itself stays language-agnostic.
 
-That fan-out exists because Go workspaces forbid `go vet ./...` from the workspace root. You have to `cd` into each module and run vet there. The naive translation of the JS triad would have meant rewriting the canonical `check-tests.sh` to know about Go workspaces. The Makefile pattern absorbs the complexity: `Makefile vet|lint|test` is the contract, and the per-language loops live inside the Makefile body. From the process-gate skill's perspective, ClusterBid looks like every other project — there's a typecheck command, a lint command, a test command, they exit with the right codes, the verdict block fills in.
+That fan-out exists because Go workspaces forbid `go vet ./...` from the workspace root. You have to `cd` into each module and run vet there. The naive translation of the JS triad would have meant rewriting the canonical `check-tests.sh` to know about Go workspaces. The Makefile pattern absorbs the complexity: `Makefile vet|lint|test` is the contract, and the per-language loops live inside the Makefile body. From the process-gate skill's perspective, ClusterBid looks like every other project. There is a typecheck command, a lint command, a test command; they exit with the right codes and the verdict block fills in.
 
-The carve-out goes the same way as Lume's. `PROCESS_GATE_STACK_PROFILE="monorepo-polyglot"` in `local.config.sh`, candidate validators sketched in the reference doc (`check-orchestrator-coverage.sh`, `check-proto-contract.sh`, `check-ci-subtree-routing.sh`), all implemented project-local. ClusterBid is the only polyglot monorepo I run, so n=1, so nothing promotes. `pre-commit` is deferred until polyglot-specific validators reach Rule of Three across at least three polyglot projects — almost word-for-word the same deferral Lume's row carries.
+The carve-out goes the same way as Lume's. `PROCESS_GATE_STACK_PROFILE="monorepo-polyglot"` in `local.config.sh`, candidate validators sketched in the reference doc (`check-orchestrator-coverage.sh`, `check-proto-contract.sh`, `check-ci-subtree-routing.sh`), all implemented project-local. ClusterBid is the only polyglot monorepo I run, so n=1, so nothing promotes. `pre-commit` is deferred until polyglot-specific validators reach Rule of Three across at least three polyglot projects, almost word-for-word the same deferral Lume's row carries.
 
 The two projects didn't coordinate. They arrived at the same answer because the shape of the rule forced it.
 
@@ -63,14 +63,14 @@ The two projects didn't coordinate. They arrived at the same answer because the 
 
 ## The Rule of Three is doing real work
 
-Both profiles sit at n=1 today. Lume is the sole witness of `unity`. ClusterBid is the sole witness of `monorepo-polyglot`. Neither one gets to promote validators into the canonical layer until a second project of the same shape shows up — and even then, the promotion doesn't happen at n=2. It happens at n=3.
+Both profiles sit at n=1 today. Lume is the sole witness of `unity`. ClusterBid is the sole witness of `monorepo-polyglot`. Neither one gets to promote validators into the canonical layer until a second project of the same shape shows up. Even then, the promotion doesn't happen at n=2. It happens at n=3.
 
-That gap between n=2 and n=3 is where the rule earns its keep. With one project I have a hypothesis. With two, I have something that looks like a pattern but is statistically indistinguishable from coincidence — two projects might share a quirk because of a single decision I made twice, or a library I chose for both, or a deadline that pushed me toward the same shortcut. With three independent projects, the pattern has cleared the noise floor. Whatever's still common across all three is structural, not incidental.
+That gap between n=2 and n=3 is where the rule earns its keep. With one project I have a hypothesis. With two, I have something that looks like a pattern but is statistically indistinguishable from coincidence. Two projects might share a quirk because of a single decision I made twice, a library I chose for both, or a deadline that pushed me toward the same shortcut. With three independent projects, the pattern has cleared the noise floor. Whatever's still common across all three is structural, not incidental.
 
 The temptation to skip ahead is constant. After Lume I wanted to write a canonical Unity profile because the validators felt obvious. After ClusterBid I wanted to write a canonical polyglot profile because the Makefile orchestrator pattern is genuinely clean. Both times the right move was a thorough reference document and project-local scripts. The reference captures the shape so the second adopter doesn't have to re-derive it; the scripts stay local so a single-project guess doesn't lock in the wrong abstraction.
 
-The system handles this by counting in the reference docs themselves. `references/stack-profiles.md` lists every profile with its current witness count and what's required to promote. `references/monorepo-polyglot.md` has a whole section on the promotion path — diff the validators between adopters, wait for the third witness, lift per the canonical procedure. Neither doc pretends canonical scripts exist yet for these profiles. The honesty is load-bearing; the moment a reference doc implies more canonization than actually exists, the deferral system erodes.
+The system handles this by counting in the reference docs themselves. `references/stack-profiles.md` lists every profile with its current witness count and what's required to promote. `references/monorepo-polyglot.md` has a whole section on the promotion path: diff the validators between adopters, wait for the third witness, lift per the canonical procedure. Neither doc pretends canonical scripts exist yet for these profiles. The honesty is load-bearing; the moment a reference doc implies more canonization than actually exists, the deferral system erodes.
 
-What's still rough is the inverse direction. There's no codified test for when a profile should *graduate* from carve-out to canonical — n=3 is the threshold, but I haven't written the audit that flags candidates ready to promote. Today it's a manual review during quarterly housekeeping. The references themselves are uneven too: `monorepo-polyglot.md` is thorough; the Unity entry is thinner because Lume is still pre-MVP and the validators are speculative more than battle-tested. Both gaps resolve themselves the moment a real bug ships that the check would have caught. The doc updates after the receipt, not before.
+What's still rough is the inverse direction. There's no codified test for when a profile should *graduate* from carve-out to canonical. n=3 is the threshold, but I haven't written the audit that flags candidates ready to promote. Today it's a manual review during quarterly housekeeping. The references themselves are uneven too: `monorepo-polyglot.md` is thorough; the Unity entry is thinner because Lume is still pre-MVP and the validators are speculative more than battle-tested. Both gaps resolve themselves the moment a real bug ships that the check would have caught. The doc updates after the receipt, not before.
 
-The next stack profile to land — whatever shape it is — will be the third witness for something. That's the moment the system either confirms the Rule of Three was the right threshold or shows me where it was too strict. I'm betting on confirmation. I built the system so being wrong is cheap.
+The next stack profile to land, whatever shape it is, will be the third witness for something. That's the moment the system either confirms the Rule of Three was the right threshold or shows me where it was too strict. I'm betting on confirmation. I built the system so being wrong is cheap.

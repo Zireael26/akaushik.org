@@ -6,6 +6,22 @@ Each task's _behavior_ is defined by the file at `docs/seo/scheduled-tasks/<task
 
 This file is registration source, not evidence that any task is currently registered or enabled. Confirm active state in the scheduler before relying on a cadence.
 
+**`<REPO_ROOT>` in the blocks below is a placeholder, not a literal.** Registration is the one step that needs a machine-specific location, so the repo does not record one. Before pasting a block, get the value on the machine you are registering from and substitute it everywhere it appears:
+
+```bash
+# Derives from the git COMMON directory, not the working tree: --show-toplevel
+# returns the WORKTREE root when run inside a worktree, while --git-common-dir
+# points at the owning checkout's .git from anywhere in the repo. --path-format=absolute
+# is load-bearing: without it git prints a bare relative `.git` when the path is the
+# repo root, which would then resolve against the caller's cwd instead.
+dirname "$(git -C <any-path-inside-akaushik.org> rev-parse --path-format=absolute --git-common-dir)"
+```
+
+The derivation, not the operator, decides the root — the same command is correct
+run from the canonical checkout and from one of its worktrees, so there is nothing
+to remember. This matches how `seo-weekly-draft.md` derives `REPO_ROOT` at run time;
+keep the two in step if either changes.
+
 **All cron times are LOCAL** (Cowork evaluates cron in the user's timezone — for Abhishek that's IST / UTC+05:30).
 
 ---
@@ -21,9 +37,9 @@ mcp__scheduled-tasks__create_scheduled_task
   prompt: |
     You are the `seo-redirect-health` scheduled task for akaushik.org.
 
-    Read the full task contract from `/Users/abhishek/projects/personal/akaushik.org/docs/seo/scheduled-tasks/seo-redirect-health.md` and follow its "Prompt content" section verbatim. The file is the source of truth — re-read each run.
+    Read the full task contract from `<REPO_ROOT>/docs/seo/scheduled-tasks/seo-redirect-health.md` and follow its "Prompt content" section verbatim. The file is the source of truth — re-read each run.
 
-    Operate against the canonical repo at `/Users/abhishek/projects/personal/akaushik.org/`. Read-only redirect checks; only write target is `docs/seo/STATUS.md`. Never push to main; PR flow only.
+    Operate against the canonical repo at `<REPO_ROOT>/`. Read-only redirect checks; only write target is `docs/seo/STATUS.md`. Never push to main; PR flow only.
 ```
 
 ## 2. `seo-weekly-draft` — Monday 06:00
@@ -37,9 +53,9 @@ mcp__scheduled-tasks__create_scheduled_task
   prompt: |
     You are the `seo-weekly-draft` scheduled task for akaushik.org.
 
-    Read the full task contract from `/Users/abhishek/projects/personal/akaushik.org/docs/seo/scheduled-tasks/seo-weekly-draft.md` and follow its "Prompt content" section verbatim.
+    Read the full task contract from `<REPO_ROOT>/docs/seo/scheduled-tasks/seo-weekly-draft.md` and follow its "Prompt content" section verbatim.
 
-    Operate against `/Users/abhishek/projects/personal/akaushik.org/`. Use only the exact dated branch and worktree path recorded by the source contract. Never wildcard or force-remove worktrees; refuse cleanup when that exact worktree is dirty. Open a DRAFT PR (labels `seo:automation` and `seo:draft`) for editorial review. Never push to main.
+    Operate against `<REPO_ROOT>/`. Use only the exact dated branch and worktree path recorded by the source contract. Never wildcard or force-remove worktrees; refuse cleanup when that exact worktree is dirty. Open a DRAFT PR (labels `seo:automation` and `seo:draft`) for editorial review. Never push to main.
 
     If `docs/seo/editorial-calendar.md` does not exist, this is the first run: bootstrap it per the contract before drafting a post.
 ```
@@ -55,9 +71,9 @@ mcp__scheduled-tasks__create_scheduled_task
   prompt: |
     You are the `seo-monthly-health` scheduled task for akaushik.org.
 
-    Read the full task contract from `/Users/abhishek/projects/personal/akaushik.org/docs/seo/scheduled-tasks/seo-monthly-health.md` and follow its "Prompt content" section verbatim.
+    Read the full task contract from `<REPO_ROOT>/docs/seo/scheduled-tasks/seo-monthly-health.md` and follow its "Prompt content" section verbatim.
 
-    Operate against `/Users/abhishek/projects/personal/akaushik.org/`. Create a worktree at `.claude/worktrees/seo-health-<YYYYMM>` on branch `seo-bot/monthly-health/<YYYYMM>`. Refresh `docs/seo/STATUS.md §3 Metrics` for the current month + update §7. Open PR (label `seo:automation`). Never push to main.
+    Operate against `<REPO_ROOT>/`. Create a worktree at `.claude/worktrees/seo-health-<YYYYMM>` on branch `seo-bot/monthly-health/<YYYYMM>`. Refresh `docs/seo/STATUS.md §3 Metrics` for the current month + update §7. Open PR (label `seo:automation`). Never push to main.
 
     If a tool is unavailable (linkinator, lhci, GSC API), record `tool-unavailable` and continue.
 ```
@@ -73,9 +89,9 @@ mcp__scheduled-tasks__create_scheduled_task
   prompt: |
     You are the `seo-monthly-profile-drift` scheduled task for akaushik.org.
 
-    Read the full task contract from `/Users/abhishek/projects/personal/akaushik.org/docs/seo/scheduled-tasks/seo-monthly-profile-drift.md` and follow its "Prompt content" section verbatim.
+    Read the full task contract from `<REPO_ROOT>/docs/seo/scheduled-tasks/seo-monthly-profile-drift.md` and follow its "Prompt content" section verbatim.
 
-    Operate against `/Users/abhishek/projects/personal/akaushik.org/`. Parse the canonical NAP block from `docs/seo/STATUS.md §2`. For each non-placeholder `sameAs` URL, fetch the public profile, diff name/bio/photo. On drift, append to §5 + PR (label `seo:automation,seo:alert`). On no drift, tiny §7 update + PR. Never push to main. Never auto-edit §2.
+    Operate against `<REPO_ROOT>/`. Parse the canonical NAP block from `docs/seo/STATUS.md §2`. For each non-placeholder `sameAs` URL, fetch the public profile, diff name/bio/photo. On drift, append to §5 + PR (label `seo:automation,seo:alert`). On no drift, tiny §7 update + PR. Never push to main. Never auto-edit §2.
 
     If every NAP field is a placeholder/TODO, exit early with note `awaiting canonical NAP fill-in (Human handoff queue H8)`.
 ```
@@ -91,9 +107,9 @@ mcp__scheduled-tasks__create_scheduled_task
   prompt: |
     You are the `seo-quarterly-flagship` scheduled task for akaushik.org.
 
-    Read the full task contract from `/Users/abhishek/projects/personal/akaushik.org/docs/seo/scheduled-tasks/seo-quarterly-flagship.md` and follow its "Prompt content" section verbatim.
+    Read the full task contract from `<REPO_ROOT>/docs/seo/scheduled-tasks/seo-quarterly-flagship.md` and follow its "Prompt content" section verbatim.
 
-    Operate against `/Users/abhishek/projects/personal/akaushik.org/`. Create a worktree at `.claude/worktrees/seo-flagship-<YYYYQN>` on branch `seo-bot/flagship/<YYYYQN>`. Draft a flagship brief at `docs/seo/flagships/<YYYYQN>-<slug>.md`. Update STATUS.md §1 Phase 1 row + §7. Open PR (label `seo:automation,seo:flagship`). Never push to main.
+    Operate against `<REPO_ROOT>/`. Create a worktree at `.claude/worktrees/seo-flagship-<YYYYQN>` on branch `seo-bot/flagship/<YYYYQN>`. Draft a flagship brief at `docs/seo/flagships/<YYYYQN>-<slug>.md`. Update STATUS.md §1 Phase 1 row + §7. Open PR (label `seo:automation,seo:flagship`). Never push to main.
 
     This task PROPOSES the flagship; it does not write the post itself.
 ```

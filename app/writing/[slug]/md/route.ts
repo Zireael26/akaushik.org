@@ -11,7 +11,9 @@ export const revalidate = 300;
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return getAllPosts('writing').map((post) => ({ slug: post.slug }));
+  return getAllPosts('writing', { includeUnlisted: true }).map((post) => ({
+    slug: post.slug,
+  }));
 }
 
 export async function GET(
@@ -38,7 +40,7 @@ export async function GET(
     headers: {
       'Content-Type': 'text/markdown; charset=utf-8',
       'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600',
-      'X-Robots-Tag': 'index, follow',
+      'X-Robots-Tag': fm.unlisted === true ? 'noindex, nofollow' : 'index, follow',
       'Link': `<https://akaushik.org/writing/${slug}>; rel="canonical"`,
     },
   });

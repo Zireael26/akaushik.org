@@ -1,16 +1,16 @@
 ---
 title: "Renaming six projects on the same day"
-dek: A retro on the 2026-04-24 mass rename — directories, GitHub repos, hook configs, scheduled-audit paths — and the registry-first pattern that made the rest tractable.
+dek: A retro on the 2026-04-24 mass rename across directories, GitHub repos, hook configs, and scheduled-audit paths, plus the registry-first pattern that made the rest tractable.
 date: 2026-05-26
 ---
 
 # Renaming six projects on the same day
 
-> A retro on the 2026-04-24 mass rename — directories, GitHub repos, hook configs, scheduled-audit paths — and the registry-first pattern that made the rest tractable.
+> A retro on the 2026-04-24 mass rename across directories, GitHub repos, hook configs, and scheduled-audit paths, plus the registry-first pattern that made the rest tractable.
 
 ## What got renamed and why
 
-On 2026-04-24 I renamed four projects in one afternoon. `developerabhishek.live` became `akaushik.org` — domain, GitHub repo, on-disk directory — driven by ADR-0003: a 22-character host that reads as "dot live" fails the dictation test, and the canonical URL is baked into too many manifests to flip later. `msme-neev` became `neev` because the MSME qualifier had stopped meaning anything inside the codebase. `institutional-rag-bot` became `vericite`. `swipe` became `curat.money`. The last two earned real product names.
+On 2026-04-24 I renamed four projects in one afternoon. `developerabhishek.live` became `akaushik.org` across the domain, GitHub repo, and on-disk directory. ADR-0003 carried the reason: a 22-character host that reads as "dot live" fails the dictation test, and the canonical URL is baked into too many manifests to flip later. `msme-neev` became `neev` because the MSME qualifier had stopped meaning anything inside the codebase. `institutional-rag-bot` became `vericite`. `swipe` became `curat.money`. The last two earned real product names.
 
 Different motivations, same week. The point isn't that you should rename your projects. The point is that several of them independently hit "this name no longer fits" within a few weeks of each other, and the day I sat down to do them all I learned what part of my setup tolerated renames and what part did not.
 
@@ -20,7 +20,7 @@ Different motivations, same week. The point isn't that you should rename your pr
 
 The only thing that kept the day from going sideways was doing the renames in the same order every time, starting with the registry.
 
-The Trellis registry (`registry.md` in the control plane) is the single source of truth for "what active projects exist." Every rename touched it first — name column, `Path`, and a `Notes` entry recording what the project used to be called. The on-disk directory move came next. The GitHub repo rename third. Everything else was a consequence.
+The Trellis registry (`registry.md` in the control plane) is the single source of truth for "what active projects exist." Every rename touched it first: name column, `Path`, and a `Notes` entry recording what the project used to be called. The on-disk directory move came next. The GitHub repo rename third. Everything else was a consequence.
 
 The trick is that the scheduled `cross-project-process-audit` cron iterates over the registry. The moment the registry path changed, the next audit run flagged every project whose hooks, primers, or workspace configs still pointed at the old path. Drift surfaced itself within twenty-four hours instead of marinating until I tripped over it. The audit became the punch list.
 
@@ -30,15 +30,15 @@ Lesson, said plainly: if you have a single source of truth that something automa
 
 ## What actually broke
 
-The friendly parts first. GitHub repo renames are transparent — GitHub keeps a redirect from the old URL forever, existing clones keep working, and `.git/config` auto-rewrites the remote URL on the next fetch. I had braced for pain there and got none.
+The friendly parts first. GitHub repo renames are transparent. GitHub keeps a redirect from the old URL forever, existing clones keep working, and `.git/config` auto-rewrites the remote URL on the next fetch. I had braced for pain there and got none.
 
 The on-disk directory rename was where the day got expensive. Every absolute path written into a `CLAUDE.md`, every IDE workspace file, every shell alias, every `cd /Users/abhishek/projects/personal/<old>` muscle-memory broke at once.
 
 Three categories of breakage I didn't see coming:
 
-- **Hook configs that hardcoded paths.** A couple of project-local hooks had absolute paths to sibling repos for cross-project lookups. Silent failures — the hook ran, found nothing, returned clean.
-- **Scheduled-task definitions.** Any cron prompt that pinned `/personal/<old-name>/...` instead of resolving through the registry kept happily running against a directory that no longer existed.
-- **Primer prose.** Primer files are pinned to commit SHAs, which survived. But the prose inside several primers referenced files by old paths. `/primer-check` caught most; the rest I found when the next session loaded the primer and complained the file didn't exist.
+- Hook configs that hardcoded paths. A couple of project-local hooks had absolute paths to sibling repos for cross-project lookups. The failures were silent: the hook ran, found nothing, and returned clean.
+- Scheduled-task definitions. Any cron prompt that pinned `/personal/<old-name>/...` instead of resolving through the registry kept happily running against a directory that no longer existed.
+- Primer prose. Primer files are pinned to commit SHAs, which survived. But the prose inside several primers referenced files by old paths. `/primer-check` caught most; the rest I found when the next session loaded the primer and complained the file didn't exist.
 
 None of this was hard in isolation. The cost was that each one surfaced one at a time, over the following week, in the middle of unrelated work.
 
@@ -46,10 +46,10 @@ None of this was hard in isolation. The cost was that each one surfaced one at a
 
 ## What I'd do differently
 
-Treat renames as a search-and-replace problem from the first minute. The strategy question — *should I rename this?* — gets all the air, but the strategy is a five-minute decision and the search-and-replace is the actual day.
+Treat renames as a search-and-replace problem from the first minute. The strategy question, *should I rename this?*, gets all the air. The strategy is a five-minute decision and the search-and-replace is the actual day.
 
 What I want next time is a pre-flight script. Take the old name and the new name. Grep the entire control plane, every registered project, every scheduled-task definition, and every `.claude/` and `.codex/` tree. Dump the hit list. Group by file. That hit list *is* the migration plan. Most of it is mechanical sed; the rest is the small set of judgment calls (ADR prose, decision-doc history, "renamed from X on date Y" notes worth preserving) that benefit from being the only things left after the mechanical pass.
 
-Doing that one Sunday would have shaved a day off the following week. I have a stub for it now — next time the registry grows a row, the script grows with it.
+Doing that one Sunday would have shaved a day off the following week. I have a stub for it now. Next time the registry grows a row, the script grows with it.
 
 The shape of the lesson is small. A registry that something automated reads is worth more than a registry that only humans read. The day you rename half your projects is the day it pays for itself.

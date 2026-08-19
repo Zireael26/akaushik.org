@@ -1,14 +1,14 @@
 ---
 title: "Native git hooks for projects without a Node runtime"
-dek: When husky is the wrong tool — wiring pre-commit, commit-msg, and pre-push enforcement into a Unity game and a Go-first monorepo without inventing a package.json just to install lint-staged.
+dek: When husky is the wrong tool. Wiring pre-commit, commit-msg, and pre-push enforcement into a Unity game and a Go-first monorepo without inventing a package.json just to install lint-staged.
 date: 2026-05-24
 ---
 
 # Native git hooks for projects without a Node runtime
 
-> When husky is the wrong tool — wiring pre-commit, commit-msg, and pre-push enforcement into a Unity game and a Go-first monorepo without inventing a package.json just to install lint-staged.
+> When husky is the wrong tool. Wiring pre-commit, commit-msg, and pre-push enforcement into a Unity game and a Go-first monorepo without inventing a package.json just to install lint-staged.
 
-Trellis has a git-boundary tier — pre-commit, commit-msg, pre-push — and on every Node project it leans on husky. Twice now husky has been the wrong fit. Lume is a Unity game; ClusterBid is a Go workspace with five services, a Next frontend, and a Python tree on the way. Both forced the same workaround, and the workaround is the post.
+Trellis has a git-boundary tier: pre-commit, commit-msg, and pre-push. On every Node project it leans on husky. Twice now husky has been the wrong fit. Lume is a Unity game; ClusterBid is a Go workspace with five services, a Next frontend, and a Python tree on the way. Both forced the same workaround, and the workaround is the post.
 
 ---
 
@@ -16,7 +16,7 @@ Trellis has a git-boundary tier — pre-commit, commit-msg, pre-push — and on 
 
 Husky wants a `package.json`. It registers hooks through a `prepare` script that runs on `npm install`, and almost every project that ships husky also ships lint-staged for the "only re-run on changed files" half. That stack is the right answer when Node is already a first-class citizen of the repo.
 
-It is the wrong answer with no meaningful root `package.json` to mount it on. Inventing one — a stub manifest whose only job is hosting husky — buys you a dev-dependency lockfile to babysit, a `node_modules/` to gitignore, and a Node toolchain you do not otherwise need.
+It is the wrong answer with no meaningful root `package.json` to mount it on. Inventing a stub manifest whose only job is hosting husky buys you a dev-dependency lockfile to babysit, a `node_modules/` to gitignore, and a Node toolchain you do not otherwise need.
 
 ---
 
@@ -28,7 +28,7 @@ Git supports this directly. Set `core.hooksPath` to a tracked directory, commit 
 git config core.hooksPath .githooks
 ```
 
-The directory holds executable scripts named for the hook events — `.githooks/commit-msg`, `.githooks/pre-push` — and because they are tracked in git, enforcement is visible in repo state and survives any clone. The trade is one extra line in `README.md` for shedding the entire Node bootstrap.
+The directory holds executable scripts named for the hook events, such as `.githooks/commit-msg` and `.githooks/pre-push`. Because they are tracked in git, enforcement is visible in repo state and survives any clone. The trade is one extra line in `README.md` for shedding the entire Node bootstrap.
 
 Lume runs this against Unity. ClusterBid runs it with `make vet && make lint` inside the pre-push body, where the root `Makefile` fans out across the Go workspace, the Next frontend, and Python when it lands. No husky, no `prepare` script, no dev-dependency drift.
 
@@ -36,7 +36,7 @@ Lume runs this against Unity. ClusterBid runs it with `make vet && make lint` in
 
 ## Deferring pre-commit is not skipping discipline
 
-Both projects ship `.githooks/commit-msg` and `.githooks/pre-push` and nothing else. The `pre-push` is non-negotiable — it carries the Trellis PR-flow guard that blocks direct pushes to `main`, with `TRELLIS_ALLOW_MAIN_PUSH=1` as the audited emergency override. That is the load-bearing hook in the tier.
+Both projects ship `.githooks/commit-msg` and `.githooks/pre-push` and nothing else. The `pre-push` is non-negotiable. It carries the Trellis PR-flow guard that blocks direct pushes to `main`, with `TRELLIS_ALLOW_MAIN_PUSH=1` as the audited emergency override. That is the load-bearing hook in the tier.
 
 `pre-commit` is the slot I deliberately leave empty. The canonical Node profile runs lint-staged here; the Unity equivalent would be a validator I have one witness for, and the polyglot equivalent a Go-plus-Python-plus-Next composite I have one witness for. Rule of Three says n=1 is the danger zone. Until a second project demands the same shape, the slot stays empty.
 
@@ -46,10 +46,10 @@ The canonical six gates still run on every PR via the process-gate skill server-
 
 ## What you give up
 
-Two real costs. First, lint-staged itself: the "only the files I just touched" filter is a few lines of shell — `git diff --cached --name-only --diff-filter=ACMR` piped through `grep` into the linter — but you do have to write it. Second, the `prepare`-script auto-install: a fresh clone needs the developer to set `core.hooksPath` once, and that line lives in the README rather than firing automatically.
+Two real costs. First, lint-staged itself: the "only the files I just touched" filter is a few lines of shell, `git diff --cached --name-only --diff-filter=ACMR` piped through `grep` into the linter, but you do have to write it. Second, the `prepare`-script auto-install: a fresh clone needs the developer to set `core.hooksPath` once, and that line lives in the README rather than firing automatically.
 
 Both are real friction. Both beat dragging a Node toolchain into a Unity project or a Go monorepo solely to host a hook runner.
 
 ---
 
-The companion piece this week — on stack profiles for the process-gate skill — covers the other half: how the canonical six gates adapt when the underlying stack is not a Node app. Together they are how Trellis enforces itself on projects that look nothing like a Node app.
+The companion piece this week, on stack profiles for the process-gate skill, covers the other half: how the canonical six gates adapt when the underlying stack is not a Node app. Together they are how Trellis enforces itself on projects that look nothing like a Node app.

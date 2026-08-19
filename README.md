@@ -18,7 +18,7 @@ The portfolio is itself a case study in the engineering process it advertises. T
 | Content | MDX via `next-mdx-remote@6` | Case studies + writing |
 | Motion (case study cards / writing loops) | HyperFrames-rendered MP4 + webp | Deterministic cinema-grade output |
 | Package manager | pnpm 11.9 | Corepack-pinned with explicit release-age policy |
-| Runtime | Node 22 LTS | `.nvmrc` |
+| Runtime | Node 24.18.x | `.nvmrc` and `package.json` |
 | Host | Vercel | Next.js `proxy.ts` for Link headers + content negotiation |
 
 ## Local development
@@ -29,13 +29,22 @@ corepack enable
 pnpm install
 
 # run
-pnpm dev          # http://localhost:3000 (Turbopack)
+pnpm dev          # native app: http://localhost:3100 (Turbopack)
 pnpm typecheck
 pnpm lint
 pnpm test         # vitest unit tests
-pnpm test:e2e     # Playwright e2e (auto-starts pnpm dev locally)
-pnpm build && pnpm start
+pnpm test:e2e     # isolated Playwright server: http://localhost:3100
+pnpm build && pnpm start  # native production server: http://localhost:3100
 ```
+
+`pnpm dev` and `pnpm start` run `scripts/local-infra-preflight.sh` before the
+application binds its fixed port. The wrapper resolves `SHARED_INFRA_ROOT` from
+an environment override or `$HOME/projects/shared-infra`, then delegates the
+project-scoped port preflight to shared infrastructure.
+
+The shared-infrastructure declaration is explicitly `services: {}`: akaushik.org
+consumes no shared PostgreSQL, Redis, MinIO, or Mailpit service. Startup runs the
+port preflight only; it does not start the shared service runtime.
 
 ## Repository layout
 
@@ -63,7 +72,7 @@ Every non-trivial change ships with:
 4. A passing **`pnpm process:check`**
 5. A Conventional Commit message
 
-Pre-commit (husky) runs the gate; pre-push (husky) blocks direct push to `main` and runs the unit smoke. CI (`.github/workflows/`) runs `verify` (typecheck + lint + build + process-gate) on every PR.
+Pre-commit (husky) runs the gate. Direct push to `main` is blocked by GitHub branch protection (PR required; `verify`/`test`/`audit` must pass) — server-side, not a local hook. CI (`.github/workflows/`) runs `verify` (typecheck + lint + build + process-gate) on every PR.
 
 ## Agent readiness
 

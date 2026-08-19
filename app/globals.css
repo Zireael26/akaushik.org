@@ -1286,16 +1286,44 @@ code { font-family: var(--mono); font-size: 0.92em; }
   max-width: 58ch; margin: 0 0 clamp(40px, 5vw, 64px);
 }
 .work-index-list { list-style: none; padding: 0; margin: 0; }
+/* Three columns, top-aligned: the middle column now holds a multi-block body
+   (link + lede + spec), so baseline alignment against the index/year no
+   longer applies. */
 .work-index-item {
   display: grid;
   grid-template-columns: auto 1fr auto;
   gap: 16px 28px;
-  align-items: baseline;
+  align-items: start;
   padding: 28px 0;
   border-top: 1px solid var(--hairline);
 }
 .work-index-item:last-child { border-bottom: 1px solid var(--hairline); }
+.work-index-body { display: grid; gap: 0; min-width: 0; }
 .work-index-link { display: grid; gap: 6px; }
+.work-index-item-lede {
+  font-size: 16px; line-height: 1.6;
+  color: var(--ink-70);
+  margin: 14px 0 0;
+  max-width: 58ch;
+}
+.work-index-item-lede code {
+  background: var(--ink-05); padding: 1px 6px; border-radius: var(--r-xs);
+}
+.work-index-item-spec {
+  margin: 20px 0 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 16px 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--hairline);
+}
+.work-index-item-spec div { margin: 0; }
+.work-index-item-spec dt {
+  font-family: var(--mono); font-size: 10.5px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-60); margin-bottom: 4px;
+}
+.work-index-item-spec dd { margin: 0; font-size: 14px; color: var(--ink); }
 .work-index-item-title {
   font-family: var(--serif); font-weight: 400;
   font-size: clamp(26px, 2.4vw, 36px);
