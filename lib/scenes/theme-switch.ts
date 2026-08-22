@@ -13,7 +13,7 @@
  *      subscription on every remount, and StrictMode mounts twice. Listeners go
  *      through an AbortController and the caller gets a disposer.
  *   2. Theme state routes through html[data-mode], not body.gj-dark — that is
- *     the attribute public/init-theme.js and components/site/ThemeToggle.tsx
+ *     the attribute public/init-theme.js and components/pixel/ThemeSwitch.tsx
  *     already write — and clicks persist to the site's storage key,
  *     abhishek.portfolio.mode. The source's own toggleTheme()/Set-of-listeners
  *     mechanism does not exist here; onThemeChange watches the attribute.
@@ -61,7 +61,7 @@ const MOON: ReadonlyArray<readonly [number, number]> = [
   [3, 4],
 ];
 
-/** The storage key public/init-theme.js reads and ThemeToggle.tsx writes. */
+/** The storage key public/init-theme.js reads and ThemeSwitch writes. */
 const MODE_KEY = 'abhishek.portfolio.mode';
 
 /** The source's toggleTheme(), rewritten for html[data-mode]. */

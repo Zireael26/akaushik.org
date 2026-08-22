@@ -2,7 +2,7 @@
    hex in a component. Ported from gaurijha.com's tokens.css, with one deliberate
    change: the theme switch is `html[data-mode="dark"]`, not `body.gj-dark`,
    because that is the attribute public/init-theme.js already sets before first
-   paint and components/site/ThemeToggle.tsx already writes. Keeping the existing
+   paint and components/pixel/ThemeSwitch.tsx already writes. Keeping the existing
    mechanism means no FOUC regression and no second storage key.
 
    Light is the default. Canvas code cannot read CSS variables cheaply per frame,

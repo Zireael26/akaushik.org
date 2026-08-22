@@ -4,7 +4,7 @@
  * gaurijha.com's original kept its own listener Set and required every theme
  * change to route through its own setDark(). That does not hold here: this site
  * already has two writers of html[data-mode] — public/init-theme.js before first
- * paint, and components/site/ThemeToggle.tsx on click — and neither knows about
+ * paint, and components/pixel/ThemeSwitch.tsx on click — and neither knows about
  * the canvases.
  *
  * So the subscription watches the attribute instead of the call site. Any writer
