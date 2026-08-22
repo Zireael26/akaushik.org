@@ -6,6 +6,20 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-08-23 — Playwright's Firefox cannot launch on this machine, and the site
+  is not the reason. Two attempts at a full five-project run against the
+  preview stalled, and the cause is the bundled Firefox Nightly failing the
+  macOS sandbox — `sandbox_extension_issue_file_to_process … Operation not
+  permitted`, then `RenderCompositorSWGL failed mapping default framebuffer`.
+  The `request`-based specs pass because they never open a page; the first spec
+  that calls `page.goto` hangs until timeout, and with retries that is minutes
+  per spec. Worth fixing, because it makes any local five-project run useless,
+  but it is a Playwright/macOS permissions problem rather than a code one.
+
+  Coverage as it stands: `chromium-desktop` 60 passed / 1 fixme / 0 failed, and
+  `webkit-desktop` 22 passed / 39 skipped / 0 failed against the live preview.
+  The WebKit skips are the specs' own `browserName !== 'chromium'` guards.
+
 - 2026-08-23 — The home page no longer scrolls sideways on a phone. Measured
   496px of document width against a 375px viewport, and 500px against a 320px
   one — a real defect nobody had looked for, because nothing had opened the

@@ -89,9 +89,15 @@ code problem, and it is worth fixing because it currently makes any local
 five-project run useless. WebKit and Chromium both launch and load the site
 normally.
 
-Where that leaves coverage: `chromium-desktop` is green end to end, and WebKit
-was verified by hand (200, eleven canvases, hero field sized by the engine, no
-overflow). Do not read "60 passed" as five-browser coverage.
+Where that leaves coverage: two engines, both green.
+
+- `chromium-desktop` — 60 passed, 1 documented fixme, 0 failed.
+- `webkit-desktop` — 22 passed, 39 skipped, 0 failed. The skips are all
+  `test.skip(browserName !== 'chromium', …)` guards the specs already carried;
+  they are by design, not by failure.
+
+Do not read those as five-browser coverage: `firefox-desktop`,
+`chromium-tablet` and `webkit-mobile` have not run.
 
 ## Open, in rough priority order
 
