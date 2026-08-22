@@ -6,6 +6,11 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-08-22 — Added the Cloudflare Wallet link to the footer. The handle is a
+  subdomain rather than a path: `cloudflare.pay/kau` and `cloudflare.pay/@kau`
+  both return 404, and `kau.cloudflare.pay` returns 200. Verified before
+  shipping, because a dead payment link on a professional site is worse than no
+  link at all.
 - 2026-08-22 — The footer marquee carries five slogans instead of one, and the
   contribution chart became interrogable. The marquee rasterises every slogan
   into a single ribbon separated by middots, so cycling is just the scroll

@@ -20,6 +20,9 @@ const LINKEDIN = 'https://www.linkedin.com/in/abhishek26k';
 // Handle confirmed by the operator, and it matches the twitter:creator already
 // declared in app/layout.tsx's metadata.
 const X_PROFILE = 'https://x.com/abhi2601k';
+// Cloudflare Wallet. The handle is a subdomain, not a path — cloudflare.pay/kau
+// and cloudflare.pay/@kau both 404. Verified 200 before shipping.
+const WALLET = 'https://kau.cloudflare.pay';
 
 export default function SiteFooter() {
   const year = new Date().getFullYear();
@@ -49,6 +52,9 @@ export default function SiteFooter() {
           </a>
           <a href={X_PROFILE} target="_blank" rel="noreferrer">
             X&nbsp;↗
+          </a>
+          <a href={WALLET} target="_blank" rel="noreferrer">
+            Wallet&nbsp;↗
           </a>
           <a href={LINKEDIN} target="_blank" rel="noreferrer">
             LinkedIn &#8599;
