@@ -30,7 +30,7 @@ export function Experience() {
 
       <div className="px-split-body">
         <p className="px-split-intro">
-          Six years of shipping software, the recent stretch of it AI and platform engineering. The
+          Six years of shipping software, the recent stretch of it AI and platform engineering. My
           day work is the agents framework backend behind Bluehost&rsquo;s AI products. Around it
           sit Neev, VeriCite and curat.money, plus advisory work on ClusterBid. The through-line is
           agent-native software: modular monoliths, retrieval systems, and operational AI.

@@ -30,7 +30,7 @@ export const CASE_STUDIES: ReadonlyArray<CaseStudy> = [
     year: '2026 — now',
     title: 'Neev',
     dek: 'Bringing AI to an industry that still runs on WhatsApp.',
-    lede: 'A modular operations platform for Indian textile distributors — built to be boring where boring matters, and quietly smart where it counts.',
+    lede: 'A modular operations platform for Indian textile distributors. Built to be boring where boring matters, and quietly smart where it counts.',
     spec: [
       { term: 'Role', def: 'Co-founder & CTO — product, architecture, build' },
       { term: 'Stack', def: 'Next.js · Postgres · multi-tenant monolith' },
@@ -64,7 +64,7 @@ export const CASE_STUDIES: ReadonlyArray<CaseStudy> = [
     year: '2025 — now',
     title: 'Bluehost · agents framework',
     dek: "The foundational platform behind Bluehost's agentic AI products.",
-    lede: 'Where AI agents meet web-hosting reality — customer scale, production uptime, and real users with real bills. A major hand in maintaining and continuously improving the platform.',
+    lede: 'Where AI agents meet web-hosting reality: customer scale, production uptime, and real users with real bills. I have a major hand in maintaining and continuously improving the platform.',
     spec: [
       { term: 'Role', def: 'Platform engineer · ongoing' },
       { term: 'Stack', def: 'Agent runtime · tool-calling · observability' },
@@ -78,7 +78,7 @@ export const CASE_STUDIES: ReadonlyArray<CaseStudy> = [
     year: '2026 — now',
     title: 'curat.money',
     dek: 'A fair-comparison tool for crypto cards, built like a real product.',
-    lede: 'Custody checks, provider coverage, multi-environment deploys — the boring-but-important scaffolding most crypto product sites skip.',
+    lede: 'Custody checks, provider coverage, multi-environment deploys: the boring-but-important scaffolding most crypto product sites skip.',
     spec: [
       { term: 'Role', def: 'CTO · Tech Lead' },
       { term: 'Stack', def: 'High-throughput data pipeline · K8s · RBAC · CI/CD' },
@@ -92,7 +92,7 @@ export const CASE_STUDIES: ReadonlyArray<CaseStudy> = [
     year: '2026 — UAT',
     title: 'ClusterBid',
     dek: 'From monorepo checks to a real-host k3s UAT, with every mock and boundary named.',
-    lede: 'A Go-service and Next.js platform taken through root-level validation, Helm deployment, and a mock-inference metering-to-billing smoke — pre-production proof, not a production or customer outcome.',
+    lede: 'A Go-service and Next.js platform taken through root-level validation, Helm deployment, and a mock-inference metering-to-billing smoke. Pre-production proof, not a production or customer outcome.',
     spec: [
       { term: 'Role', def: 'Engineering advisor · process & platform' },
       { term: 'Stack', def: 'Go · Next.js · TypeScript · Helm · k3s' },

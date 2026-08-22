@@ -25,7 +25,7 @@ export const SERVICES: ReadonlyArray<Service> = [
     num: 'S/02',
     title: 'AI enablement for an MSME operation',
     duration: '8 — 12 weeks',
-    lede: 'For businesses that run on WhatsApp and spreadsheets. A layer that removes typing and memory load — not one that replaces judgment.',
+    lede: 'For businesses that run on WhatsApp and spreadsheets. A layer that removes typing and memory load, not one that replaces judgment.',
     list: [
       { label: 'In', value: 'Operator interviews, a narrow AI surface, training & rollout' },
       { label: 'Out', value: 'Full ERP replacement, ledger migration' },
