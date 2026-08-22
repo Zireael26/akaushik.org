@@ -6,6 +6,7 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-08-23 — Rebuilt the writing index and all published article routes in the pixel language, with grounded short answers and FAQs, stable Article/FAQ structured data, and read-next recommendations that never expose unlisted posts.
 - 2026-08-22 — Generalised the hero heatfield into a reusable pixel field, and
   made it the engine behind every piece of live art on the site. `lib/pixel/field.ts`
   takes a list of sources — silhouettes drawn into an offscreen buffer at cell
