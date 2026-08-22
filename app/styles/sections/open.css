@@ -1,1 +1,52 @@
-/* open — section styles. Owned by the open section component. */
+/* open — section styles. Owned by the open section component.
+
+   The layout is entirely shared: .px-section for rhythm, .px-split for the
+   split-editorial columns, .px-row for the repository rows. Only the two things
+   specific to this section live here: the weekly-contribution cell grid and the
+   mono provenance line under the rows.
+
+   One deliberate departure from the sections it sits between. The prototype's
+   split sections open on prose; this one opens on the cell grid, above the
+   intro. The grid is the section's evidence, and burying it under a paragraph
+   would put the copy ahead of the receipt. */
+
+.px-open-spark {
+  margin: 0 0 clamp(20px, 3vh, 30px);
+}
+
+/* height:auto with the intrinsic viewBox ratio keeps the cells square at every
+   width. Stretching to fill would turn them into rectangles, which is the one
+   thing the pixel language does not permit. */
+.px-open-spark-svg {
+  display: block;
+  width: 100%;
+  max-width: 440px;
+  height: auto;
+}
+
+.px-open-spark figcaption {
+  margin-top: 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink40);
+}
+
+/* "AUG 2026" does not fit the shared 56px tag column. */
+.px-open .px-row-tag {
+  flex: 0 0 82px;
+}
+
+.px-open-meta {
+  margin: 18px 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink40);
+}
+
+.px-open-meta a {
+  color: inherit;
+}

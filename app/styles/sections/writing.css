@@ -1,1 +1,128 @@
-/* writing — section styles. Owned by the writing section component. */
+/* writing — section styles. Owned by the writing section component.
+
+   Ported from gaurijha.com's `.gj-row` writing-index row (public-site-v1,
+   src/pages/writing/index.astro): mono date column, title over a one-line dek,
+   coloured mono tag on the right. `.gj-` becomes `.px-`; measurements are the
+   prototype's.
+
+   Two deliberate departures from the source:
+   1. The prototype's row hover only indents, because its rows are anchors on a
+      page with no global link-hover colour. Ours are, and globals.css turns
+      every hovered anchor cobalt — which would recolour the dek too. The row
+      pins itself back to `--ink` on hover and lets the title alone take the
+      cobalt, matching `.px-matter` in _shared.css.
+   2. `.px-writing-more` has no counterpart in the prototype, whose index is the
+      whole list. This section is a teaser, so it needs the link through. It is
+      built at the mono-label measurements rather than as a button, because the
+      section already ends on a rule and a filled control would fight it. */
+
+.px-writing .px-head-title {
+  max-width: 26ch;
+  text-wrap: pretty;
+}
+
+.px-writing-rows {
+  margin-top: clamp(18px, 3vh, 34px);
+}
+
+.px-writing-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  align-items: baseline;
+  padding: 22px 0;
+  border-top: 1px solid var(--line);
+  color: var(--ink);
+  transition: padding-left 0.18s ease;
+}
+
+.px-writing-row.is-last {
+  border-bottom: 1px solid var(--line);
+}
+
+.px-writing-row:hover {
+  padding-left: 14px;
+  color: var(--ink);
+}
+
+.px-writing-row:hover .px-writing-title {
+  color: var(--px-cobalt);
+}
+
+.px-writing-date {
+  flex: 0 0 92px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--ink40);
+}
+
+.px-writing-main {
+  flex: 1 1 380px;
+  min-width: min(100%, 260px);
+}
+
+.px-writing-title {
+  display: block;
+  font-weight: 600;
+  font-size: clamp(17px, 2vw, 23px);
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+  transition: color 0.18s ease;
+}
+
+.px-writing-dek {
+  display: block;
+  margin-top: 6px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink55);
+}
+
+.px-writing-tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+}
+
+/* ---------- link through ---------- */
+.px-writing-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: clamp(20px, 3vh, 34px);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--ink40);
+}
+
+.px-writing-more-arrow {
+  letter-spacing: 0;
+  transition: transform 0.18s ease;
+}
+
+.px-writing-more:hover .px-writing-more-arrow {
+  transform: translateX(4px);
+}
+
+/* The rows are anchors, so the hover indent is a link affordance. Reduced
+   motion keeps the colour change and drops the movement. */
+@media (prefers-reduced-motion: reduce) {
+  .px-writing-row {
+    transition: none;
+  }
+
+  .px-writing-row:hover {
+    padding-left: 0;
+  }
+
+  .px-writing-more-arrow {
+    transition: none;
+  }
+
+  .px-writing-more:hover .px-writing-more-arrow {
+    transform: none;
+  }
+}

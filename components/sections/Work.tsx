@@ -1,7 +1,8 @@
-import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { SectionHeader } from './SectionHeader';
-import { Reel, type ReelSlug } from '@/components/work/reels';
+import type { ReelSlug } from '@/components/work/reels';
+import { MatterRow } from '@/components/pixel/RuledRow';
+import { SectionHead } from '@/components/pixel/SectionHead';
+import { getAllPosts } from '@/lib/content';
 
 type CaseStudy = {
   index: string;
@@ -16,6 +17,11 @@ type CaseStudy = {
   draft?: boolean;
 };
 
+// Card data for the /work routes: app/work/page.tsx renders it as the index
+// grid, app/work/[slug]/page.tsx reads it for the OG-card fallback, and
+// CaseStudyStub renders it for slugs whose MDX body is still a stub. The
+// section below no longer reads it — its rows come from the MDX frontmatter,
+// which is where the editorial copy actually lives.
 export const CASE_STUDIES: ReadonlyArray<CaseStudy> = [
   {
     index: '01',
@@ -95,57 +101,54 @@ export const CASE_STUDIES: ReadonlyArray<CaseStudy> = [
   },
 ];
 
+/** Tag colour rotates across the stack, as in the matters list it ports from. */
+const TAG_TONES = ['cobalt', 'amber', 'red', 'ink'] as const;
+
+function tagTone(i: number): (typeof TAG_TONES)[number] {
+  switch (i % 4) {
+    case 0:
+      return 'cobalt';
+    case 1:
+      return 'amber';
+    case 2:
+      return 'red';
+    default:
+      return 'ink';
+  }
+}
+
+/**
+ * Selected work — the matter-row stack.
+ *
+ * Rows are the case-study frontmatter, ordered by its `index` rather than by
+ * filename, because `index` is the strategic ordering the case studies were
+ * written against and getPostSlugs sorts alphabetically.
+ *
+ * The heading is short, so it carries no `headingTarget`: a lime cursor arrow
+ * pointing at two words reads as noise rather than emphasis.
+ */
 export function Work() {
+  const studies = getAllPosts('case-studies').sort((a, b) =>
+    a.frontmatter.index.localeCompare(b.frontmatter.index),
+  );
+
   return (
     <section
-      className="work"
+      className="px-section px-work"
       id="work"
       data-screen-label="03 Work"
-      data-companion-pose="work"
-      aria-label="03 Work"
+      aria-labelledby="work-head"
     >
-      <SectionHeader
-        num="03"
-        title="Selected work"
-        kicker="Five case studies, ordered by strategic weight. Each is a problem in the client's words, an approach, what shipped, and honest scope on what was and wasn't included."
-      />
-      <ol className="case-list" role="list">
-        {CASE_STUDIES.filter((c) => c.draft !== true).map((c) => (
-          <li
-            key={c.slug}
-            className={`case-item${c.lead ? ' case-item--lead' : ''}`}
-            id={`case-${c.slug}`}
-          >
-            <div className="case-meta">
-              <span className="case-index">{c.index}</span>
-              <span className="case-tag">{c.tag}</span>
-              <span className="case-year">{c.year}</span>
-            </div>
-            <div className="case-body">
-              <h3 className="case-title">{c.title}</h3>
-              <p className="case-dek">{c.dek}</p>
-              <p className="case-lede">{c.lede}</p>
-              <dl className="case-spec">
-                {c.spec.map((s) => (
-                  <div key={s.term}>
-                    <dt>{s.term}</dt>
-                    <dd>{s.def}</dd>
-                  </div>
-                ))}
-              </dl>
-              <Link className="case-link" href={`/work/${c.slug}`}>
-                Read the case study
-                <span className="arrow" aria-hidden="true">
-                  →
-                </span>
-              </Link>
-            </div>
-            <div className="case-reel" aria-hidden="true">
-              <Reel slug={c.slug} />
-            </div>
-          </li>
-        ))}
-      </ol>
+      <SectionHead heading="Selected work." label="2025 — present" id="work-head" />
+      {studies.map((study, i) => (
+        <MatterRow
+          key={study.slug}
+          title={study.frontmatter.title}
+          tag={study.frontmatter.tag}
+          tagTone={tagTone(i)}
+          href={`/work/${study.slug}`}
+        />
+      ))}
     </section>
   );
 }

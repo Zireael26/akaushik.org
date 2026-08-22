@@ -1,1 +1,118 @@
-/* profile — section styles. Owned by the profile section component. */
+/* profile — section styles. Owned by the profile section component.
+
+   Ported from gaurijha.com's `.gj-profile` (public-site-v1, src/pages/index.astro):
+   a statement with a chip row on the left, a pixel-notched 3:4 portrait with a
+   mono caption on the right. `.gj-` becomes `.px-`; measurements are the
+   prototype's.
+
+   Two deliberate departures from the source:
+   1. The statement doubles as the section heading, so it takes the shared
+      `.px-head-title` sizing (clamp(30px, 3.4vw, 52px)) instead of the
+      prototype's clamp(26px, 3.6vw, 50px). One site-wide heading measurement
+      beats a 2px clamp delta. The 30ch measure is kept.
+   2. `.px-profile-body` has no counterpart in the prototype. ABOUT_COPY carries
+      two paragraphs of sourced prose (the NSSO citation lives there) that
+      app/llms-full.txt already publishes; dropping them from the rendered page
+      would leave the two surfaces out of step. They sit under the statement at
+      the shared `.px-split-intro` measurements, subordinate to it. */
+
+.px-profile {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: clamp(32px, 5vw, 80px);
+}
+
+.px-profile-main {
+  flex: 1 1 460px;
+  min-width: min(100%, 300px);
+}
+
+.px-profile-statement {
+  max-width: 30ch;
+  text-wrap: pretty;
+}
+
+/* ---------- supporting prose ---------- */
+.px-profile-body {
+  max-width: 62ch;
+  margin-top: clamp(22px, 3.5vh, 34px);
+}
+
+.px-profile-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* Links inside justified prose need a mark of their own — colour alone is the
+   hover state, and body copy is already ink70. */
+.px-profile-body a {
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.18s ease;
+}
+
+.px-profile-body a:hover {
+  text-decoration-color: var(--px-cobalt);
+}
+
+/* ---------- chips ---------- */
+.px-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 44px;
+  margin-top: clamp(24px, 4vh, 40px);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink55);
+}
+
+.px-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+/* The key stays neutral even on the accented chip — `.is-cobalt` tints the
+   value only, which is what the prototype's tinted chip reads as. */
+.px-chip-key {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink40);
+}
+
+/* ---------- portrait ---------- */
+.px-portrait {
+  flex: 0 1 300px;
+  min-width: 240px;
+  max-width: 100%;
+}
+
+.px-portrait-frame {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  background: var(--line);
+}
+
+/* The asset is 768×960 (4:5), so cover crops ~6% off the width and nothing off
+   the height — centred is the right crop here, not the prototype's 50% 40%. */
+.px-portrait-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;
+}
+
+.px-portrait-cap {
+  margin-top: 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink45);
+  text-align: right;
+}

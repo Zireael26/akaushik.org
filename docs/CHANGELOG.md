@@ -6,6 +6,28 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-08-22 — Replaced the parchment-on-ink design with the pixel language
+  built for gaurijha.com, and rebuilt the home page on it. Tokens, the four
+  self-hosted faces, and the reset move to `app/styles/`; section styles split
+  one file per section under `app/styles/sections/` so rebuilding a section is a
+  two-file change and two sections never contend for the same stylesheet.
+  Tailwind was removed outright — the previous `globals.css` carried an
+  `@import 'tailwindcss'` and an `@theme` bridge, but no component in `app/` or
+  `components/` used a single utility class, so the bridge existed and nothing
+  crossed it. The eight-section scroll is rebuilt on shared row primitives
+  (`SectionHead`, `RuledRow`, `MatterRow`); contact folds into the footer as the
+  design intends, so the standalone Contact section is unmounted. The mono face
+  is JetBrains Mono Nerd Font, subset by `scripts/build-fonts.sh` to 238 glyphs
+  and 13.5 KB a weight rather than the 190 KB the unsubset Nerd Font ships,
+  because roughly 900 of its glyphs are Font Awesome and devicon outlines
+  nothing here draws. The hero's three.js `AgentGraph` is replaced by the pixel
+  heatfield, dropping `three` from the client bundle. Content, the MDX pipeline,
+  the MCP server, `proxy.ts`, and the whole agent-readiness surface are
+  untouched by this change: it is a presentation-layer replacement, and the
+  contract in `docs/AGENT_READINESS.md` still holds. `vitest.config.ts` now
+  excludes `.trellis/**`, whose runtime symlink pointed at the shared immutable
+  Trellis release and caused the include glob to run the toolchain's own hook
+  tests as this project's.
 - 2026-08-13 — Closed the unblocked entries of the phase-2 AEO spec. The
   63 million MSME figure now carries its source (National Sample Survey Office,
   2017) in both the homepage About paragraph and the Neev case study, with the

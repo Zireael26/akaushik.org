@@ -1,1 +1,49 @@
-/* header — section styles. Owned by the header section component. */
+/* header — section styles. Owned by the header section component.
+   Ported from the <style> block of gaurijha.com's Header.astro (tag
+   `public-site-v1`). Measurements are unchanged; the row is additionally
+   capped at --wrap-max so the wordmark aligns with the hero title. */
+
+.px-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px 16px;
+  max-width: var(--wrap-max);
+  margin: 0 auto;
+  padding: 16px var(--wrap-pad);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink60);
+}
+
+.px-header-end {
+  display: flex;
+  align-items: center;
+  gap: clamp(14px, 2.4vw, 26px);
+}
+
+.px-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(12px, 2vw, 24px);
+}
+
+/* The global `a` rule paints every link --ink. Nav links sit back at --ink60
+   and come forward on hover, which is the global a:hover cobalt. */
+.px-nav a {
+  color: var(--ink60);
+}
+
+/* design.md § Layout: hit targets >= 44px on touch. Desktop is unchanged.
+   The theme switch's own appearance belongs to components/pixel/ThemeSwitch;
+   only its hit target in this row is the header's business. */
+@media (pointer: coarse) {
+  .px-nav a {
+    padding-block: 12px;
+  }
+
+  .px-theme-switch {
+    padding-block: 9px;
+  }
+}

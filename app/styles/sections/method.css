@@ -1,1 +1,129 @@
-/* method — section styles. Owned by the method section component. */
+/* method — section styles. Owned by the method section component.
+
+   Layout comes from .px-section (max-width, gutters, top rhythm) and the head
+   from .px-head--block; only what is specific to the method section lives here:
+   the flow band, the four-step grid, the icon mount slots, and the artifact
+   list carried over from the old "Built in the open" section. */
+
+/* ---------- flow band ---------- */
+/* Sized here, drawn by the band engine. The engine reads [data-mstep] on the
+   grid columns below to drive its hover highlight, so the band and the grid
+   have to stay in the same section. */
+.px-method-band {
+  display: block;
+  width: 100%;
+  height: clamp(120px, 18vh, 190px);
+  margin-top: clamp(12px, 2vh, 22px);
+}
+
+/* ---------- the four steps ---------- */
+.px-method-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: clamp(18px, 2.6vw, 34px);
+  margin-top: clamp(24px, 4vh, 40px);
+}
+
+.px-icon-slot {
+  height: 94px;
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: 10px;
+}
+
+.px-icon-slot canvas {
+  display: block;
+}
+
+.px-step {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.px-step-body {
+  margin: 10px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink65);
+}
+
+/* ---------- built in the open ---------- */
+.px-method-open {
+  margin-top: clamp(36px, 6vh, 64px);
+}
+
+.px-method-open-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px 32px;
+  margin-bottom: clamp(12px, 2vh, 20px);
+}
+
+.px-method-open-note {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink60);
+}
+
+.px-method-open-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 0 clamp(24px, 4vw, 64px);
+  border-top: 1px solid var(--line);
+}
+
+.px-method-open-list a {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 20px;
+  padding: 14px 0;
+  min-height: 44px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  text-decoration: none;
+  transition:
+    padding-left 0.18s ease,
+    color 0.18s ease;
+}
+
+.px-method-open-list a:hover {
+  padding-left: 12px;
+}
+
+.px-method-open-list code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  transition: color 0.18s ease;
+}
+
+.px-method-open-list a:hover code,
+.px-method-open-list a:focus-visible code {
+  color: var(--px-cobalt);
+}
+
+.px-method-open-list span {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .px-method-open-list a {
+    transition: none;
+  }
+
+  .px-method-open-list a:hover {
+    padding-left: 0;
+  }
+}

@@ -1,1 +1,87 @@
-/* footer — section styles. Owned by the footer section component. */
+/* footer — section styles. Owned by the footer section component.
+   Ported from the <style> block of gaurijha.com's Footer.astro (tag
+   `public-site-v1`), home variant. */
+
+.px-footer {
+  overflow: hidden;
+  background: var(--bg);
+  padding-top: clamp(36px, 6vh, 72px);
+}
+
+.px-marquee,
+.px-skyline {
+  display: block;
+  width: 100%;
+}
+
+/* Row counts x cell size from the gaurijha canvas engines: the marquee is 20
+   rows of 7px, the skyline 16. The engines set the same value inline once they
+   measure, so this is the pre-hydration reservation that stops the footer from
+   reflowing under the fold. */
+.px-marquee {
+  height: 140px;
+}
+
+.px-skyline {
+  height: 112px;
+}
+
+.px-contact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 26px;
+  padding: clamp(44px, 8vh, 84px) var(--wrap-pad) clamp(36px, 6vh, 60px);
+  text-align: center;
+}
+
+.px-cta {
+  display: inline-block;
+  padding: 16px 36px;
+  background: var(--panel);
+  color: var(--panelInk);
+  font-weight: 600;
+  font-size: 15px;
+  transition: background 0.18s ease;
+}
+
+/* The global a:hover would tint the label cobalt on a cobalt field. */
+.px-cta:hover {
+  background: var(--px-cobalt);
+  color: var(--panelInk);
+}
+
+.px-contact-note {
+  margin: 0;
+  max-width: 52ch;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ink55);
+}
+
+.px-contact-mail {
+  font-size: 15px;
+  color: var(--ink55);
+}
+
+.px-contact-mail a {
+  font-weight: 600;
+}
+
+.px-legal {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 24px;
+  font-size: 12px;
+  color: var(--ink45);
+}
+
+.px-legal a {
+  color: var(--ink60);
+}
+
+.px-legal-sha {
+  font-family: var(--font-mono);
+  letter-spacing: 0.1em;
+}

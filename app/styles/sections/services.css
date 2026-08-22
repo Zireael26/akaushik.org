@@ -1,1 +1,66 @@
-/* services — section styles. Owned by the services section component. */
+/* services — section styles. Owned by the services section component.
+
+   gaurijha.com has no services section, so this is the one section designed
+   rather than ported. It reuses the ported vocabulary instead of inventing a
+   second one: .px-section for rhythm, .px-head--block for the head,
+   .px-split-intro for the one-line intro, .px-matter for each service head, and
+   .px-row for the In / Out / Fit lines. What is here is the spacing between
+   three stacked blocks, and the changes that follow from a matter row that is
+   not a link. */
+
+.px-services .px-split-intro {
+  max-width: var(--prose-max);
+}
+
+.px-service {
+  margin-top: clamp(30px, 5vh, 56px);
+}
+
+/* The service index sits above the title, in the same mono register as the
+   ruled-row tags. */
+.px-service-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--ink40);
+  margin-bottom: 4px;
+}
+
+/* Nothing in a service block navigates, so the matter row loses the hover
+   indent, the hover colour, and the closing rule — the first ruled row below it
+   already draws a border-top, and two rules together would read as a mistake. */
+.px-service .px-matter {
+  padding: 0 0 10px;
+  border-bottom: 0;
+  transition: none;
+}
+
+.px-service .px-matter:hover {
+  padding-left: 0;
+}
+
+.px-service .px-matter:hover .px-matter-title {
+  color: var(--ink);
+}
+
+.px-service .px-matter-tag {
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.px-service-lede {
+  margin: 0 0 16px;
+  max-width: var(--prose-max);
+  font-size: 14.5px;
+  line-height: 1.75;
+  color: var(--ink70);
+}
+
+/* "In" / "Out" / "Fit" are labels rather than the dates the tag column was
+   sized for, so they get the section-label letter-spacing and a narrower
+   column. */
+.px-service .px-row-tag {
+  flex-basis: 44px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
