@@ -1,31 +1,27 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { mountHeatfield } from '@/lib/scenes/heatfield';
+import { PixelField } from '@/components/pixel/PixelField';
+import { agentGraph, prompt, trellis, wordmark } from '@/lib/pixel/sources';
 
 /**
- * The heatfield hero canvas.
+ * The hero field: four exhibits that cycle on click.
  *
- * This is the whole React surface of a pixel island: a ref, an effect, a
- * disposer. The engine owns its own loop, listeners and theme subscription and
- * hands back a teardown — which is what makes StrictMode's double-mount in dev
- * a no-op rather than two competing rAF loops.
+ * Now a thin arrangement of `PixelField` rather than its own engine — the
+ * heatfield was the first field, and generalising it turned this file into a
+ * list of sources.
  *
- * Decorative: aria-hidden, and the engine already no-ops its motion paths under
- * prefers-reduced-motion.
+ * The triple-click secret entrance is gone. It opened a hidden wing that this
+ * site does not have, so what shipped was a dead gesture: three clicks in the
+ * middle of the hero that swallowed the exhibit cycle and fired an event with
+ * nothing listening. Its only remaining trace is that the agent graph's root
+ * node sits high and centred, which is where it belongs anyway.
  */
+const EXHIBITS = [agentGraph, prompt, trellis, wordmark('AK.')];
+
 export function Heatfield() {
-  const ref = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = ref.current;
-    if (!canvas) return;
-    return mountHeatfield(canvas);
-  }, []);
-
   return (
     <div className="px-heatfield">
-      <canvas ref={ref} aria-hidden="true" />
+      <PixelField sources={EXHIBITS} preset="hero" interactive cycleOnClick swing />
     </div>
   );
 }

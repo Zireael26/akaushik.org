@@ -1,4 +1,4 @@
-import Image from 'next/image';
+import { PixelPortrait } from '@/components/pixel/PixelPortrait';
 import { Fragment, type ReactNode } from 'react';
 
 import { ABOUT_COPY } from '@/lib/about-copy';
@@ -94,12 +94,19 @@ export function About() {
 
       <div className="px-portrait">
         <div className="px-portrait-frame px-notch">
-          <Image
+          {/* Rendered as a pixel field rather than an <img>, so the portrait
+              speaks the same language as the rest of the page — same palette
+              ramp, same ambient drift, and it takes pointer heat. next/image
+              cannot do that, which is why the optimisation it offers is not
+              worth having here. */}
+          <PixelPortrait
             src="/images/about/abhishek.webp"
             alt="Portrait of Abhishek Kaushik"
-            width={768}
-            height={960}
-            sizes="(max-width: 640px) 100vw, 300px"
+            className="px-portrait-canvas"
+            invert
+            gamma={1.15}
+            floor={0.3}
+            cellSize={3.5}
           />
         </div>
         <div className="px-portrait-cap">Abhishek Kaushik · AI engineer</div>

@@ -6,6 +6,34 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-08-22 — Generalised the hero heatfield into a reusable pixel field, and
+  made it the engine behind every piece of live art on the site. `lib/pixel/field.ts`
+  takes a list of sources — silhouettes drawn into an offscreen buffer at cell
+  resolution — and everything else it inherited from the original stays shared:
+  the streak fold, the ambient drift, the heat decay, the five-stop ramp, the
+  cell rule. Presets are expressed as a target cell size rather than a column
+  count, because a column count only makes sense at hero width: the same 150
+  columns across a 135px band leave thirteen rows, and a glyph with any internal
+  detail disintegrates. `gain`, `scatter` and `shapeNoise` scale with the preset
+  for the same reason — the ambient scatter that is the hero's whole atmosphere
+  is just noise on top of a 30-row glyph.
+
+  The method section is now a process pipeline rather than an abstract
+  four-colour band: four stage glyphs — a re-read record, a decision with one
+  branch taken and one left, modules landing, and a gate with a passing trace —
+  joined by a conduit with packets moving along it, and hovering a step swells
+  that stage in the band. The band and the tiles draw from one glyph library, so
+  there is no second set of art to keep in sync.
+
+  `fromImage` converts a photograph into a field: luminance becomes alpha, and
+  the site's ramp and drift apply from there. It stretches the image's own
+  luminance range across the ramp first, because a photograph with a narrow
+  range — most photographs — otherwise lands mid-ramp everywhere and renders as
+  a flat slab of one colour. The About portrait now uses it.
+
+  The hero's triple-click secret entrance is removed. It opened a hidden wing
+  this site does not have, so what shipped was a dead gesture that swallowed the
+  exhibit cycle and fired an event with nothing listening.
 - 2026-08-22 — Re-drew the law-specific pixel art for this site. The hero's
   four exhibits are now an agent graph, a shell prompt, a trellis, and the "AK."
   wordmark, replacing gaurijha.com's scales, section sign, gavel and "GJ."; the

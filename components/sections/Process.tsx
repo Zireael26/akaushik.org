@@ -1,51 +1,42 @@
-import { MethodBand } from '@/components/pixel/MethodBand';
+import { ProcessPipeline, type ProcessStep } from '@/components/pixel/ProcessPipeline';
 import { SectionHead } from '@/components/pixel/SectionHead';
 
 /**
  * The method — statement head, flow band, four steps, then the artifact list.
  *
- * Ported from gaurijha.com's `gj-method`. Two contracts come across verbatim
- * and must not be renamed:
- *   - `data-mstep="0".."3"` on the four column wrappers. The band engine reads
- *     the document for these to drive its hover highlight.
- *   - `data-icon` on the four mount canvases. The icon art is authored
- *     separately; nothing here draws.
+ * The band and the four tiles are one component, ProcessPipeline, because they
+ * draw from the same glyph library — hovering a step swells that stage in the
+ * band. gaurijha's version was an abstract four-colour flow band plus separate
+ * icon art, which said "there are four of these" and nothing more.
  *
  * The steps are his, not the prototype's: gaurijha's Read / Research / Write /
- * Argue is a litigator's sequence. The artifact list below the grid is the old
- * "Built in the open" section carried forward — those links are real and load
- * bearing, so they stay in the section rather than being dropped in the port.
+ * Argue is a litigator's sequence. The artifact list below is the old "Built in
+ * the open" section carried forward — those links are real and load bearing, so
+ * they stay in the section rather than being dropped in the port.
  */
 
-type Step = {
-  step: string;
-  icon: string;
-  tone: 'cobalt' | 'amber' | 'red' | 'ink';
-  body: string;
-};
-
-const METHOD: ReadonlyArray<Step> = [
+const METHOD: ReadonlyArray<ProcessStep> = [
   {
-    step: '01 · Read',
-    icon: 'read',
+    label: '01 · Read',
+    kind: 'read',
     tone: 'cobalt',
     body: 'The system as it actually is, and the constraints around it, before a line changes.',
   },
   {
-    step: '02 · Spec',
-    icon: 'spec',
+    label: '02 · Spec',
+    kind: 'spec',
     tone: 'amber',
     body: 'A PRD for the shape, an ADR for every decision that would be expensive to unwind.',
   },
   {
-    step: '03 · Build',
-    icon: 'build',
+    label: '03 · Build',
+    kind: 'build',
     tone: 'red',
     body: 'In phases, against a roadmap. Every shipped change lands in the changelog.',
   },
   {
-    step: '04 · Harden',
-    icon: 'harden',
+    label: '04 · Harden',
+    kind: 'harden',
     tone: 'ink',
     body: 'The process gate runs before the PR opens. Done means a receipt, not a summary.',
   },
@@ -85,19 +76,7 @@ export function Process() {
     <section id="method" className="px-section px-method" data-screen-label="03 Method">
       <SectionHead heading="The method." label="In order, every time" />
 
-      <MethodBand />
-
-      <div className="px-method-grid">
-        {METHOD.map((step, i) => (
-          <div key={step.icon} data-mstep={String(i)}>
-            <div className="px-icon-slot">
-              <canvas data-icon={step.icon} aria-hidden="true" />
-            </div>
-            <div className={`px-step is-${step.tone}`}>{step.step}</div>
-            <p className="px-step-body">{step.body}</p>
-          </div>
-        ))}
-      </div>
+      <ProcessPipeline steps={METHOD} />
 
       <div className="px-method-open">
         <div className="px-method-open-head">

@@ -116,3 +116,11 @@
   color: var(--ink45);
   text-align: right;
 }
+
+/* The portrait is a canvas field, not an <img>. It fills the notched frame and
+   keeps the 3:4 the photograph was cropped to. */
+.px-portrait-canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+}

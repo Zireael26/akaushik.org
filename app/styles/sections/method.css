@@ -9,32 +9,7 @@
 /* Sized here, drawn by the band engine. The engine reads [data-mstep] on the
    grid columns below to drive its hover highlight, so the band and the grid
    have to stay in the same section. */
-.px-method-band {
-  display: block;
-  width: 100%;
-  height: clamp(120px, 18vh, 190px);
-  margin-top: clamp(12px, 2vh, 22px);
-}
-
 /* ---------- the four steps ---------- */
-.px-method-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
-  gap: clamp(18px, 2.6vw, 34px);
-  margin-top: clamp(24px, 4vh, 40px);
-}
-
-.px-icon-slot {
-  height: 94px;
-  display: flex;
-  align-items: flex-end;
-  margin-bottom: 10px;
-}
-
-.px-icon-slot canvas {
-  display: block;
-}
-
 .px-step {
   font-family: var(--font-mono);
   font-size: 12px;
@@ -126,4 +101,58 @@
   .px-method-open-list a:hover {
     padding-left: 0;
   }
+}
+
+/* ---------- the pipeline ---------- */
+/* The band carries all four stage glyphs and the conduit between them; the
+   tiles below repeat each glyph beside its caption. Both are PixelFields, so
+   sizing here is the only thing that separates them. */
+.px-pipeline {
+  margin-top: clamp(20px, 3.4vh, 34px);
+}
+
+.px-pipeline-band {
+  display: block;
+  width: 100%;
+  height: clamp(104px, 15vh, 168px);
+}
+
+.px-pipeline-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  gap: clamp(18px, 2.6vw, 34px);
+  margin-top: clamp(20px, 3vh, 34px);
+}
+
+.px-pipeline-step {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.px-pipeline-tile {
+  width: 100%;
+  height: clamp(76px, 9vh, 104px);
+  margin-bottom: 14px;
+}
+
+.px-pipeline-tile-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.px-step {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.px-step-body {
+  margin: 10px 0 0;
+  max-width: 34ch;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--ink70);
 }
