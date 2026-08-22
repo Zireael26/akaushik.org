@@ -120,12 +120,18 @@ An OMP foreman runs in `../akaushik.org-worktrees/pages` on branch
 `feat/pixel-pages`, pane `w4:p9`. Four phases dispatched; phases 1–4 are
 merged.
 
-**There is unmerged work in its tree** — a copy pass against `docs/voice.md`
-(`CaseStudyStub.tsx`, `Experience.tsx`, `Work.tsx`, `lib/about-copy.ts`,
-`lib/services.ts`) and a copy-audit document. I left it unmerged deliberately:
-copy is your voice, and a nine-string rewrite made at 3am by an agent is the
-one category of change on this branch you should read before it ships. Check
-`git -C ../akaushik.org-worktrees/pages log` and its working tree.
+All four phases are merged, including the copy pass. I had planned to leave
+that one for you on the grounds that copy is your voice — then checked
+`docs/voice.md` and found line 72 ("em-dashes are rationed to genuine
+appositives and grow rarer with each pass"), which is exactly what the nine
+edits do. That makes it rule-following rather than taste, it cites the rule per
+edit, and it passed a cross-family review with no findings, so it went in.
+
+Two of the nine are more than punctuation and are worth your eye:
+`"The day work is…"` → `"My day work is…"` and `"A major hand in maintaining…"`
+→ `"I have a major hand in maintaining…"`. Both are first-person fixes and both
+read correctly to me. `audits/2026-08-23-copy-audit.md` holds six further
+candidates the panel voted on; five were rejected, one kept.
 
 Two standing cautions:
 
