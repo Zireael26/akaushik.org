@@ -18,6 +18,15 @@ export default defineConfig({
       '**/e2e/**',
       '**/*.spec.{ts,tsx}',
       '**/.claude/worktrees/**',
+      // `.trellis/runtime` is a symlink to the shared immutable Trellis release
+      // (~/.trellis/releases/<version>/payload), added by the portable-manifest
+      // migration in 4585ec6. The include glob follows it and runs the
+      // toolchain's own hook tests as if they were this project's — they fail
+      // here because the hook subprocesses don't find `jq` on their PATH, and
+      // the suite reports zero tests. Those tests belong to the release, not to
+      // akaushik.org, and nothing in this repo can fix them: the payload is
+      // immutable and shared by every attached project.
+      '**/.trellis/**',
     ],
     coverage: {
       provider: 'v8',

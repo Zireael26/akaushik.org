@@ -1,28 +1,23 @@
 import Hero from '@/components/sections/Hero';
-import { About } from '@/components/sections/About';
-import { Work } from '@/components/sections/Work';
-import { Writing } from '@/components/sections/Writing';
-import { Services } from '@/components/sections/Services';
-import { Process } from '@/components/sections/Process';
-import { OpenSource } from '@/components/sections/OpenSource';
-import { Contact } from '@/components/sections/Contact';
 
 /**
- * Home — single-page scroll with all eight sections (PRD §5).
- * Each section component owns its own <section> element with the
- * data-companion-pose / data-screen-label attrs that Wanderer keys off.
+ * Home.
+ *
+ * Mid-conversion. The eight-section scroll is being rebuilt in the pixel design
+ * one section at a time; only the ones already converted are mounted here. The
+ * remaining components still exist under components/sections/ and come back in
+ * this order as they land:
+ *
+ *   About → Work → Writing → Services → Process → OpenSource → Contact
+ *
+ * Mounting an unconverted section would render it against a stylesheet that no
+ * longer carries its rules, which reads as a bug rather than as work in
+ * progress. Hence the deliberate omission.
  */
 export default function Home() {
   return (
     <main id="top">
       <Hero />
-      <About />
-      <Work />
-      <Writing />
-      <Services />
-      <Process />
-      <OpenSource />
-      <Contact />
     </main>
   );
 }

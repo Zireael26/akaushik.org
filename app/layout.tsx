@@ -1,11 +1,8 @@
 import type { Metadata, Viewport } from 'next';
-import { Newsreader, Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
 import { headers } from 'next/headers';
 import Script from 'next/script';
 import SiteNav from '@/components/site/SiteNav';
 import SiteFooter from '@/components/site/SiteFooter';
-import { Wanderer } from '@/components/scene/Wanderer';
-import { TweakBridge } from '@/components/dev/TweakBridge';
 import { CANONICAL_ORIGIN } from '@/lib/canonical';
 import { JsonLdScript } from '@/components/seo/JsonLdScript';
 import { siteGraph, jsonLdString } from '@/lib/structured-data';
@@ -16,26 +13,6 @@ import './globals.css';
 // from NEXT_PUBLIC_CF_BEACON_TOKEN so it ships nowhere the codebase can
 // see. When unset (dev / preview) the script is a no-op.
 const CF_BEACON_TOKEN = process.env.NEXT_PUBLIC_CF_BEACON_TOKEN;
-
-const newsreader = Newsreader({
-  subsets: ['latin'],
-  variable: '--font-newsreader',
-  display: 'swap',
-  style: ['normal', 'italic'],
-  weight: ['300', '400', '500', '600', '700'],
-});
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  variable: '--font-jakarta',
-  display: 'swap',
-  weight: ['400', '500', '600', '700'],
-});
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  variable: '--font-jetbrains',
-  display: 'swap',
-  weight: ['400', '500'],
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(CANONICAL_ORIGIN),
@@ -75,8 +52,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   colorScheme: 'light dark',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#F5F1E8' },
-    { media: '(prefers-color-scheme: dark)', color: '#121417' },
+    { media: '(prefers-color-scheme: light)', color: '#FFFFFF' },
+    { media: '(prefers-color-scheme: dark)', color: '#0F1218' },
   ],
 };
 
@@ -87,12 +64,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html
       lang="en"
       data-mode="light"
-      data-accent="forest"
-      data-density="airy"
       data-motion="on"
-      data-tagline="a"
       data-scroll-behavior="smooth"
-      className={`${newsreader.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
     >
       <head>
@@ -117,11 +90,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <JsonLdScript id="ld-json-site" json={jsonLdString(siteGraph())} nonce={nonce} />
       </head>
       <body>
-        <Wanderer />
         <SiteNav />
         {children}
         <SiteFooter />
-        <TweakBridge />
         {CF_BEACON_TOKEN ? (
           <Script
             nonce={nonce}

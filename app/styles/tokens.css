@@ -1,0 +1,60 @@
+/* Design tokens. Every colour on the site comes from here — never hard-code a
+   hex in a component. Ported from gaurijha.com's tokens.css, with one deliberate
+   change: the theme switch is `html[data-mode="dark"]`, not `body.gj-dark`,
+   because that is the attribute public/init-theme.js already sets before first
+   paint and components/site/ThemeToggle.tsx already writes. Keeping the existing
+   mechanism means no FOUC regression and no second storage key.
+
+   Light is the default. Canvas code cannot read CSS variables cheaply per frame,
+   so the pixel palette below is mirrored as constants in lib/pixel.ts — change
+   one, change both. */
+
+:root {
+  /* Surfaces and ink — light. */
+  --bg: #ffffff;
+  --ink: #111318;
+  --ink70: rgba(17, 19, 24, 0.7);
+  --ink65: rgba(17, 19, 24, 0.66);
+  --ink60: rgba(17, 19, 24, 0.6);
+  --ink55: rgba(17, 19, 24, 0.55);
+  --ink45: rgba(17, 19, 24, 0.45);
+  --ink40: rgba(17, 19, 24, 0.4);
+  --line: rgba(17, 19, 24, 0.13);
+  --panel: #111318;
+  --panelInk: #ffffff;
+
+  /* Pixel palette — identical in both themes; canvas code does the dark swaps. */
+  --px-cobalt: #3b5bf6;
+  --px-amber: #f6a61c;
+  --px-red: #e8401c;
+  --px-lime: #c8f218;
+  --px-navy: #1b2331;
+  --px-navy-dark: #e9ecf4;
+  --px-deepblue: #2c3f94;
+  --px-deepblue-dark: #5f74d9;
+  --px-canvas-dark: #0f1218;
+
+  /* Type */
+  --font-display: 'Cabinet Grotesk', system-ui, sans-serif;
+  --font-body: 'General Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+
+  /* Layout */
+  --wrap-max: 1560px;
+  --wrap-pad: clamp(20px, 4vw, 56px);
+  --prose-max: 70ch;
+}
+
+[data-mode='dark'] {
+  --bg: #0f1218;
+  --ink: #eff1f6;
+  --ink70: rgba(239, 241, 246, 0.75);
+  --ink65: rgba(239, 241, 246, 0.66);
+  --ink60: rgba(239, 241, 246, 0.6);
+  --ink55: rgba(239, 241, 246, 0.55);
+  --ink45: rgba(239, 241, 246, 0.45);
+  --ink40: rgba(239, 241, 246, 0.4);
+  --line: rgba(239, 241, 246, 0.16);
+  --panel: #eff1f6;
+  --panelInk: #0f1218;
+}
