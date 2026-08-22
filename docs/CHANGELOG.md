@@ -39,6 +39,7 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
   Verified at 320, 375 and 768 across the home, article and case-study routes:
   no horizontal overflow anywhere.
+- 2026-08-23 — Tightened nine phase 1–3 interface strings against `docs/voice.md`: first person where the site speaks as Abhishek, fewer ornamental em dashes, and no changes to sourced facts, links, markup, metadata, or MDX.
 - 2026-08-23 — Added a policy test that parses both theme token blocks and rejects any `--ink*` or `--px-*-ink` colour below WCAG AA’s 4.5:1 contrast floor against that theme’s page background.
 - 2026-08-23 — The site meets WCAG 2 AA now, and the e2e suite is green again.
   Both were found the same way: by running the specs against the deployed

@@ -43,7 +43,7 @@ export function CaseStudyStub({ slug }: { slug: ReelSlug }) {
         ))}
       </dl>
       <div className="work-stub-notice">
-        Case study available on request — scope is under client review. The
+        Case study available on request. Scope is under client review. The
         home-page card above is the honest headline; email{' '}
         <a href="mailto:hello@akaushik.org">hello@akaushik.org</a> for the
         full story.
