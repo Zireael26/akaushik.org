@@ -14,6 +14,51 @@
 import type { FieldSource, SourceContext } from './field';
 
 /* ------------------------------------------------------------------ *
+ * Internal graph geometry
+ * ------------------------------------------------------------------ */
+
+type GraphPoints = {
+  CX: number;
+  ROOT: number;
+  mids: Array<[number, number]>;
+  leaves: Array<Array<[number, number]>>;
+};
+
+/**
+ * Shared geometry for the agent network. The hero graph, the broken 404 graph,
+ * and the error graph all draw the same network — a root, three intermediaries,
+ * two leaves each, and cross-edges between the middle tier — so the positions
+ * live here. Nothing is copied between sources; they all call this helper and
+ * then decide which edges and nodes to render.
+ *
+ * The rotation keeps the swing circular on screen rather than elliptical: the
+ * grid is roughly 2.2:1, so x is scaled through the rotation. Leaf positions
+ * are derived from the already-rotated mid positions exactly as the original
+ * `agentGraph` did, so the art remains identical when this helper is used.
+ */
+function graphGeometry(cols: number, rows: number, angle: number): GraphPoints {
+  const CX = cols * 0.5;
+  const ROOT = rows * 0.13;
+  const AR = rows / cols;
+  const rot = (x: number, y: number): [number, number] => {
+    const dx = (x - CX) * AR;
+    const dy = y - ROOT;
+    const c = Math.cos(angle);
+    const s = Math.sin(angle);
+    return [CX + (dx * c - dy * s) / AR, ROOT + (dx * s + dy * c)];
+  };
+
+  const TIER1 = rows * 0.45;
+  const TIER2 = rows * 0.74;
+  const mids: Array<[number, number]> = [-0.19, 0, 0.19].map((f) => rot(CX + cols * f, TIER1));
+  const leaves: Array<Array<[number, number]>> = mids.map(([mx, my]) =>
+    ([-0.072, 0.072].map((off) => rot(mx + cols * off, TIER2)) as Array<[number, number]>),
+  );
+
+  return { CX, ROOT, mids, leaves };
+}
+
+/* ------------------------------------------------------------------ *
  * Hero exhibits
  * ------------------------------------------------------------------ */
 
@@ -23,19 +68,7 @@ import type { FieldSource, SourceContext } from './field';
  * tree. Reads `angle`, so it swings when the field is mounted with `swing`.
  */
 export const agentGraph: FieldSource = (o, { cols, rows, angle }) => {
-  const CX = cols * 0.5;
-  const ROOT = rows * 0.13;
-
-  // The grid is roughly 2.2:1, so x is scaled through the rotation to keep the
-  // swing circular on screen rather than elliptical.
-  const AR = rows / cols;
-  const rot = (x: number, y: number): [number, number] => {
-    const dx = (x - CX) * AR;
-    const dy = y - ROOT;
-    const c = Math.cos(angle);
-    const s = Math.sin(angle);
-    return [CX + (dx * c - dy * s) / AR, ROOT + (dx * s + dy * c)];
-  };
+  const { CX, ROOT, mids, leaves } = graphGeometry(cols, rows, angle);
 
   const node = (x: number, y: number, r: number): void => {
     o.beginPath();
@@ -50,18 +83,14 @@ export const agentGraph: FieldSource = (o, { cols, rows, angle }) => {
     o.stroke();
   };
 
-  const TIER1 = rows * 0.45;
-  const TIER2 = rows * 0.74;
-  const mids: Array<[number, number]> = [-0.19, 0, 0.19].map((f) => rot(CX + cols * f, TIER1));
-
   node(CX, ROOT, rows * 0.055);
   for (const [mx, my] of mids) {
     edge(CX, ROOT, mx, my, 1.9);
     node(mx, my, rows * 0.04);
   }
   mids.forEach(([mx, my], i) => {
-    for (const off of [-0.072, 0.072]) {
-      const [lx, ly] = rot(mx + cols * off, TIER2);
+    const ls = leaves[i]!;
+    for (const [lx, ly] of ls) {
       edge(mx, my, lx, ly, 1.4);
       node(lx, ly, rows * 0.028);
     }
@@ -71,6 +100,196 @@ export const agentGraph: FieldSource = (o, { cols, rows, angle }) => {
     }
   });
 };
+
+/**
+ * The 404 graph: the same network as `agentGraph`, with one severed edge and
+ * one unreachable node. Geometry comes from `graphGeometry` so the two remain
+ * in lockstep; only which edges are drawn differs.
+ *
+ * The unreachable leaf is `leaves[0][0]` — its incident edge is omitted and the
+ * node floats with no connection, which reads as a dropped destination. The
+ * severed edge is `mids[2] → leaves[2][1]` — it is drawn in two segments with a
+ * centred gap, so the line is visibly broken rather than simply missing. Both
+ * alters are deterministic; no ad-hoc randomness is involved and colour is
+ * still the field's, never a hard-coded hex.
+ */
+export const brokenGraph: FieldSource = (o, { cols, rows, angle }) => {
+  const { CX, ROOT, mids, leaves } = graphGeometry(cols, rows, angle);
+
+  const node = (x: number, y: number, r: number): void => {
+    o.beginPath();
+    o.arc(x, y, r, 0, 7);
+    o.fill();
+  };
+  const edge = (ax: number, ay: number, bx: number, by: number, w: number): void => {
+    o.lineWidth = w;
+    o.beginPath();
+    o.moveTo(ax, ay);
+    o.lineTo(bx, by);
+    o.stroke();
+  };
+  const severedEdge = (ax: number, ay: number, bx: number, by: number, w: number): void => {
+    const mx = (ax + bx) * 0.5;
+    const my = (ay + by) * 0.5;
+    const dx = bx - ax;
+    const dy = by - ay;
+    const len = Math.hypot(dx, dy);
+    if (len < 0.001) {
+      edge(ax, ay, bx, by, w);
+      return;
+    }
+    const ux = dx / len;
+    const uy = dy / len;
+    const gap = len * 0.18;
+    const half = gap * 0.5;
+    o.lineWidth = w;
+    o.beginPath();
+    o.moveTo(ax, ay);
+    o.lineTo(mx - ux * half, my - uy * half);
+    o.stroke();
+    o.beginPath();
+    o.moveTo(mx + ux * half, my + uy * half);
+    o.lineTo(bx, by);
+    o.stroke();
+  };
+
+  const UNREACHABLE_MID = 0;
+  const UNREACHABLE_LEAF = 0;
+  const SEVERED_MID = 2;
+  const SEVERED_LEAF = 1;
+
+  node(CX, ROOT, rows * 0.055);
+  for (const [mx, my] of mids) {
+    edge(CX, ROOT, mx, my, 1.9);
+    node(mx, my, rows * 0.04);
+  }
+
+  mids.forEach(([mx, my], i) => {
+    const ls = leaves[i]!;
+    ls.forEach(([lx, ly], j) => {
+      const isUnreachable = i === UNREACHABLE_MID && j === UNREACHABLE_LEAF;
+      const isSevered = i === SEVERED_MID && j === SEVERED_LEAF;
+      if (isUnreachable) {
+        node(lx, ly, rows * 0.028);
+        return;
+      }
+      if (isSevered) {
+        severedEdge(mx, my, lx, ly, 1.4);
+      } else {
+        edge(mx, my, lx, ly, 1.4);
+      }
+      node(lx, ly, rows * 0.028);
+    });
+    if (i < mids.length - 1) {
+      const [nx, ny] = mids[i + 1]!;
+      edge(mx, my, nx, ny, 0.9);
+    }
+  });
+};
+
+/**
+ * The error graph: the same network, with one node overdriven and its incident
+ * edges recoiling. The centre mid (`mids[1]`) is drawn larger than its peers,
+ * and every edge that touches it stops short of the node so a gap appears —
+ * the edges visibly pull away from the failure.
+ *
+ * Like `brokenGraph`, this reuses `graphGeometry` and carries no hard-coded
+ * colour. The recoil inset is proportional to `rows` so the gap survives across
+ * presets, and the hash-driven field is never bypassed.
+ */
+export const errorGraph: FieldSource = (o, { cols, rows, angle }) => {
+  const { CX, ROOT, mids, leaves } = graphGeometry(cols, rows, angle);
+
+  const OVER = 1;
+  const normalR = rows * 0.04;
+  const overR = rows * 0.062;
+  const recoilGap = rows * 0.014;
+  const overInset = overR + recoilGap;
+
+  const node = (x: number, y: number, r: number): void => {
+    o.beginPath();
+    o.arc(x, y, r, 0, 7);
+    o.fill();
+  };
+  const edge = (ax: number, ay: number, bx: number, by: number, w: number): void => {
+    o.lineWidth = w;
+    o.beginPath();
+    o.moveTo(ax, ay);
+    o.lineTo(bx, by);
+    o.stroke();
+  };
+  const recoiledEdge = (
+    ax: number,
+    ay: number,
+    bx: number,
+    by: number,
+    w: number,
+    recoilStart: boolean,
+    recoilEnd: boolean,
+  ): void => {
+    let sx = ax;
+    let sy = ay;
+    let ex = bx;
+    let ey = by;
+    const len = Math.hypot(bx - ax, by - ay);
+    if (len > 0.001) {
+      const ux = (bx - ax) / len;
+      const uy = (by - ay) / len;
+      if (recoilStart) {
+        sx = ax + ux * overInset;
+        sy = ay + uy * overInset;
+      }
+      if (recoilEnd) {
+        ex = bx - ux * overInset;
+        ey = by - uy * overInset;
+      }
+    }
+    o.lineWidth = w;
+    o.beginPath();
+    o.moveTo(sx, sy);
+    o.lineTo(ex, ey);
+    o.stroke();
+  };
+
+  node(CX, ROOT, rows * 0.055);
+  for (let i = 0; i < mids.length; i++) {
+    const [mx, my] = mids[i]!;
+    const isOver = i === OVER;
+    if (isOver) {
+      recoiledEdge(CX, ROOT, mx, my, 1.9, false, true);
+    } else {
+      edge(CX, ROOT, mx, my, 1.9);
+    }
+    node(mx, my, isOver ? overR : normalR);
+  }
+
+  mids.forEach(([mx, my], i) => {
+    const ls = leaves[i]!;
+    const midIsOver = i === OVER;
+    ls.forEach(([lx, ly]) => {
+      if (midIsOver) {
+        recoiledEdge(mx, my, lx, ly, 1.4, true, false);
+      } else {
+        edge(mx, my, lx, ly, 1.4);
+      }
+      node(lx, ly, rows * 0.028);
+    });
+    if (i < mids.length - 1) {
+      const [nx, ny] = mids[i + 1]!;
+      const touchesOver = i === OVER || i + 1 === OVER;
+      if (touchesOver) {
+        const recoilStart = i === OVER;
+        const recoilEnd = i + 1 === OVER;
+        recoiledEdge(mx, my, nx, ny, 0.9, recoilStart, recoilEnd);
+      } else {
+        edge(mx, my, nx, ny, 0.9);
+      }
+    }
+  });
+};
+
+/** Backwards-compatible alias for the error source; both names point to the same restrained network. */
+export const overloadedGraph: FieldSource = errorGraph;
 
 /**
  * A shell prompt: chevron and block caret. Drawn as paths rather than set as

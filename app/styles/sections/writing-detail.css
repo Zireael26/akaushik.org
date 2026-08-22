@@ -1,0 +1,498 @@
+/* writing-detail — /writing index and /writing/[slug] article pages.
+   Owned by R1 (app/writing/** and this stylesheet).
+   Ported to the pixel language from the parchment template (recoverable from
+   git history on origin/main before feat/pixel-transplant) and from the
+   gaurijha.com reference (design-refs/design.md § Blog / SEO and
+   Writing - Section 34.dc.html at public-site-v1). The template rendered
+   `.writing-index-*` / `.writing-detail-*` / `.work-stub-*` over the warm
+   editorial palette; that palette is gone. Every colour here goes through
+   app/styles/tokens.css — no hard-coded hex, per spec 004.
+
+   Two deliberate departures from the reference:
+
+   1. gaurijha.com's article carries a topic tag (Arbitration) in the
+      breadcrumb — `Writing / Topic` with the topic in cobalt. This repo's
+      WritingFrontmatter (lib/content.ts) carries no topic field and none of
+      the 13 published MDX files sets one, and the spec forbids inventing a
+      taxonomy. The breadcrumb is therefore `Writing` alone, styled as a mono
+      link; the shared RouteField sits above it as the per-route texture, not
+      as a topic illustration.
+
+   2. The MDX body is styled here, not in a separate article.css. Writing
+      MDX ships H2/H3, blockquotes, lists, code and tables through
+      next-mdx-remote (remarkGfm, rehypeSlug, rehypePrettyCode with shiki).
+      Those selectors live on `.px-article-body` so a content edit cannot
+      leak unstyled markup. The 70ch max-width matches design.md § Blog/SEO
+      and app/styles/tokens.css --prose-max. The H1/dek/byline/short-answer
+      chrome is rendered from frontmatter in the page component; the MDX body
+      is stripped of its leading H1 + blockquote dek (stripTitleChrome) and
+      starts at the first H2, so there is no duplicated H1.
+
+   Imported from app/layout.tsx alongside the other section files, not chained
+   through globals.css. The foreman owns the final root import, so this file
+   is not imported elsewhere. */
+
+/* ---------- index shell ---------- */
+.px-writing-index {
+  max-width: var(--wrap-max);
+  margin: 0 auto;
+  padding: clamp(32px, 6vh, 72px) var(--wrap-pad) clamp(56px, 9vh, 110px);
+}
+
+.px-writing-index-head {
+  /* px-split handles the flex; this keeps the head on the same rhythm as
+     the work index without duplicating the split gap. */
+  margin-bottom: clamp(24px, 4vh, 36px);
+}
+
+.px-writing-index-head .px-head-title {
+  max-width: 26ch;
+  text-wrap: pretty;
+}
+
+.px-writing-index-head .px-head-label {
+  color: var(--ink40);
+}
+
+.px-writing-index-rows {
+  margin-top: clamp(28px, 4vh, 44px);
+}
+
+/* The rows themselves are .px-writing-row in app/styles/sections/writing.css
+   (home teaser reuse). The index reuses that sheet; no second definition
+   here. The pixel band above the rows is PixelBand (canvas, decorative). */
+.px-pixel-band {
+  display: block;
+  width: 100%;
+  height: clamp(84px, 12vh, 136px);
+}
+
+/* ---------- article shell ---------- */
+.writing-detail {
+  /* Main wrapper — no max-width here; .px-article centers. Keeps the glitch
+     where main itself would clip the RouteField's full-bleed texture. */
+  background: var(--bg);
+}
+
+.px-article {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: clamp(32px, 6vh, 72px) var(--wrap-pad) clamp(56px, 9vh, 110px);
+}
+
+/* ---------- RouteField — shared detail route strip ---------- */
+/* The same full-width rectangle can sit above writing and case-study detail
+   chrome. PixelField owns the canvas paint and reduced-motion behaviour; this
+   block only reserves the strip and the gap below it. */
+.px-route-field {
+  display: block;
+  width: 100%;
+  height: clamp(84px, 12vh, 136px);
+  margin-bottom: clamp(24px, 4vh, 36px);
+}
+
+.px-article-crumb {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink60);
+}
+
+.px-article-crumb a {
+  color: var(--ink60);
+  text-decoration: none;
+  transition: color 0.18s ease;
+}
+.px-article-crumb a:hover {
+  color: var(--px-cobalt);
+}
+
+.px-article-crumb a:focus-visible {
+  outline: 2px solid var(--px-cobalt);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ---------- title / dek / byline ---------- */
+.px-article-title {
+  margin: clamp(18px, 3vh, 28px) 0 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(30px, 4vw, 54px);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  text-wrap: pretty;
+  color: var(--ink);
+}
+
+.px-article-dek {
+  margin: clamp(16px, 2.5vh, 24px) 0 0;
+  font-size: clamp(16px, 1.5vw, 19px);
+  line-height: 1.65;
+  color: var(--ink70);
+  text-wrap: pretty;
+}
+
+.px-article-byline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  align-items: center;
+  margin-top: clamp(18px, 3vh, 26px);
+  padding-bottom: clamp(18px, 3vh, 26px);
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink60);
+}
+
+.px-article-byline a {
+  color: var(--ink60);
+  text-decoration: none;
+}
+
+.px-article-byline a:hover {
+  color: var(--px-cobalt);
+}
+
+.px-article-byline a:focus-visible {
+  outline: 2px solid var(--px-cobalt);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.px-article-byline time {
+  color: var(--ink60);
+}
+.px-article-kicker {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--ink60);
+}
+
+/* ---------- The short answer ---------- */
+.px-article-short {
+  margin-top: clamp(24px, 4vh, 36px);
+}
+
+.px-article-short .px-article-kicker {
+  margin-bottom: 10px;
+}
+
+.px-article-short .px-row {
+  gap: 18px;
+  padding: 14px 0;
+}
+
+/* RuledRow owns the border contract: every row opens with a top rule and the
+   row marked `is-last` closes the box with its bottom rule. */
+.px-article-short .px-row-tag {
+  flex: 0 0 24px;
+  line-height: 1;
+}
+
+/* The kicker is child one; the ruled rows begin at child two. */
+.px-article-short .px-row:nth-child(3n + 2) .px-row-tag {
+  color: var(--px-cobalt);
+}
+
+.px-article-short .px-row:nth-child(3n + 3) .px-row-tag {
+  color: var(--px-amber);
+}
+
+.px-article-short .px-row:nth-child(3n + 4) .px-row-tag {
+  color: var(--px-red);
+}
+
+.px-article-short .px-row-body {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--ink70);
+}
+
+/* ---------- loops inside the article ---------- */
+.px-article-loop {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  margin: clamp(24px, 4vh, 36px) 0 0;
+  border: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.px-article-loop svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.px-article-loop video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+html[data-motion='off'] .px-article-loop video {
+  display: none;
+}
+
+/* ---------- MDX prose ---------- */
+.px-article-body {
+  max-width: var(--prose-max);
+  margin-top: clamp(28px, 4vh, 40px);
+}
+
+.px-article-body > :first-child {
+  margin-top: 0;
+}
+
+.px-article-body h2 {
+  margin: clamp(32px, 5vh, 48px) 0 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(22px, 2.4vw, 30px);
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+.px-article-body h3 {
+  margin: 28px 0 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(17px, 1.8vw, 21px);
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.px-article-body p {
+  margin: 14px 0 0;
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--ink70);
+}
+
+.px-article-body a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--px-cobalt);
+  transition: text-decoration-thickness 0.18s ease;
+}
+
+.px-article-body a:hover {
+  color: var(--ink);
+  text-decoration-thickness: 2px;
+}
+
+.px-article-body a:focus-visible {
+  outline: 2px solid var(--px-cobalt);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.px-article-body strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.px-article-body em {
+  font-style: italic;
+}
+
+.px-article-body ul,
+.px-article-body ol {
+  margin: 14px 0 0;
+  padding-left: 1.2em;
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--ink70);
+}
+
+.px-article-body li + li {
+  margin-top: 8px;
+}
+
+.px-article-body li::marker {
+  color: var(--ink60);
+}
+
+.px-article-body blockquote {
+  margin: 18px 0 0;
+  padding: 12px 18px;
+  border-left: 2px solid var(--line);
+  background: color-mix(in oklab, var(--line) 28%, transparent);
+  color: var(--ink60);
+}
+
+.px-article-body blockquote p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.px-article-body hr {
+  margin: clamp(28px, 5vh, 40px) 0 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+.px-article-body img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 20px 0 0;
+  border: 1px solid var(--line);
+}
+
+.px-article-body pre {
+  margin: 18px 0 0;
+  padding: 16px 18px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.7;
+  background: color-mix(in oklab, var(--line) 40%, transparent);
+  border: 1px solid var(--line);
+}
+
+.px-article-body code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+.px-article-body :not(pre) > code {
+  padding: 1px 5px;
+  background: color-mix(in oklab, var(--line) 55%, transparent);
+  border-radius: 4px;
+  color: var(--ink);
+}
+
+.px-article-body table {
+  width: 100%;
+  margin: 18px 0 0;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.px-article-body th,
+.px-article-body td {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  text-align: left;
+}
+
+.px-article-body th {
+  font-weight: 600;
+  color: var(--ink);
+  background: color-mix(in oklab, var(--line) 35%, transparent);
+}
+
+/* ---------- Common questions (FAQ) ---------- */
+.px-article-faq {
+  margin-top: clamp(36px, 6vh, 56px);
+}
+
+.px-article-faq .px-article-kicker {
+  margin-bottom: 10px;
+}
+
+.px-article-faq-row {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.px-article-kicker + .px-article-faq-row {
+  border-top: 1px solid var(--line);
+}
+
+.px-article-faq-q {
+  font-weight: 600;
+  font-size: 15.5px;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.px-article-faq-a {
+  margin: 8px 0 0;
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--ink70);
+  max-width: var(--prose-max);
+}
+
+/* ---------- Read next ---------- */
+.px-article-next {
+  margin-top: clamp(36px, 6vh, 56px);
+}
+
+.px-article-next .px-article-kicker {
+  margin-bottom: 10px;
+}
+
+.px-article-next .px-matter {
+  border-bottom: 1px solid var(--line);
+}
+
+.px-article-next .px-matter:first-of-type {
+  border-top: 1px solid var(--line);
+}
+
+/* Keep MatterRow hover on ink; the tag underline carries the rotating accent,
+   same contract as the work index. The row's own hover indent stays. */
+.px-article-next .px-matter:hover .px-matter-title {
+  color: var(--ink);
+}
+
+.px-article-next .px-matter-tag {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+.px-article-next .px-matter-tag.is-cobalt {
+  text-decoration-color: var(--px-cobalt);
+}
+
+.px-article-next .px-matter-tag.is-amber {
+  text-decoration-color: var(--px-amber);
+}
+
+.px-article-next .px-matter-tag.is-red {
+  text-decoration-color: var(--px-red);
+}
+
+.px-article-next .px-matter:focus-visible {
+  outline: 2px solid var(--px-cobalt);
+  outline-offset: 4px;
+}
+
+/* ---------- focus & reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .px-article-crumb a,
+  .px-article-byline a,
+  .px-article-body a,
+  .px-article-next .px-matter,
+  .px-article-next .px-matter-title {
+    transition: none;
+  }
+
+  .px-article-next .px-matter:hover {
+    padding-left: 0;
+  }
+
+  .px-article-loop video {
+    display: none;
+  }
+}

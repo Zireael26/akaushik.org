@@ -1,6 +1,6 @@
 import { Children, isValidElement, type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import WritingPost, { generateMetadata } from './page';
+import WritingPost, { generateMetadata, nextReads } from './page';
 
 // Guards the per-page OpenGraph fix: under Next's shallow metadata merge,
 // omitting `openGraph` here means every writing post inherited the homepage's
@@ -22,6 +22,21 @@ function findJsonLd(node: ReactNode, id: string): string | undefined {
   }
 
   return undefined;
+}
+
+function collectJsonLd(node: ReactNode): Array<{ id: string; json: string }> {
+  const found: Array<{ id: string; json: string }> = [];
+
+  function visit(current: ReactNode) {
+    if (!isValidElement<{ children?: ReactNode; id?: string; json?: string }>(current)) return;
+    if (current.props.id && current.props.json) {
+      found.push({ id: current.props.id, json: current.props.json });
+    }
+    for (const child of Children.toArray(current.props.children)) visit(child);
+  }
+
+  visit(node);
+  return found;
 }
 
 describe('writing/[slug] generateMetadata', () => {
@@ -96,6 +111,58 @@ describe('writing/[slug] generateMetadata', () => {
         name: 'Notes on bringing AI to an MSME',
         item: 'https://akaushik.org/writing/ai-for-msme',
       },
+    ]);
+  });
+});
+
+describe('writing/[slug] read next', () => {
+  it('locates an unlisted current article without recommending an unlisted post', () => {
+    const expected = ['trellis-loop-era', 'trellis-1-0-rc'];
+
+    expect(nextReads('detection-is-not-continuity').map((post) => post.slug)).toEqual(expected);
+    expect(nextReads('gptx-in-trellis').map((post) => post.slug)).toEqual(expected);
+    expect(nextReads('gptx-in-trellis').map((post) => post.slug)).not.toContain(
+      'detection-is-not-continuity',
+    );
+  });
+});
+
+describe('writing/[slug] article structured data', () => {
+  it('merges Article and FAQPage into one graph with stable ids', async () => {
+    const page = await WritingPost({ params: Promise.resolve({ slug: 'ai-for-msme' }) });
+    const scripts = collectJsonLd(page);
+    const faqScripts = scripts.filter(({ json }) => {
+      const value = JSON.parse(json) as {
+        '@type'?: string;
+        '@graph'?: Array<{ '@type'?: string }>;
+      };
+      return (
+        value['@type'] === 'FAQPage' ||
+        value['@graph']?.some((node) => node['@type'] === 'FAQPage') === true
+      );
+    });
+
+    expect(faqScripts).toHaveLength(1);
+    expect(faqScripts[0]?.id).toBe('ld-json-article-ai-for-msme');
+
+    const merged = JSON.parse(faqScripts[0]?.json ?? '{}') as {
+      '@context'?: string;
+      '@graph'?: Array<{
+        '@type'?: string;
+        '@id'?: string;
+        mainEntity?: Array<{ '@id'?: string }>;
+      }>;
+    };
+    expect(merged['@context']).toBe('https://schema.org');
+    expect(merged['@graph']?.map((node) => node['@type'])).toEqual(['Article', 'FAQPage']);
+    expect(merged['@graph']?.map((node) => node['@id'])).toEqual([
+      'https://akaushik.org/writing/ai-for-msme#article',
+      'https://akaushik.org/writing/ai-for-msme#faq',
+    ]);
+    expect(merged['@graph']?.[1]?.mainEntity?.map((node) => node['@id'])).toEqual([
+      'https://akaushik.org/writing/ai-for-msme#faq-1',
+      'https://akaushik.org/writing/ai-for-msme#faq-2',
+      'https://akaushik.org/writing/ai-for-msme#faq-3',
     ]);
   });
 });
