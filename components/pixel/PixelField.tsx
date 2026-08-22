@@ -17,6 +17,7 @@ export type PixelFieldProps = {
   cycleOnClick?: boolean;
   swing?: boolean;
   ambient?: boolean;
+  animate?: number;
   /** Per-instance hash offset — same seed, same texture, every load. */
   seed?: number;
   className?: string;
@@ -51,6 +52,7 @@ export function PixelField({
   cycleOnClick = false,
   swing = false,
   ambient = true,
+  animate = 0,
   seed = 0,
   className,
   label,
@@ -80,6 +82,7 @@ export function PixelField({
       cycleOnClick,
       swing,
       ambient,
+      animate,
       seed,
     });
     handle.current = h;
@@ -89,7 +92,7 @@ export function PixelField({
       handle.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [preset, cellSize, gain, scatter, shapeNoise, interactive, cycleOnClick, swing, ambient, seed]);
+  }, [preset, cellSize, gain, scatter, shapeNoise, interactive, cycleOnClick, swing, ambient, animate, seed]);
 
   useEffect(() => {
     if (typeof stage === 'number') handle.current?.setStage(stage);

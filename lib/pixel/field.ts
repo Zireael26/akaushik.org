@@ -146,6 +146,17 @@ export type FieldOptions = {
   swing?: boolean;
   /** Ambient drift. Off makes the field static apart from pointer heat. */
   ambient?: boolean;
+  /**
+   * Rebuild the source every `animate` frames, so a source can animate its own
+   * geometry off `t` rather than only being redrawn when the stage changes.
+   *
+   * 0 (the default) means build-on-change only, which is what a static
+   * silhouette wants. A rebuild is a full offscreen redraw plus a getImageData
+   * over the whole grid, so this is the expensive path — 2 or 3 is the useful
+   * range, and the drift already recomputes on a 2-frame cadence for the same
+   * reason.
+   */
+  animate?: number;
   /** Per-instance hash offset. Same seed, same texture, every load. */
   seed?: number;
   /** Called when the stage changes, however it changed. */
@@ -191,6 +202,7 @@ export function mountField(canvas: HTMLCanvasElement, options: FieldOptions): Fi
     cycleOnClick = false,
     swing = false,
     ambient = true,
+    animate = 0,
     seed = 0,
     onStage,
   } = options;
@@ -351,10 +363,15 @@ export function mountField(canvas: HTMLCanvasElement, options: FieldOptions): Fi
       any = true;
     }
 
-    if (!rm && ambient) {
+    if (!rm && (ambient || animate)) {
       t += 0.006;
       frame++;
-      if (frame % 2 === 0) drift();
+      if (ambient && frame % 2 === 0) drift();
+      // An animated source owns `base`, so it must not fight the stage blend or
+      // the swing spring — both write the same buffer.
+      if (animate && blend >= 1 && !swing && frame % animate === 0) {
+        base = build(stageIndex, base);
+      }
       any = true;
     }
 

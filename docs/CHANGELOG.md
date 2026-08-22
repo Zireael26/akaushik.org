@@ -6,6 +6,30 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-08-22 — The hero is a network training on repeat. Four phases an epoch —
+  forward pass, loss, backward pass, settle — and the backward pass is
+  deliberately a different picture rather than the forward sweep mirrored: it
+  travels the other way, it emphasises the edges where the forward pass
+  emphasises the nodes, and it leaves the weights visibly changed behind it.
+  Weights come from the shared hash keyed by epoch, so the network learns the
+  same way on every load, and their magnitudes converge as the epoch count rises
+  before wrapping — which is what makes it read as training rather than as noise
+  being reshuffled. Epoch ticks along the bottom say it is a loop.
+
+  This needed a new `animate` option on the field engine: sources previously
+  rebuilt only on a stage change, so nothing could animate its own geometry off
+  the clock. It rebuilds every Nth frame and is off by default, because a
+  rebuild is a full offscreen redraw plus a `getImageData` over the whole grid.
+  It refuses to run alongside the swing spring — both own the same buffer.
+
+  Two things that had to be tuned by looking rather than by reasoning. The
+  engine's 8-unit glow, which gives the chunky hero silhouettes their bleed, is
+  eight *cells* at this size and welded every edge into its neighbours until the
+  network was one blob; the source drops it to 1.5. And dropping weak edges to
+  thin the graph left nodes floating unattached, so every node now keeps its
+  strongest incoming edge regardless of threshold — a disconnected node is not a
+  picture of a network. Hero cell size drops from 6.5 to 5 for the extra
+  resolution the subject needs.
 - 2026-08-22 — Added the Cloudflare Wallet link to the footer. The handle is a
   subdomain rather than a path: `cloudflare.pay/kau` and `cloudflare.pay/@kau`
   both return 404, and `kau.cloudflare.pay` returns 200. Verified before

@@ -1,27 +1,39 @@
 'use client';
 
 import { PixelField } from '@/components/pixel/PixelField';
-import { agentGraph, prompt, trellis, wordmark } from '@/lib/pixel/sources';
+import { neuralTraining } from '@/lib/pixel/neural';
+import { prompt, trellis, wordmark } from '@/lib/pixel/sources';
 
 /**
- * The hero field: four exhibits that cycle on click.
+ * The hero field.
  *
- * Now a thin arrangement of `PixelField` rather than its own engine — the
- * heatfield was the first field, and generalising it turned this file into a
- * list of sources.
+ * Exhibit 0 is a small network training on repeat — forward pass, loss,
+ * backward pass, weight update — and it is what the page shows by default. The
+ * other three cycle in on click.
  *
- * The triple-click secret entrance is gone. It opened a hidden wing that this
- * site does not have, so what shipped was a dead gesture: three clicks in the
- * middle of the hero that swallowed the exhibit cycle and fired an event with
- * nothing listening. Its only remaining trace is that the agent graph's root
- * node sits high and centred, which is where it belongs anyway.
+ * It replaces the static agent graph that was here: the graph said "this person
+ * works on agents" and then stopped, while this says the same thing and keeps
+ * saying it. The agent graph's swing is gone with it — a network mid-training
+ * should not also be swinging on a spring, and `animate` and `swing` both own
+ * `base`, so the engine refuses to run them together anyway.
+ *
+ * `animate: 2` rebuilds the source every second frame. That is the expensive
+ * path — a full offscreen redraw plus a getImageData over ~26k cells — so it is
+ * deliberately not the default for fields that do not need it.
  */
-const EXHIBITS = [agentGraph, prompt, trellis, wordmark('AK.')];
+const EXHIBITS = [neuralTraining, prompt, trellis, wordmark('AK.')];
 
 export function Heatfield() {
   return (
     <div className="px-heatfield">
-      <PixelField sources={EXHIBITS} preset="hero" interactive cycleOnClick swing />
+      <PixelField
+        sources={EXHIBITS}
+        preset="hero"
+        cellSize={5}
+        interactive
+        cycleOnClick
+        animate={2}
+      />
     </div>
   );
 }
