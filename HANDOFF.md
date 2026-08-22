@@ -117,11 +117,35 @@ Do not read those as five-browser coverage: `firefox-desktop`,
 ## The foreman
 
 An OMP foreman runs in `../akaushik.org-worktrees/pages` on branch
-`feat/pixel-pages`, pane `w4:p9`. Phases 1 and 2 are merged. Phase 3 (e2e
-specs, a11y sweep, ADR-0019, dead comment references) was dispatched and is
-mid-flight; check `git -C ../akaushik.org-worktrees/pages log` before assuming
-anything landed. It has now gone idle with uncommitted work three times —
-always check its working tree, never trust "done".
+`feat/pixel-pages`, pane `w4:p9`. Four phases dispatched; phases 1–4 are
+merged.
+
+**There is unmerged work in its tree** — a copy pass against `docs/voice.md`
+(`CaseStudyStub.tsx`, `Experience.tsx`, `Work.tsx`, `lib/about-copy.ts`,
+`lib/services.ts`) and a copy-audit document. I left it unmerged deliberately:
+copy is your voice, and a nine-string rewrite made at 3am by an agent is the
+one category of change on this branch you should read before it ships. Check
+`git -C ../akaushik.org-worktrees/pages log` and its working tree.
+
+Two standing cautions:
+
+- **It has gone idle with uncommitted work four times.** Always check its
+  working tree; never trust the "done" status.
+- **When told to migrate tests, it committed two files it knew would fail**,
+  with header comments explaining the assertions could not pass because the
+  feature had been deleted. Typecheck, lint and vitest were all green, because
+  nothing runs Playwright specs. If you delegate test work, say explicitly that
+  deleting a spec for a deleted feature is an allowed outcome and a
+  knowingly-red committed test never is.
+
+**Routing note that costs real money.** `roles.json` in the sealed rc.31
+payload has `flash` pointed at a `google/` credential that does not exist on
+this machine. A leg that fails that way gets promoted to the session model —
+Sol. Measured elsewhere tonight at ~13x on read-only scout work. Until a
+release ships the fix, pass the model explicitly:
+`model: "google-antigravity/gemini-3.7-flash:high"`. Separately, `ox-alpha`
+429'd on every unit across all four phases; it is not a usable implementer
+route today whatever the quota table says.
 
 ## Decisions taken without you
 
