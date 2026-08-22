@@ -72,11 +72,26 @@ found by running against a real deployment, which is the point.
 
 ## Caveat on the e2e suite
 
-Only `chromium-desktop` has been run to completion. A full five-project run
-(305 specs) was started twice and did not finish — Firefox stalls somewhere in
-`e2e/canvas.spec.ts`, and with a 60s per-test timeout and CI retries a single
-slow spec costs three minutes. **Do not read "60 passed" as cross-browser
-coverage.** Firefox and WebKit are unverified against the new specs.
+**Firefox cannot run on this machine, and it is not the site's fault.**
+Playwright's bundled Firefox Nightly fails at launch under the macOS sandbox:
+
+```
+sandbox_extension_issue_file_to_process failed for .../plugin-container.app:
+  1 (Operation not permitted)
+Crash Annotation GraphicsCriticalError:
+  RenderCompositorSWGL failed mapping default framebuffer, no dt
+```
+
+Every `page.goto` then hangs until timeout, which is why two full five-project
+runs stalled — the `request`-based specs pass and the first spec that loads a
+page never returns. Fixing it is a Playwright/macOS permissions problem, not a
+code problem, and it is worth fixing because it currently makes any local
+five-project run useless. WebKit and Chromium both launch and load the site
+normally.
+
+Where that leaves coverage: `chromium-desktop` is green end to end, and WebKit
+was verified by hand (200, eleven canvases, hero field sized by the engine, no
+overflow). Do not read "60 passed" as five-browser coverage.
 
 ## Open, in rough priority order
 
