@@ -37,6 +37,19 @@
    reader. Columns size themselves off the container so 53 weeks always span it. */
 .px-open-contrib {
   margin: 0 0 26px;
+  /* Fifty-three weekly columns have a hard floor: each cell is square with a
+     7px minimum, so the grid cannot compress below ~477px without the weeks
+     becoming too small to hover or read. On a 375px phone that dragged the
+     whole document sideways — measured 496px of scroll width against a 375px
+     viewport. The chart scrolls inside itself now instead; the page never
+     does. Shrinking the cells was the other option and it is the wrong one:
+     this chart is meant to be bigger than the sparkline it replaced, not
+     smaller than a phone. */
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  /* Room for the focus ring, which sits 6px outside the grid and would
+     otherwise be clipped by the scroll container. */
+  padding: 8px 0;
 }
 
 .px-contrib {
@@ -46,6 +59,9 @@
   gap: 2px;
   align-items: end;
   padding: 4px 0;
+  /* The floor above, stated. Wider containers still spread the columns to fill,
+     because the columns are 1fr. */
+  min-width: 480px;
 }
 
 .px-contrib:focus-visible {

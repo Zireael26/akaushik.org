@@ -6,6 +6,26 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-08-23 — The home page no longer scrolls sideways on a phone. Measured
+  496px of document width against a 375px viewport, and 500px against a 320px
+  one — a real defect nobody had looked for, because nothing had opened the
+  site at a phone width since the transplant began.
+
+  The cause is the contribution chart. Fifty-three weekly columns of square
+  cells with a 7px minimum give the grid a hard floor around 480px, and its
+  column is a flex item, which defaults to `min-width: auto` — "never narrower
+  than my content". So the column refused to shrink and took the document with
+  it. Two changes: the chart scrolls inside its own container, and the column
+  is allowed to narrow. An `overflow-x` on the chart alone does nothing while
+  an ancestor is the thing that will not shrink.
+
+  Shrinking the cells was the other option and it was the wrong one. This chart
+  replaced a sparkline precisely to be bigger and interrogable; cells small
+  enough to fit a 320px screen would be neither.
+
+  Verified at 320, 375 and 768 across the home, article and case-study routes:
+  no horizontal overflow anywhere.
+
 - 2026-08-23 — The site meets WCAG 2 AA now, and the e2e suite is green again.
   Both were found the same way: by running the specs against the deployed
   preview, which is the first time anything had.

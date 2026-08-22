@@ -61,6 +61,12 @@
 
 .px-split-body {
   flex: 2 1 460px;
+  /* A flex item defaults to `min-width: auto`, which means "never smaller than
+     my content". The contribution grid has a 480px floor, so without this the
+     column refuses to narrow on a phone and takes the document with it — the
+     `overflow-x: auto` on the chart itself cannot help while its ancestor is
+     the thing that will not shrink. */
+  min-width: 0;
 }
 
 .px-split-intro {
