@@ -6,6 +6,27 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-08-23 — The portrait reads as a person again. It was a lime slab with a
+  hole in the middle, and the cause was the photograph rather than the engine:
+  a face lit at a restaurant window, a lamp to the left, a lit street to the
+  right, and a black polo occupying the bottom third of the frame. Ramped
+  whole, the shirt is the largest single-tone region in the picture, so
+  `invert` handed it the loudest end of the palette while the face landed
+  mid-ramp and disappeared.
+
+  `fromImage` takes a `crop` now — a rectangle in 0..1 of the source, applied
+  before anything else. That matters more than any of the tone controls,
+  because the auto-contrast stretch is computed over whatever is in frame: a
+  face that occupies a third of a photograph is competing with the room and
+  loses. Cropped to head-and-shoulders at the canvas's own 3:4, the stretch runs
+  over skin and hair, `invert` is no longer needed, and the features resolve —
+  glasses, nose, beard, the line of the shoulder. Cell size drops to 2.1 for the
+  resolution a face needs, and the floor sits at 0.2, high enough to drop the
+  restaurant out and low enough to keep gradation inside the face.
+
+  The option is on the shared image source, not on the portrait, so every
+  image the pixel system converts gets it.
+
 - 2026-08-23 — The site runs on Cloudflare Workers. Three things had to change
   for that, and each was a runtime incompatibility rather than a preference.
 

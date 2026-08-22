@@ -103,10 +103,18 @@ export function About() {
             src="/images/about/abhishek.webp"
             alt="Portrait of Abhishek Kaushik"
             className="px-portrait-canvas"
-            invert
-            gamma={1.15}
-            floor={0.3}
-            cellSize={3.5}
+            // Head and shoulders, at the canvas's own 3:4. The full frame
+            // does not work here: it is a face lit at a restaurant window,
+            // with a lamp on the left, a lit street on the right, and a black
+            // polo occupying the bottom third. Ramped whole, the shirt is the
+            // largest single-tone region in the picture and takes the loudest
+            // end of the palette while the face lands mid-ramp — a lime slab
+            // with a hole where the person is. Cropped to the head, the
+            // stretch is computed over skin and hair and the features read.
+            crop={{ x: 0.27, y: 0.1, w: 0.4, h: 0.45 }}
+            gamma={1}
+            floor={0.2}
+            cellSize={2.1}
           />
         </div>
         <div className="px-portrait-cap">Abhishek Kaushik · AI engineer</div>

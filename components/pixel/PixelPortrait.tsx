@@ -21,6 +21,11 @@ export type PixelPortraitProps = {
    */
   invert?: boolean;
   cellSize?: number;
+  /**
+   * Which rectangle of the source to use, in 0..1. Almost every real
+   * photograph needs one — see `fromImage`.
+   */
+  crop?: { x: number; y: number; w: number; h: number };
 };
 
 /**
@@ -54,6 +59,7 @@ export function PixelPortrait({
   gamma = 0.78,
   invert = false,
   cellSize = 4,
+  crop,
 }: PixelPortraitProps) {
   const ref = useRef<HTMLCanvasElement>(null);
   const [failed, setFailed] = useState(false);
@@ -70,7 +76,7 @@ export function PixelPortrait({
       .then((img) => {
         if (cancelled || !ref.current) return;
         handle = mountField(ref.current, {
-          sources: [fromImage(img, { floor, gamma, invert, fit: 'cover' })],
+          sources: [fromImage(img, { floor, gamma, invert, crop, fit: 'cover' })],
           preset: 'tile',
           cellSize,
           interactive: true,

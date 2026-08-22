@@ -367,6 +367,21 @@ export type ImageSourceOptions = {
   /** 'cover' fills the grid and crops; 'contain' fits and letterboxes. */
   fit?: 'cover' | 'contain';
   /**
+   * Take only this rectangle of the source, in 0..1 of its own width and
+   * height, before anything else happens.
+   *
+   * This is the difference between a portrait that reads and one that does not.
+   * The ramp is driven by the luminance range of whatever is in frame, so a
+   * face that occupies a third of a photograph competes with everything around
+   * it — a lamp, a window, a black shirt — and loses. Cropping first means the
+   * stretch is computed over the subject rather than over the room, and the
+   * five colours land on the features instead of on the furniture.
+   *
+   * Match the crop's aspect to the canvas: `fit` still applies afterwards, so a
+   * mismatched crop just gets cropped again.
+   */
+  crop?: { x: number; y: number; w: number; h: number };
+  /**
    * Stretch the image's own luminance range across the full ramp before
    * mapping. Without it a photograph with a narrow range — most photographs —
    * lands in the middle of the five-colour ramp everywhere at once and renders
@@ -390,11 +405,19 @@ export type ImageSourceOptions = {
  */
 export function fromImage(image: CanvasImageSource, opts: ImageSourceOptions = {}): FieldSource {
   const { floor = 0.06, gamma = 0.85, invert = false, fit = 'cover', autoContrast = true } = opts;
+  const crop = opts.crop;
 
   return (o, { cols, rows }) => {
-    const iw = 'naturalWidth' in image ? image.naturalWidth : (image as { width: number }).width;
-    const ih = 'naturalHeight' in image ? image.naturalHeight : (image as { height: number }).height;
-    if (!iw || !ih) return;
+    const nw = 'naturalWidth' in image ? image.naturalWidth : (image as { width: number }).width;
+    const nh = 'naturalHeight' in image ? image.naturalHeight : (image as { height: number }).height;
+    if (!nw || !nh) return;
+
+    // Source rectangle: the whole image, or the requested crop of it.
+    const sx = crop ? crop.x * nw : 0;
+    const sy = crop ? crop.y * nh : 0;
+    const iw = crop ? crop.w * nw : nw;
+    const ih = crop ? crop.h * nh : nh;
+    if (iw <= 0 || ih <= 0) return;
 
     const scale =
       fit === 'cover' ? Math.max(cols / iw, rows / ih) : Math.min(cols / iw, rows / ih);
@@ -404,7 +427,7 @@ export function fromImage(image: CanvasImageSource, opts: ImageSourceOptions = {
     // The glow that helps drawn shapes bleed would smear a photograph.
     o.save();
     o.shadowBlur = 0;
-    o.drawImage(image, (cols - dw) / 2, (rows - dh) / 2, dw, dh);
+    o.drawImage(image, sx, sy, iw, ih, (cols - dw) / 2, (rows - dh) / 2, dw, dh);
     o.restore();
 
     const frame = o.getImageData(0, 0, cols, rows);
