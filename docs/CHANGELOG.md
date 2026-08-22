@@ -8,6 +8,7 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 - 2026-08-23 — Rebuilt the writing index and all published article routes in the pixel language, with grounded short answers and FAQs, stable Article/FAQ structured data, and read-next recommendations that never expose unlisted posts.
 - 2026-08-23 — Rebuilt `/api/docs` as a ruled pixel reference while preserving the OpenAPI and MCP response contracts, including a deterministic client-island field and accessible, case-faithful contract labels.
+- 2026-08-23 — Added custom 404 and error routes with deterministic broken/overdriven graph fields, legal Server/Client boundaries, retry and home actions, and token-backed status styling.
 - 2026-08-22 — Generalised the hero heatfield into a reusable pixel field, and
   made it the engine behind every piece of live art on the site. `lib/pixel/field.ts`
   takes a list of sources — silhouettes drawn into an offscreen buffer at cell

@@ -1,0 +1,119 @@
+/* status — 404 and error pages. Owned by R3.
+   Both routes render a hero-scale pixel field plus a short headed message
+   and a way back. Nothing here invents palette or type — every colour and
+   face comes from app/styles/tokens.css, and the field's own palette lives
+   in lib/pixel.ts. The layout mirrors the shared .px-section rhythm without
+   pulling in the full section chrome, because a 404 should not pretend to be
+   a regular section.
+
+   Imported from app/layout.tsx alongside the other section sheets. The
+   foreman owns the final root import in the fan-out, so this file lands
+   unimported until the layout pass. No hard-coded hex, per spec 004. */
+
+.px-status {
+  max-width: var(--wrap-max);
+  margin: 0 auto;
+  padding: clamp(28px, 5vh, 64px) var(--wrap-pad) clamp(56px, 9vh, 118px);
+}
+
+/* Hero-scale field: same rect the home hero reserves (clamp 340, 64vh, 700),
+   so the weather reads at the same density. The canvas paints its own
+   background via lib/pixel.ts canvasBg(dark) — the stylesheet only reserves
+   the rect the engine measures. */
+.px-status-field {
+  display: block;
+  width: 100%;
+  height: clamp(340px, 64vh, 700px);
+}
+
+/* Decorative canvases never take focus; the engine owns the loop. */
+.px-status-field:focus {
+  outline: none;
+}
+
+.px-status-body {
+  max-width: 560px;
+  margin: clamp(28px, 4vh, 44px) auto 0;
+  text-align: center;
+}
+
+/* Head is the shared SectionHead, so no local title rules. Spacing only. */
+.px-status-body .px-head--block {
+  margin-bottom: 0;
+}
+
+.px-status-copy {
+  margin: 18px 0 0;
+  font-size: 14.5px;
+  line-height: 1.75;
+  color: var(--ink70);
+}
+
+.px-status-copy a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
+}
+
+.px-status-copy a:hover {
+  color: var(--ink);
+  text-decoration-color: var(--px-cobalt);
+}
+
+.px-status-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 28px;
+}
+
+/* Primary way back: panel field with pixel notches, cobalt on hover.
+   Mirrors .px-cta in footer.css but centered and without the footer-only
+   overrides. Uses tokens, never a hex. */
+.px-status-link,
+.px-status-button {
+  display: inline-block;
+  padding: 14px 28px;
+  background: var(--panel);
+  color: var(--panelInk);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1;
+  text-decoration: none;
+  border: 0;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+.px-status-link:hover,
+.px-status-button:hover {
+  background: var(--px-cobalt);
+  color: var(--panelInk);
+}
+
+[data-mode='dark'] .px-status-link:hover,
+[data-mode='dark'] .px-status-button:hover {
+  color: var(--panel);
+}
+.px-status-link:focus-visible,
+.px-status-button:focus-visible {
+  outline: 2px solid var(--px-cobalt);
+  outline-offset: 3px;
+}
+
+/* Reduced motion: keep colour, drop movement. The field engine already
+   no-ops its ambient drift under prefers-reduced-motion, and the global
+   `* { transition: none }` in globals.css handles most motion. This
+   explicitly covers the button transition that global misses due to
+   specificity. */
+@media (prefers-reduced-motion: reduce) {
+  .px-status-link,
+  .px-status-button {
+    transition: none;
+  }
+}
