@@ -3,6 +3,7 @@ import { MDXRemote } from 'next-mdx-remote/rsc';
 import type { Post, CaseStudyFrontmatter } from '@/lib/content';
 import { MDX_OPTIONS } from '@/lib/mdx-options';
 import { HyperframesLoop } from '@/components/media/hyperframes-loop';
+import { RuledRow } from '@/components/pixel/RuledRow';
 import { Reel, type ReelSlug } from './reels';
 
 export function CaseStudyPage({
@@ -14,47 +15,34 @@ export function CaseStudyPage({
 }) {
   const fm = post.frontmatter as CaseStudyFrontmatter;
   return (
-    <main id="top" className="work-detail">
-      <Link href="/#work" className="work-stub-back">
+    <main id="top" className="px-work-detail">
+      <Link href="/#work" className="px-work-back">
         ← Back to selected work
       </Link>
-      <header className="work-detail-head">
-        <div className="work-stub-meta">
-          {fm.index ? <span className="case-index">{fm.index}</span> : null}
-          {fm.tag ? <span className="case-tag">{fm.tag}</span> : null}
-          {fm.year ? <span className="case-year">{fm.year}</span> : null}
+      <header className="px-work-detail-head">
+        <div className="px-work-detail-meta">
+          {fm.index ? <span className="px-work-detail-index">{fm.index}</span> : null}
+          {fm.tag ? <span className="px-work-detail-tag">{fm.tag}</span> : null}
+          {fm.year ? <span className="px-work-detail-year">{fm.year}</span> : null}
         </div>
-        {fm.role || fm.stack || fm.evidenceOf ? (
-          <dl className="case-spec">
-            {fm.role ? (
-              <div>
-                <dt>Role</dt>
-                <dd>{fm.role}</dd>
-              </div>
-            ) : null}
-            {fm.stack?.length ? (
-              <div>
-                <dt>Stack</dt>
-                <dd>{fm.stack.join(' · ')}</dd>
-              </div>
-            ) : null}
-            {fm.evidenceOf ? (
-              <div>
-                <dt>Evidence of</dt>
-                <dd>{fm.evidenceOf}</dd>
-              </div>
-            ) : null}
-          </dl>
-        ) : null}
+        <div className="px-work-detail-spec">
+          {fm.role ? <RuledRow tag="Role">{fm.role}</RuledRow> : null}
+          {fm.stack?.length ? <RuledRow tag="Stack">{fm.stack.join(' · ')}</RuledRow> : null}
+          {fm.evidenceOf ? (
+            <RuledRow tag="Evidence" last>
+              {fm.evidenceOf}
+            </RuledRow>
+          ) : null}
+        </div>
       </header>
       {slug === 'neev' ? (
-        <HyperframesLoop kind="work-inline" slug="neev" className="work-inline-loop" />
+        <HyperframesLoop kind="work-inline" slug="neev" className="px-work-inline-loop" />
       ) : slug ? (
-        <figure className="work-detail-reel work-detail-reel--card" aria-hidden="true">
+        <figure className="px-work-detail-reel" aria-hidden="true">
           <Reel slug={slug} variant="card" />
         </figure>
       ) : null}
-      <article className="work-detail-body">
+      <article className="px-work-body">
         <MDXRemote source={post.content} options={MDX_OPTIONS} />
       </article>
     </main>

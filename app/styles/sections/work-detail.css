@@ -1,0 +1,493 @@
+/* work-detail — index and case-study detail pages.
+   Owned by U1 (app/work/**, components/work/**). Ported to the pixel
+   language from the parchment template (recoverable from git history on
+   origin/main before feat/pixel-transplant). The template rendered
+   `.work-index`, `.work-detail`, `.work-stub` and friends over the editorial
+   warm palette (`--accent`, `--ink-05` etc from _reference/portfolio). That
+   palette is gone. Every colour here goes through app/styles/tokens.css —
+   no hard-coded hex, per spec 004's constraint.
+
+   Two deliberate departures from the gaurijha.com reference (design-refs/design.md
+   and public-site-v1):
+
+   1. gaurijha.com has no `/work` at all — the closest analogue is the
+      `gj-article` detail (writing/[slug].astro) and the `gj-row` index. The
+      index therefore borrows `gj-row`'s measurements (92px mono date col →
+      52px mono index col, title+dek main, coloured tag) and the detail borrows
+      `gj-article`'s 70ch prose, H1/dek/byline rhythm and ruled-spec stack.
+      Work-specific facts stay in frontmatter, never in copy.
+
+   2. The MDX body is styled here, not in a separate article.css. Case-study
+      MDX ships headings, blockquotes, lists, inline code and fenced code
+      through next-mdx-remote (remarkGfm, rehypeSlug, rehypePrettyCode with
+      shiki). Those selectors live on `.px-work-body` so a content edit cannot
+      leak unstyled markup. The 70ch `max-width` matches `design.md` § Blog/SEO
+      and `app/styles/tokens.css` --prose-max.
+
+   Imported from app/layout.tsx alongside the other section files, not chained
+   through globals.css. The foreman owns the final root import, so this file
+   is not imported elsewhere. */
+
+/* ---------- index shell ---------- */
+.px-work-index {
+  max-width: var(--wrap-max);
+  margin: 0 auto;
+  padding: clamp(32px, 6vh, 72px) var(--wrap-pad) clamp(56px, 9vh, 110px);
+}
+
+.px-work-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink60);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+  text-decoration-color: transparent;
+}
+
+.px-work-back:hover {
+  color: var(--ink);
+  text-decoration-color: var(--px-cobalt);
+}
+
+.px-work-back:focus-visible {
+  outline: 2px solid var(--px-cobalt);
+  outline-offset: 4px;
+}
+
+.px-work-index .px-head-title {
+  max-width: 22ch;
+  text-wrap: pretty;
+}
+
+.px-work-index .px-head-label,
+.px-work-index .px-row-tag,
+.px-work-detail .px-row-tag {
+  color: var(--ink60);
+}
+
+.px-work-index-lede {
+  max-width: 58ch;
+  margin: 16px 0 0;
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--ink70);
+  text-wrap: pretty;
+}
+
+/* ---------- index list ---------- */
+.px-work-index-list {
+  margin: clamp(28px, 4vh, 44px) 0 0;
+  list-style: none;
+  padding: 0;
+}
+
+.px-work-index-item {
+  padding: 22px 0;
+  border-top: 1px solid var(--line);
+}
+
+.px-work-index-item.is-last {
+  border-bottom: 1px solid var(--line);
+}
+
+/* The MatterRow inside already carries the shared hover-indent contract. The
+   local rules below keep glyphs on accessible ink while the tag underline
+   carries the rotating pixel accent. The li itself is just the ruled-row
+   container, so remove the inner MatterRow border and avoid a second indent. */
+.px-work-index-item .px-matter {
+  border-bottom: none;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.px-work-index-item .px-matter:hover .px-matter-title {
+  color: var(--ink);
+}
+
+.px-work-index-item .px-matter-tag {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+.px-work-index-item .px-matter-tag.is-cobalt {
+  text-decoration-color: var(--px-cobalt);
+}
+
+.px-work-index-item .px-matter-tag.is-amber {
+  text-decoration-color: var(--px-amber);
+}
+
+.px-work-index-item .px-matter-tag.is-red {
+  text-decoration-color: var(--px-red);
+}
+
+.px-work-index-item .px-matter-tag.is-ink {
+  text-decoration-color: var(--ink);
+}
+
+.px-work-index-item-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  align-items: baseline;
+}
+
+.px-work-index-index {
+  flex: 0 0 52px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--ink60);
+}
+
+.px-work-index-main {
+  flex: 1 1 380px;
+  min-width: min(100%, 260px);
+}
+
+.px-work-index-dek {
+  display: block;
+  margin-top: 6px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink60);
+}
+
+.px-work-index-spec {
+  margin-top: 16px;
+}
+
+.px-work-index-spec .px-row {
+  padding: 10px 0;
+}
+
+.px-work-index-spec .px-row-body {
+  font-size: 13.5px;
+}
+
+.px-work-index-year {
+  margin-top: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--ink60);
+}
+
+/* ---------- detail shell ---------- */
+.px-work-detail {
+  max-width: var(--wrap-max);
+  margin: 0 auto;
+  padding: clamp(32px, 6vh, 72px) var(--wrap-pad) clamp(56px, 9vh, 110px);
+}
+
+.px-work-detail-head {
+  margin-top: clamp(24px, 4vh, 36px);
+  padding-bottom: clamp(18px, 3vh, 26px);
+  border-bottom: 1px solid var(--line);
+}
+
+.px-work-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink60);
+}
+
+.px-work-detail-index {
+  color: var(--ink);
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--px-cobalt);
+}
+
+.px-work-detail-tag {
+  color: var(--ink60);
+}
+
+.px-work-detail-year {
+  color: var(--ink60);
+}
+
+.px-work-detail-spec {
+  margin-top: 18px;
+}
+
+.px-work-detail-spec .px-row {
+  padding: 12px 0;
+}
+
+.px-work-detail-spec .px-row-body {
+  font-size: 14px;
+}
+
+/* ---------- reels / loops ---------- */
+.px-work-detail-reel,
+.px-work-inline-loop {
+  position: relative;
+  margin: clamp(24px, 4vh, 36px) 0 0;
+}
+
+.px-work-detail-reel {
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.px-work-inline-loop {
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--bg);
+}
+
+/* The SVG establishes the aspect ratio. The video is absolutely positioned
+   over it, so the two are exactly overlaid rather than stacked. When motion
+   is disabled, MotionVideo renders the video without a <source> (no MP4
+   bytes), so the SVG remains the visible floor. */
+.px-work-detail-reel svg,
+.px-work-inline-loop svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.px-work-detail-reel video,
+.px-work-inline-loop video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.px-reel-fallback {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--bg);
+}
+
+html[data-motion='off'] .px-work-detail-reel video,
+html[data-motion='off'] .px-work-inline-loop video {
+  display: none;
+}
+
+/* ---------- MDX prose ---------- */
+.px-work-body {
+  max-width: var(--prose-max);
+  margin-top: clamp(28px, 4vh, 40px);
+}
+
+.px-work-body > :first-child {
+  margin-top: 0;
+}
+
+/* H1 comes from the MDX body itself (`# Neev` → <h1>). The detail header
+   above it is meta, not a title, so there is no duplicated H1. */
+.px-work-body h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(30px, 4vw, 54px);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  text-wrap: pretty;
+  color: var(--ink);
+}
+
+/* Dek is the `> ` blockquote directly under the H1 in every case-study MDX,
+   mirroring design.md's writing dek. Style it as the lede, not a quote. */
+.px-work-body h1 + blockquote {
+  margin: clamp(16px, 2.5vh, 24px) 0 0;
+  padding: 0;
+  border: 0;
+  font-size: clamp(16px, 1.5vw, 19px);
+  line-height: 1.65;
+  color: var(--ink70);
+  text-wrap: pretty;
+}
+
+.px-work-body h1 + blockquote p {
+  margin: 0;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+
+.px-work-body h2 {
+  margin: clamp(32px, 5vh, 48px) 0 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(22px, 2.4vw, 30px);
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+.px-work-body h3 {
+  margin: 28px 0 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(17px, 1.8vw, 21px);
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.px-work-body p {
+  margin: 14px 0 0;
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--ink70);
+}
+
+.px-work-body a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--px-cobalt);
+  transition: text-decoration-thickness 0.18s ease;
+}
+
+.px-work-body a:hover {
+  color: var(--ink);
+  text-decoration-thickness: 2px;
+}
+
+.px-work-body a:focus-visible {
+  outline: 2px solid var(--px-cobalt);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.px-work-body strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.px-work-body em {
+  font-style: italic;
+}
+
+.px-work-body ul,
+.px-work-body ol {
+  margin: 14px 0 0;
+  padding-left: 1.2em;
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--ink70);
+}
+
+.px-work-body li + li {
+  margin-top: 8px;
+}
+
+.px-work-body li::marker {
+  color: var(--ink60);
+}
+
+.px-work-body blockquote {
+  margin: 18px 0 0;
+  padding: 12px 18px;
+  border-left: 2px solid var(--line);
+  background: color-mix(in oklab, var(--line) 28%, transparent);
+  color: var(--ink60);
+}
+
+.px-work-body blockquote p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.px-work-body hr {
+  margin: clamp(28px, 5vh, 40px) 0 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+.px-work-body img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 20px 0 0;
+  border: 1px solid var(--line);
+}
+
+.px-work-body pre {
+  margin: 18px 0 0;
+  padding: 16px 18px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.7;
+  background: color-mix(in oklab, var(--line) 40%, transparent);
+  border: 1px solid var(--line);
+}
+
+.px-work-body code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+.px-work-body :not(pre) > code {
+  padding: 1px 5px;
+  background: color-mix(in oklab, var(--line) 55%, transparent);
+  border-radius: 4px;
+  color: var(--ink);
+}
+
+.px-work-body table {
+  width: 100%;
+  margin: 18px 0 0;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.px-work-body th,
+.px-work-body td {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  text-align: left;
+}
+
+.px-work-body th {
+  font-weight: 600;
+  color: var(--ink);
+  background: color-mix(in oklab, var(--line) 35%, transparent);
+}
+/* ---------- reduced motion & focus ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .px-work-index-item .px-matter,
+  .px-work-index-item .px-matter-title,
+  .px-work-body a {
+    transition: none;
+  }
+
+  .px-work-index-item .px-matter:hover {
+    padding-left: 0;
+  }
+
+  .px-work-detail-reel video,
+  .px-work-inline-loop video {
+    display: none;
+  }
+}
