@@ -7,6 +7,7 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 ### Changed
 
 - 2026-08-23 — Updated Playwright locators for the pixel routes without weakening retained contracts, kept agent-readiness checks mechanism-neutral, and added real 404 coverage plus an explicit blocked error-boundary case.
+- 2026-08-23 — Recorded ADR-0019: Cloudflare Workers runtime code cannot depend on filesystem reads, runtime template compilation, dynamic code generation, or byte-instantiated WASM; those operations belong in build steps.
 - 2026-08-23 — The site runs on Cloudflare Workers. Three things had to change
   for that, and each was a runtime incompatibility rather than a preference.
 
