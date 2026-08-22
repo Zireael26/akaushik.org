@@ -6,6 +6,15 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-08-23 — Amended ADR-0018 with what the preview spike actually found.
+  Two of its claims were wrong: the deploy was never blocked on an
+  operator-minted API token (Wrangler was already OAuth-authenticated; the
+  zone-scoped `CLOUDFLARE_API_TOKEN` in the shell just shadows it), and edge
+  middleware does not survive the move to Next 16 — which was the assumption
+  the whole retrofit-over-rewrite decision rested on. The decision still holds,
+  and the addendum says why, but it also says that the cost was underestimated
+  because provider feature tables were read rather than probed.
+
 - 2026-08-23 — The portrait reads as a person again. It was a lime slab with a
   hole in the middle, and the cause was the photograph rather than the engine:
   a face lit at a restaurant window, a lamp to the left, a lit street to the

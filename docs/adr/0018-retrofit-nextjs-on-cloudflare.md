@@ -74,3 +74,44 @@ Rejected for the same reason as a full rewrite, plus an additional seam. Splitti
 ## Status
 
 Accepted 2026-08-22. Supersedes only the framework selection in ADR-0001. The P1 Worker spike (preview deploy, `next/og`, nonce, and negotiation verification) and the final DNS cutover are tracked in `specs/004-pixel-transplant/tasks.md` (T04–T08, T34) and are not claimed here.
+
+---
+
+## Addendum — what the P1 spike actually found (2026-08-23)
+
+The spike ran and the site is deployed to a preview Worker at
+`beta.akaushik.org`. The decision above stands — retrofitting was still much
+cheaper than an Astro rewrite — but two things it asserted were wrong, and the
+record should say so plainly.
+
+**The API-token blocker did not exist.** The text above says the spike is
+"blocked pending an operator-minted Workers-scoped API token". Wrangler was
+already authenticated by OAuth for this account with write scopes. The
+zone-scoped `CLOUDFLARE_API_TOKEN` in the shell shadows that OAuth session, so
+every Wrangler call needs `env -u CLOUDFLARE_API_TOKEN`; that is the whole
+obstacle, and it is a shell detail rather than a provisioning one.
+
+**Edge middleware does not carry over, and that was the load-bearing
+assumption.** The decision rests on `proxy.ts` surviving the move because
+"OpenNext supports edge middleware, including the Turbopack builds". Next 16
+renamed `middleware.ts` to `proxy.ts` and removed the edge runtime for it in
+the same move — `runtime: 'edge'` is rejected with "Proxy does not support Edge
+runtime" — while `@opennextjs/cloudflare` supports edge middleware only and
+aborts with "Node.js middleware is not currently supported". Its own feature
+table lists Node middleware as unsupported. There is no version pair that
+satisfies both; 1.20.2 was the newest adapter at the time.
+
+The contract survived anyway, which is why the decision holds: it moved into
+`lib/agent-proxy.ts` as pure functions, with `proxy.ts` and `worker/index.ts`
+as thin adapters, and gained 57 unit tests it never had. But the honest reading
+is that the retrofit cost more than this ADR predicted, and the reason is that
+provider feature tables were treated as settled rather than probed. Two further
+runtime refusals surfaced the same way and are recorded in ADR-0019: no
+filesystem, and no runtime code generation (`new Function`, or WebAssembly
+instantiated from bytes).
+
+T04–T08 are satisfied by the preview: `next/og` renders — all twenty cards are
+prerendered at build time and served from the asset store, so satori never runs
+inside the Worker — the nonce CSP reaches every script tag, and both
+negotiation patterns answer correctly on the deployed host. T34, the DNS
+cutover, is untouched: `akaushik.org` still serves from Vercel.
