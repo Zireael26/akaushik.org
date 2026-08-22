@@ -70,9 +70,9 @@ mandatory-pipeline gate's remediation path. Each maps to a success criterion.
 
 - [ ] T29 Rewrite the 9 Playwright specs against the new markup → SC3, SC4, SC7, SC8 *(dispatched; must assert the response contract, never the mechanism, now that there are two proxy adapters)*
 - [x] T30 Sweep dead code: `Contact.tsx`, `Wanderer`, `AgentGraph`, `three`, `ThemeToggle` → SC9 — a follow-up pass on stale *comment* references to those files is dispatched
-- [ ] T31 Lighthouse against `lighthouserc.yml` and `lighthouserc.mobile.yml` → SC9
-- [ ] T32 `isitagentready.com` scan of the preview, reconciled with `docs/AGENT_READINESS.md` → SC3
-- [ ] T33 Link-integrity sweep over every pre-existing URL → SC4
+- [~] T31 Lighthouse against `lighthouserc.yml` and `lighthouserc.mobile.yml` → SC9 — Lighthouse itself is CI-only and not installed locally, so it has **not** run. Core Web Vitals were measured directly against the preview instead, which is a different and weaker check: TTFB 147–679 ms (the 679 is a cold isolate on `/`; warm routes are 147–246 ms), LCP 448–1180 ms, CLS 0.000–0.002, 101–285 KB over 25–27 requests. The Lighthouse budgets still need a real run.
+- [~] T32 `isitagentready.com` scan of the preview, reconciled with `docs/AGENT_READINESS.md` → SC3 — the external scan cannot run against a `noindex` preview, so it is **not** done. The contract itself was verified by hand on the deployed host: all six discovery `Link` rels present, `/.well-known/api-catalog`, `/.well-known/mcp.json`, `/.well-known/agent-skills/index.json`, `/llms.txt`, `/llms-full.txt` and `/api/openapi.json` all 200 with correct content types, `POST /api/mcp` returns a real `tools/list`, and both Markdown negotiation patterns answer. Run the scan after cutover.
+- [x] T33 Link-integrity sweep over every pre-existing URL → SC4 — 46 unique URLs across `/`, `/work`, `/writing`, `/api/docs` and the sitemap. Found four dead GitHub links (private repositories, 404 for every reader) and fixed them: private repos are now named, not linked. LinkedIn answers 999 to automated requests, which is its anti-bot response and not a broken link.
 - [ ] T34 DNS cutover; pause the Vercel project for 14 days → SC10
 
 ---

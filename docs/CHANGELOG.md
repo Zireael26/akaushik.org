@@ -6,6 +6,17 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-08-23 — Measured the preview rather than assuming it. Core Web Vitals
+  from the deployed Worker: TTFB 147–679 ms — the 679 is a cold isolate on the
+  home route, warm routes sit at 147–246 ms — LCP 448–1180 ms, CLS 0.000–0.002,
+  101–285 KB over 25–27 requests. Some of that is the platform move paying for
+  itself: no filesystem read, no MDX compile and no syntax highlighting happen
+  per request any more, because none of them can.
+
+  This is **not** a Lighthouse run. Lighthouse is CI-only here and is not
+  installed locally, so `lighthouserc.yml` and `lighthouserc.mobile.yml` remain
+  unchecked; direct vitals are a weaker signal than the budgets they encode.
+
 - 2026-08-23 — Private repositories are named, not linked. A link-integrity
   sweep of the preview deployment found four dead links on the home page:
   `msme-neev/neev`, `vericite-ai/vericite`, `curat-money/curat` and
