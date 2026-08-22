@@ -80,11 +80,38 @@ function rewritePatternA(pathname: string): string | null {
   return `${pathname}/md`;
 }
 
+/**
+ * Any host that is not the canonical one is a preview and must never be
+ * indexed.
+ *
+ * A preview deployment serving the same content as production is duplicate
+ * content: it competes with the real site in search, and the damage outlives
+ * the preview because a de-indexing takes far longer than an indexing. The
+ * canonical tags already point at production, which is necessary but not
+ * sufficient — a crawler still has to fetch and interpret the page to see
+ * them. `X-Robots-Tag` is refused at the header, before any of that.
+ *
+ * Derived from the request host rather than an env var on purpose: an env var
+ * is a thing someone can forget to set on a new preview, and the failure is
+ * silent and expensive. The host cannot be forgotten.
+ */
+function isPreviewHost(request: NextRequest): boolean {
+  const host = request.headers.get('host')?.toLowerCase() ?? '';
+  if (!host) return false;
+  const bare = host.replace(/:\d+$/, '');
+  if (bare === 'localhost' || bare.endsWith('.localhost') || bare === '127.0.0.1') return false;
+  return bare !== 'akaushik.org' && bare !== 'www.akaushik.org';
+}
+
 function buildResponseHeaders(
   pathname: string,
   productionSecurityHeaders: Record<string, string>,
+  preview: boolean,
 ): Headers {
   const headers = new Headers();
+  if (preview) {
+    headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+  }
   headers.set('Link', AGENT_DISCOVERY_LINK_HEADER);
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
@@ -113,6 +140,7 @@ function applyHeaders(
   response: NextResponse,
   pathname: string,
   productionSecurityHeaders: Record<string, string>,
+  preview: boolean,
   markdownCanonicalPath?: string,
 ): NextResponse {
   // A rewrite response is finalized before the destination route handler runs,
@@ -125,7 +153,7 @@ function applyHeaders(
       `<https://akaushik.org${markdownCanonicalPath}>; rel="canonical"`,
     );
   }
-  const defaults = buildResponseHeaders(pathname, productionSecurityHeaders);
+  const defaults = buildResponseHeaders(pathname, productionSecurityHeaders, preview);
   defaults.forEach((value, key) => {
     // Do not clobber headers the route handler has already set (e.g. the
     // `/md` handlers set their own Cache-Control + canonical Link). But the
@@ -148,12 +176,15 @@ export function proxy(request: NextRequest) {
   const nonce = btoa(crypto.randomUUID());
   const productionSecurityHeaders = securityHeaders(nonce);
 
+  const preview = isPreviewHost(request);
+
   const patternB = rewritePatternB(pathname);
   if (patternB) {
     return applyHeaders(
       NextResponse.rewrite(new URL(patternB, request.url)),
       pathname,
       productionSecurityHeaders,
+      preview,
       pathname.slice(0, -'.md'.length),
     );
   }
@@ -165,6 +196,7 @@ export function proxy(request: NextRequest) {
         NextResponse.rewrite(new URL(patternA, request.url)),
         pathname,
         productionSecurityHeaders,
+        preview,
         pathname === '/' || pathname === '' ? undefined : pathname,
       );
     }
@@ -172,7 +204,7 @@ export function proxy(request: NextRequest) {
 
   const contentSecurityPolicy = productionSecurityHeaders['content-security-policy'];
   if (!contentSecurityPolicy) {
-    return applyHeaders(NextResponse.next(), pathname, productionSecurityHeaders);
+    return applyHeaders(NextResponse.next(), pathname, productionSecurityHeaders, preview);
   }
 
   const requestHeaders = new Headers(request.headers);
@@ -183,6 +215,7 @@ export function proxy(request: NextRequest) {
     NextResponse.next({ request: { headers: requestHeaders } }),
     pathname,
     productionSecurityHeaders,
+    preview,
   );
 }
 
