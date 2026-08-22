@@ -7,6 +7,19 @@ import { CANONICAL_ORIGIN } from '@/lib/canonical';
 import { JsonLdScript } from '@/components/seo/JsonLdScript';
 import { siteGraph, jsonLdString } from '@/lib/structured-data';
 import './globals.css';
+// Section styles, one file per section. Order matters: _shared defines the
+// primitives the rest build on. Imported here rather than @import-chained from
+// globals.css, which silently dropped everything past the first few files.
+import './styles/sections/_shared.css';
+import './styles/sections/header.css';
+import './styles/sections/profile.css';
+import './styles/sections/method.css';
+import './styles/sections/experience.css';
+import './styles/sections/work.css';
+import './styles/sections/services.css';
+import './styles/sections/writing.css';
+import './styles/sections/open.css';
+import './styles/sections/footer.css';
 
 // Cloudflare Web Analytics beacon — cookieless, no consent banner needed
 // (per memory: Cloudflare analytics, not @vercel/analytics). Token read

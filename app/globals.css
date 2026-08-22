@@ -25,19 +25,11 @@
 @import './styles/fonts.css';
 @import './styles/tokens.css';
 
-/* Section styles. One file per section, each owned by its component, so that
-   rebuilding a section is a two-file change and two sections never contend for
-   the same stylesheet. _shared carries the primitives they all build on. */
-@import './styles/sections/_shared.css';
-@import './styles/sections/header.css';
-@import './styles/sections/profile.css';
-@import './styles/sections/method.css';
-@import './styles/sections/experience.css';
-@import './styles/sections/work.css';
-@import './styles/sections/services.css';
-@import './styles/sections/writing.css';
-@import './styles/sections/open.css';
-@import './styles/sections/footer.css';
+/* Section styles are imported from app/layout.tsx, not chained here.
+   A 12-deep @import chain silently lost everything after _shared.css in the
+   Turbopack build — 20 KB of section CSS on disk, ~7.5 KB served, with the cut
+   falling exactly at the first import past _shared. Importing each file from
+   the layout is the idiomatic Next path and removes the failure mode. */
 
 /* ---------- reset + base ---------- */
 *,

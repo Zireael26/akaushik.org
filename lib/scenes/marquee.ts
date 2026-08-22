@@ -1,5 +1,7 @@
 /**
- * The footer marquee — "see you in court · " sampled from type into pixel cells.
+ * The footer marquee — "it has to work on a tuesday · " sampled from type into
+ * pixel cells. The phrase is his own, lifted from the Services copy; gaurijha's
+ * "see you in court" was a litigator's sign-off.
  *
  * Ported from gaurijha.com's src/scripts/marquee.ts (itself from _mkText/_drawMq
  * in the design-refs prototype). The glyphs are rasterised once from Cabinet
@@ -20,7 +22,7 @@
 import { PALETTE, h, navy, prefersReducedMotion } from '../pixel';
 import { isDark, onThemeChange } from '../pixel-theme';
 
-const TEXT = 'see you in court · ';
+const TEXT = 'it has to work on a tuesday · ';
 const FONT = '500 16px "Cabinet Grotesk", sans-serif';
 const CELL = 7;
 const ROWS = 20;

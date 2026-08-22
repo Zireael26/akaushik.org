@@ -6,6 +6,21 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-08-22 — Re-drew the law-specific pixel art for this site. The hero's
+  four exhibits are now an agent graph, a shell prompt, a trellis, and the "AK."
+  wordmark, replacing gaurijha.com's scales, section sign, gavel and "GJ."; the
+  graph keeps the scales' mechanic exactly, swinging on the same spring, and its
+  root node still occupies the pivot zone the pointerdown handler treats as the
+  secret entrance. The footer skyline is a server rack, a layered stack and a
+  trellis panel in place of the Supreme Court, India Gate and a pedimented
+  courthouse, and the marquee reads "it has to work on a tuesday" rather than
+  "see you in court". Only the drawing routines changed — the heatfield and
+  skyline engines, their constants, and the cell rule are untouched, which is
+  what made the art swappable in one function each. Section stylesheets are
+  imported from `app/layout.tsx` rather than chained through `@import` in
+  `globals.css`, because the chain silently dropped every file after the first:
+  20 KB of section CSS on disk served as 7.5 KB, with the nav and the method
+  grid among the rules lost.
 - 2026-08-22 — Ported the method band, marquee, Delhi legal skyline, pixel
   band, and theme switch canvas engines from gaurijha.com's `public-site-v1`
   tag into `lib/scenes/`, with their React wrappers in `components/pixel/`.

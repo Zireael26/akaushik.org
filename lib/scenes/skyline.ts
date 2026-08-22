@@ -1,5 +1,5 @@
 /**
- * The Delhi legal skyline that closes every public page.
+ * The footer skyline that closes every public page.
  *
  * Ported from gaurijha.com's src/scripts/skyline.ts. Three buildings repeat
  * across the strip in order — the Supreme Court (dome, finial, two chhatri wings,
@@ -49,51 +49,77 @@ export function mountSkyline(canvas: HTMLCanvasElement): () => void {
     const o = oc.getContext('2d')!;
     o.fillStyle = PALETTE.navy;
 
-    const supremeCourt = (x: number): number => {
-      const cx = x + 23;
-      o.fillRect(x + 1, R - 2, 44, 2);
-      o.fillRect(x + 3, R - 7, 40, 2);
-      for (let i = 0; i < 13; i++) o.fillRect(x + 4 + i * 3, R - 5, 2, 3);
+    // Three towers, not three monuments. gaurijha's skyline was the Delhi
+    // legal one — Supreme Court, India Gate, a pedimented courthouse — which
+    // is hers and means nothing here. These are the equivalent landmarks for
+    // this site: the machine you rent, the thing you build on it, and the frame
+    // that holds the process together. Each returns its own width in cells.
+
+    /** A server rack: posts, rails, unit slats, and two status lamps. */
+    const rack = (x: number): number => {
+      const W = 18;
+      o.fillRect(x + 1, R - 14, 1.4, 14);
+      o.fillRect(x + W - 2.4, R - 14, 1.4, 14);
+      o.fillRect(x + 1, R - 14, W - 2, 1.4);
+      o.fillRect(x, R - 2, W, 2);
+      for (let i = 0; i < 5; i++) o.fillRect(x + 3.2, R - 11.6 + i * 2.1, W - 6.4, 1.1);
+      // Lamps are the one warm note in a navy silhouette, same trick the
+      // original used for its filler stacks.
+      o.fillStyle = PALETTE.amber;
+      o.fillRect(x + W - 4.6, R - 11.4, 0.9, 0.9);
+      o.fillStyle = PALETTE.lime;
+      o.fillRect(x + W - 4.6, R - 7.2, 0.9, 0.9);
+      o.fillStyle = navy(dark);
+      return W;
+    };
+
+    /** A layered stack, narrowing upward, with a mast. The modular monolith. */
+    const stack = (x: number): number => {
+      const W = 14;
+      o.fillRect(x, R - 3, W, 3);
+      o.fillRect(x + 1.5, R - 6, W - 3, 3);
+      o.fillRect(x + 3, R - 9, W - 6, 3);
+      o.fillRect(x + 4.5, R - 12, W - 9, 3);
+      o.fillRect(x + W / 2 - 0.4, R - 15, 0.8, 3);
+      o.fillStyle = PALETTE.red;
+      o.fillRect(x + W / 2 - 0.5, R - 15.8, 1, 1);
+      o.fillStyle = navy(dark);
+      return W;
+    };
+
+    /** A trellis panel on legs — the hero's third exhibit, at skyline scale. */
+    const trellis = (x: number): number => {
+      const W = 22;
+      const T = R - 13;
+      const B = R - 3;
+      o.fillRect(x + 1, T, W - 2, 1.2);
+      o.fillRect(x + 1, B - 1.2, W - 2, 1.2);
+      o.fillRect(x + 1, T, 1.2, B - T);
+      o.fillRect(x + W - 2.2, T, 1.2, B - T);
+      o.save();
       o.beginPath();
-      o.arc(cx, R - 7, 5, Math.PI, 0);
-      o.fill();
-      o.fillRect(cx - 6, R - 8, 12, 1);
-      o.fillRect(cx - 0.8, R - 13.6, 1.6, 1.8);
-      for (const s of [-16, 16]) {
+      o.rect(x + 2, T + 1, W - 4, B - T - 2);
+      o.clip();
+      o.strokeStyle = navy(dark);
+      o.lineWidth = 0.9;
+      for (let d = -(B - T); d < W + (B - T); d += 5) {
         o.beginPath();
-        o.arc(cx + s, R - 10, 2.4, Math.PI, 0);
-        o.fill();
-        o.fillRect(cx + s - 3, R - 10, 6, 1);
-        o.fillRect(cx + s - 2.5, R - 9, 1, 2);
-        o.fillRect(cx + s + 1.5, R - 9, 1, 2);
+        o.moveTo(x + d, T);
+        o.lineTo(x + d + (B - T), B);
+        o.stroke();
+        o.beginPath();
+        o.moveTo(x + d, B);
+        o.lineTo(x + d + (B - T), T);
+        o.stroke();
       }
-      return 46;
+      o.restore();
+      o.fillRect(x + 2.5, B, 1.2, 3);
+      o.fillRect(x + W - 4, B, 1.2, 3);
+      return W;
     };
 
-    const indiaGate = (x: number): number => {
-      o.fillRect(x + 8, R - 16, 4, 1);
-      o.fillRect(x + 2, R - 15, 16, 1);
-      o.fillRect(x + 3, R - 14, 14, 3);
-      o.fillRect(x + 3, R - 11, 4, 11);
-      o.fillRect(x + 13, R - 11, 4, 11);
-      return 20;
-    };
-
-    const courthouse = (x: number): number => {
-      o.beginPath();
-      o.moveTo(x + 1, R - 9);
-      o.lineTo(x + 14, R - 14);
-      o.lineTo(x + 27, R - 9);
-      o.closePath();
-      o.fill();
-      o.fillRect(x + 2, R - 9, 24, 1.6);
-      for (let i = 0; i < 6; i++) o.fillRect(x + 3 + i * 4, R - 7, 2, 5);
-      o.fillRect(x + 1, R - 2, 26, 2);
-      return 28;
-    };
-
-    const kinds = [supremeCourt, indiaGate, courthouse];
-    const widths = [46, 20, 28];
+    const kinds = [rack, stack, trellis];
+    const widths = [18, 14, 22];
     const mask = new Uint8Array(cols);
     let x = 2;
     let k = 0;
@@ -107,11 +133,11 @@ export function mountSkyline(canvas: HTMLCanvasElement): () => void {
       k++;
       drawn++;
     }
-    // A narrow strip still deserves one building rather than only filler stacks.
-    if (!drawn && cols > 32) {
-      const bx = Math.floor(cols / 2) - 14;
-      courthouse(bx);
-      for (let i = Math.max(0, bx - 1); i < Math.min(cols, bx + 29); i++) mask[i] = 1;
+    // A narrow strip still deserves one tower rather than only filler stacks.
+    if (!drawn && cols > 26) {
+      const bx = Math.floor(cols / 2) - 11;
+      const bw = trellis(bx);
+      for (let i = Math.max(0, bx - 1); i < Math.min(cols, bx + bw + 1); i++) mask[i] = 1;
     }
 
     const img = o.getImageData(0, 0, cols, ROWS).data;

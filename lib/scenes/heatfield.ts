@@ -20,9 +20,15 @@
  *      data attribute. The React wrapper already holds the ref; re-querying the
  *      document from inside would be a second source of truth.
  *
- * The ART is still Gauri's — scales, §, gavel — on purpose. Porting the engine
- * unchanged first means any fidelity gap is attributable to the port. The four
- * exhibits get re-drawn next; only the wordmark is already switched to "AK.".
+ * The four exhibits are this site's own: an agent graph, a shell prompt, a
+ * trellis, and the "AK." wordmark. They replace gaurijha's scales / § / gavel /
+ * "GJ." and are the only part of this file that is not a fidelity port — the
+ * engine underneath them is unchanged, which is why they could be swapped in a
+ * single function.
+ *
+ * Exhibit 0 keeps the scales' mechanic: odd clicks swing it on the same spring,
+ * and its root node occupies the pivot zone the pointerdown handler treats as
+ * the secret entrance.
  */
 import { PALETTE, canvasBg, h, navy, prefersReducedMotion } from '../pixel';
 import { isDark, onThemeChange } from '../pixel-theme';
@@ -107,55 +113,123 @@ export function mountHeatfield(canvas: HTMLCanvasElement): () => void {
     const u = rows * 0.01;
 
     if (which === 0) {
+      // Exhibit 0 — the agent graph. Replaces gaurijha's scales, and inherits
+      // their mechanic exactly: the whole subtree swings around the root on the
+      // same spring, so an odd click still "tips" it. The root node sits in the
+      // pivot zone (|x/cols - 0.5| < 0.09, 0.03 < y/rows < 0.32), which is the
+      // triple-click secret entrance — that geometry is a contract with the
+      // pointerdown handler below, not a layout choice.
       const CX = cols * 0.5;
-      const TOP = rows * 0.1;
-      const W = cols * 0.17;
-      const POST = rows * 0.6;
+      const ROOT = rows * 0.13;
       const a = angle;
-      octx.beginPath();
-      octx.arc(CX, TOP - 1, 2.4, 0, 7);
-      octx.fill();
-      octx.fillRect(CX - 1.4, TOP, 2.8, POST);
-      const py = TOP + rows * 0.08;
-      octx.save();
-      octx.translate(CX, py);
-      octx.rotate(a);
-      octx.fillRect(-W, -1.3, W * 2, 2.6);
-      octx.restore();
-      const pan = (sx: number): void => {
-        const px = CX + Math.cos(a) * W * sx;
-        const pyy = py + Math.sin(a) * W * sx;
-        const drop = rows * 0.22;
-        const pw = cols * 0.075;
-        octx.lineWidth = 1.3;
+
+      // Rotate a point about the root. Cells are square in grid space but the
+      // grid itself is ~2.2:1, so x is scaled to keep the swing circular on screen.
+      const AR = rows / cols;
+      const rot = (x: number, y: number): [number, number] => {
+        const dx = (x - CX) * AR;
+        const dy = y - ROOT;
+        const c = Math.cos(a);
+        const sn = Math.sin(a);
+        return [CX + (dx * c - dy * sn) / AR, ROOT + (dx * sn + dy * c)];
+      };
+
+      const node = (x: number, y: number, r: number): void => {
         octx.beginPath();
-        octx.moveTo(px, pyy + 1);
-        octx.lineTo(px - pw, pyy + drop);
-        octx.moveTo(px, pyy + 1);
-        octx.lineTo(px + pw, pyy + drop);
-        octx.stroke();
-        octx.beginPath();
-        octx.ellipse(px, pyy + drop, pw * 1.2, pw * 0.6, 0, 0, Math.PI);
+        octx.arc(x, y, r, 0, 7);
         octx.fill();
       };
-      pan(-1);
-      pan(1);
-      octx.fillRect(CX - cols * 0.045, TOP + POST, cols * 0.09, 2.2);
-      octx.fillRect(CX - cols * 0.08, TOP + POST + 2.2, cols * 0.16, 2.8);
+      const edge = (
+        ax: number,
+        ay: number,
+        bx: number,
+        by: number,
+        w: number,
+      ): void => {
+        octx.lineWidth = w;
+        octx.beginPath();
+        octx.moveTo(ax, ay);
+        octx.lineTo(bx, by);
+        octx.stroke();
+      };
+
+      const TIER1 = rows * 0.45;
+      const TIER2 = rows * 0.74;
+      const mids: Array<[number, number]> = [-0.19, 0, 0.19].map((f) =>
+        rot(CX + cols * f, TIER1),
+      );
+      node(CX, ROOT, rows * 0.055);
+
+      for (const [mx, my] of mids) {
+        edge(CX, ROOT, mx, my, 1.9);
+        node(mx, my, rows * 0.04);
+      }
+      // Leaves fan two per mid node, plus one long edge across the middle pair
+      // so the graph reads as a mesh rather than a tidy tree.
+      mids.forEach(([mx, my], i) => {
+        for (const off of [-0.072, 0.072]) {
+          const [lx, ly] = rot(mx / 1 + cols * off, TIER2);
+          edge(mx, my, lx, ly, 1.4);
+          node(lx, ly, rows * 0.028);
+        }
+        if (i < mids.length - 1) {
+          const [nx, ny] = mids[i + 1]!;
+          edge(mx, my, nx, ny, 0.9);
+        }
+      });
     } else if (which === 1) {
-      octx.textAlign = 'center';
-      octx.textBaseline = 'middle';
-      octx.font = `${Math.floor(rows * 0.86)}px Georgia, serif`;
-      octx.fillText('§', cols * 0.5, rows * 0.5);
+      // Exhibit 1 — the shell prompt. A chevron and a block caret, drawn as
+      // paths rather than set as type: at ~100 rows a glyph outline breaks up,
+      // and the chevron's stroke weight needs to survive the cell threshold.
+      const CX = cols * 0.5;
+      const CY = rows * 0.5;
+      const S = rows * 0.3;
+      octx.lineWidth = rows * 0.055;
+      octx.lineCap = 'square';
+      octx.lineJoin = 'miter';
+      octx.beginPath();
+      octx.moveTo(CX - S * 1.15, CY - S * 0.62);
+      octx.lineTo(CX - S * 0.34, CY);
+      octx.lineTo(CX - S * 1.15, CY + S * 0.62);
+      octx.stroke();
+      octx.fillRect(CX + S * 0.12, CY - S * 0.42, S * 0.62, S * 0.84);
     } else if (which === 2) {
+      // Exhibit 2 — a trellis. His framework is named for the garden frame, and
+      // a lattice of crossed battens is the one shape on this list that a square
+      // cell grid draws better than any other medium.
+      const L = cols * 0.5 - cols * 0.125;
+      const R = cols * 0.5 + cols * 0.125;
+      const T = rows * 0.11;
+      const B = rows * 0.85;
+      // Spacing is the whole design here. At rows*0.155 the battens sat ~15
+      // cells apart, the diamonds closed up, and the panel read as one solid
+      // block of heat rather than a lattice. The open ground between battens is
+      // what makes it legible.
+      const STEP = rows * 0.34;
+      const w = rows * 0.022;
+
+      octx.lineWidth = w;
+      octx.lineCap = 'butt';
       octx.save();
-      octx.translate(cols * 0.44, rows * 0.36);
-      octx.rotate(-0.6);
-      octx.fillRect(-u * 9, -u * 8, u * 18, u * 16);
-      octx.fillRect(u * 9, -u * 2.2, u * 30, u * 4.4);
+      octx.beginPath();
+      octx.rect(L, T, R - L, B - T);
+      octx.clip();
+      // Two families of parallel battens. The span covers the frame's diagonal
+      // so both families reach every corner after clipping.
+      for (let d = -(B - T); d < R - L + (B - T); d += STEP) {
+        octx.beginPath();
+        octx.moveTo(L + d, T);
+        octx.lineTo(L + d + (B - T), B);
+        octx.stroke();
+        octx.beginPath();
+        octx.moveTo(L + d, B);
+        octx.lineTo(L + d + (B - T), T);
+        octx.stroke();
+      }
       octx.restore();
-      octx.fillRect(cols * 0.5 - u * 11, rows * 0.74, u * 22, u * 3.5);
-      octx.fillRect(cols * 0.5 - u * 14, rows * 0.74 + u * 3.5, u * 28, u * 3);
+      // The frame last, so it sits over the batten ends.
+      octx.lineWidth = w * 1.5;
+      octx.strokeRect(L, T, R - L, B - T);
     } else {
       octx.textAlign = 'center';
       octx.textBaseline = 'middle';
