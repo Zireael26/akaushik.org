@@ -9,9 +9,9 @@ mandatory-pipeline gate's remediation path. Each maps to a success criterion.
 
 ## P0 — Spec
 
-- [x] T01 Author `spec.md`, `plan.md`, `tasks.md` on this branch
+- [x] T01 Author `clarify.md`, `spec.md`, `plan.md`, `tasks.md` on this branch
 - [ ] T02 ADR-0018: retrofit Next.js on Cloudflare, superseding the framework half of ADR-0001 → SC-all
-- [ ] T03 Resolve OQ1 (display face), OQ2 (secret entrance destination), OQ3 (hyperframes on case studies)
+- [ ] T03 Resolve OQ1 (display face) and OQ3 (hyperframes on case studies). OQ2 closed — the secret entrance was removed outright.
 
 ## P1 — Cloudflare spike *(blocked: needs operator OAuth)*
 
@@ -35,15 +35,21 @@ mandatory-pipeline gate's remediation path. Each maps to a success criterion.
 - [x] T15 Port heatfield with a disposer → SC1, SC6
 - [x] T16 Port marquee, skyline, method-band, pixel-band, theme-switch → SC1, SC6
 - [x] T17 `ThemeSwitch` writes `html[data-mode]`, persists `abhishek.portfolio.mode` → SC7
-- [ ] T18 Port the cursor engine (520 lines); gavel becomes an Enter keycap that depresses on click → SC1, SC8
+- [~] T18 Port the cursor engine; gavel becomes an Enter keycap that depresses on click. In progress on `feat/pixel-cursor` → SC1, SC8
 
 ## P4 — Art
+
+- [x] T35 Generalise the heatfield into `lib/pixel/field.ts`: pluggable sources, stages, seeds, cell-size presets → SC1, SC6
+- [x] T36 `fromImage` — photographs as live fields, with a luminance stretch; the About portrait uses it → SC1
+- [x] T37 Remove the triple-click secret entrance → SC2
 
 - [x] T19 Hero exhibits: agent graph, shell prompt, trellis, "AK." → SC2
 - [x] T20 Footer skyline: rack, layered stack, trellis panel → SC2
 - [x] T21 Marquee string: "it has to work on a tuesday" → SC2
-- [ ] T22 Four method icons — `data-icon` canvases mount but nothing draws → SC2
+- [x] T22 Method art: four stage glyphs and a pipeline conduit, replacing the abstract flow band → SC2
 - [ ] T23 Favicon from the new cursor sprite → SC2
+- [ ] T38 Per-article pixel headers, seeded from the slug via `seedFrom` → SC1
+- [ ] T39 Revisit the hero art itself → SC1
 
 ## P5 — Sections and content
 
