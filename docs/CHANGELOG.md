@@ -6,6 +6,16 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-08-22 — Mounted the pixel cursor overlay in the root layout and wired
+  its stylesheet. The engine itself arrived on `feat/pixel-cursor`; this is the
+  integration. It is mounted last in `<body>` and is decorative in the strict
+  sense: gated to `(pointer: fine)`, disabled entirely under
+  `prefers-reduced-motion`, and `pointer-events: none`, so it can neither eat a
+  click nor suppress a focus ring. The engine was deliberately decoupled from
+  the method icons it was fused to in gaurijha.com's original — rather than
+  drawing icon art itself it dispatches `pixel:cursor-near` and
+  `pixel:cursor-leave` against `[data-pixel-hover]`, which is what let the
+  method section be redesigned as a process pipeline independently.
 - 2026-08-22 — Split the final canvas port at the ownership boundary the new
   site needs: `lib/scenes/cursor.ts` keeps gaurijha.com's proximity ordering,
   target-pointing lime arrow and two-layer velocity trail, while method art is

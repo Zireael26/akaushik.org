@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import Script from 'next/script';
 import SiteNav from '@/components/site/SiteNav';
 import SiteFooter from '@/components/site/SiteFooter';
+import { Cursor } from '@/components/pixel/Cursor';
 import { CANONICAL_ORIGIN } from '@/lib/canonical';
 import { JsonLdScript } from '@/components/seo/JsonLdScript';
 import { siteGraph, jsonLdString } from '@/lib/structured-data';
@@ -20,6 +21,7 @@ import './styles/sections/services.css';
 import './styles/sections/writing.css';
 import './styles/sections/open.css';
 import './styles/sections/footer.css';
+import './styles/sections/cursor.css';
 
 // Cloudflare Web Analytics beacon — cookieless, no consent banner needed
 // (per memory: Cloudflare analytics, not @vercel/analytics). Token read
@@ -106,6 +108,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <SiteNav />
         {children}
         <SiteFooter />
+        {/* Decorative overlay, mounted last. It gates itself to (pointer: fine),
+            disables under prefers-reduced-motion, and is pointer-events: none —
+            it can never eat a click or suppress a focus ring. */}
+        <Cursor />
         {CF_BEACON_TOKEN ? (
           <Script
             nonce={nonce}
