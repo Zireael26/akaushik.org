@@ -6,6 +6,26 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-08-23 — Private repositories are named, not linked. A link-integrity
+  sweep of the preview deployment found four dead links on the home page:
+  `msme-neev/neev`, `vericite-ai/vericite`, `curat-money/curat` and
+  `ClusterBid/console` all 404 for anyone not signed in. The commit counts
+  beside them are real — `scripts/fetch-github-stats.mjs` runs with a
+  `repo`-scoped token, which is the point, that work is most of the twelve
+  months — but the GitHub URL built from the same name is a 404 for every
+  reader of the site, and four dead links on a portfolio are worse than none.
+
+  The script now asks GitHub unauthenticated whether each repository is
+  visible, which is exactly the request a reader's browser makes, and records
+  it. `OpenSource` links only what comes back public. The flag is optional and
+  absent means *do not link*, so the `stats.json` already committed — which
+  predates the field — stops emitting the four dead links immediately rather
+  than waiting for the next scheduled refresh. A rate-limited or ambiguous
+  response is treated as not-linkable for the same reason.
+
+  Four tests, and they fail if the requirement is inverted: linking all
+  repositories unconditionally breaks two of them.
+
 - 2026-08-23 — Amended ADR-0018 with what the preview spike actually found.
   Two of its claims were wrong: the deploy was never blocked on an
   operator-minted API token (Wrangler was already OAuth-authenticated; the

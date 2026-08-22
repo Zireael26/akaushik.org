@@ -66,9 +66,17 @@ export default function OpenSource() {
             tag={repo.lastCommit ? formatMonthYear(repo.lastCommit).toUpperCase() : ''}
           >
             <strong>
-              <a href={repo.url} rel="noopener noreferrer" target="_blank">
-                {repo.label}
-              </a>
+              {/* Only public repositories are linked. Four of these are
+                  private: the commit counts are real, but the GitHub URL
+                  built from the same name is a 404 for every reader, and a
+                  dead link on a portfolio is worse than a plain label. */}
+              {repo.public ? (
+                <a href={repo.url} rel="noopener noreferrer" target="_blank">
+                  {repo.label}
+                </a>
+              ) : (
+                repo.label
+              )}
               .
             </strong>{' '}
             {repo.commits12mo === null
