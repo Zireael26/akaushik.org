@@ -13,12 +13,19 @@
   /* Surfaces and ink — light. */
   --bg: #ffffff;
   --ink: #111318;
-  --ink70: rgba(17, 19, 24, 0.7);
-  --ink65: rgba(17, 19, 24, 0.66);
-  --ink60: rgba(17, 19, 24, 0.6);
-  --ink55: rgba(17, 19, 24, 0.55);
-  --ink45: rgba(17, 19, 24, 0.45);
-  --ink40: rgba(17, 19, 24, 0.4);
+  /* The alpha steps are set by WCAG AA, not by taste. At the previous values
+     every one of these except --ink60 failed 4.5:1 against the page: --ink40
+     measured 2.59:1 and --ink45 3.00:1, and they carry the mono labels, chip
+     keys and small print on every route. axe-core found 64 nodes on the home
+     page alone. These are the lowest alphas that clear 4.5:1 while keeping the
+     steps in order, so the hierarchy reads as it did and the muted text is
+     simply less muted. Measured ratios in the comments. */
+  --ink70: rgba(17, 19, 24, 0.72); /* 7.45:1 */
+  --ink65: rgba(17, 19, 24, 0.68); /* 6.41:1 */
+  --ink60: rgba(17, 19, 24, 0.64); /* 5.57:1 */
+  --ink55: rgba(17, 19, 24, 0.62); /* 5.19:1 */
+  --ink45: rgba(17, 19, 24, 0.6); /* 4.88:1 */
+  --ink40: rgba(17, 19, 24, 0.58); /* 4.54:1 */
   --line: rgba(17, 19, 24, 0.13);
   --panel: #111318;
   --panelInk: #ffffff;
@@ -28,6 +35,21 @@
   --px-amber: #f6a61c;
   --px-red: #e8401c;
   --px-lime: #c8f218;
+
+  /* The palette, tuned for use as *text*.
+     The five colours are built for cells on a canvas, where they sit beside
+     each other rather than on the page ground, and three of them are unusable
+     as small type in light mode: amber measures 2.02:1 on white and lime
+     1.30:1. Rather than drop the colour coding — it is the design's grammar —
+     each accent gets a text-safe sibling at the same hue and saturation,
+     walked in lightness until it clears 4.5:1. Use `--px-*-ink` whenever an
+     accent is the colour of glyphs; use the plain token for cells, rules,
+     underlines and canvas work, where contrast against the page is not the
+     question being asked. */
+  --px-cobalt-ink: #3b5bf6; /* 5.23:1 on white — already fine */
+  --px-amber-ink: #a16806; /* was 2.02:1, now 4.67:1 */
+  --px-red-ink: #d53716; /* was 4.05:1, now 4.79:1 */
+  --px-lime-ink: #677e07; /* was 1.30:1, now 4.60:1 */
   --px-navy: #1b2331;
   --px-navy-dark: #e9ecf4;
   --px-deepblue: #2c3f94;
@@ -48,13 +70,23 @@
 [data-mode='dark'] {
   --bg: #0f1218;
   --ink: #eff1f6;
-  --ink70: rgba(239, 241, 246, 0.75);
-  --ink65: rgba(239, 241, 246, 0.66);
-  --ink60: rgba(239, 241, 246, 0.6);
-  --ink55: rgba(239, 241, 246, 0.55);
-  --ink45: rgba(239, 241, 246, 0.45);
-  --ink40: rgba(239, 241, 246, 0.4);
+  /* Same rule against the dark canvas, where --ink40 measured 3.52:1 and
+     --ink45 4.13:1. */
+  --ink70: rgba(239, 241, 246, 0.78); /* 10.30:1 */
+  --ink65: rgba(239, 241, 246, 0.72); /* 8.92:1 */
+  --ink60: rgba(239, 241, 246, 0.66); /* 7.61:1 */
+  --ink55: rgba(239, 241, 246, 0.6); /* 6.48:1 */
+  --ink45: rgba(239, 241, 246, 0.55); /* 5.63:1 */
+  --ink40: rgba(239, 241, 246, 0.5); /* 4.86:1 */
   --line: rgba(239, 241, 246, 0.16);
   --panel: #eff1f6;
   --panelInk: #0f1218;
+
+  /* Against the dark canvas the problem inverts: amber, red and lime are all
+     comfortably readable and cobalt is the one that fails, at 3.58:1. Only it
+     needs a text-safe sibling here. */
+  --px-cobalt-ink: #5873f7; /* was 3.58:1, now 4.65:1 */
+  --px-amber-ink: #f6a61c; /* 9.28:1 */
+  --px-red-ink: #e8401c; /* 4.63:1 */
+  --px-lime-ink: #c8f218; /* 14.44:1 */
 }

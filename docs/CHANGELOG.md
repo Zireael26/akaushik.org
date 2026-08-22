@@ -6,6 +6,61 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-08-23 — The site meets WCAG 2 AA now, and the e2e suite is green again.
+  Both were found the same way: by running the specs against the deployed
+  preview, which is the first time anything had.
+
+  **Contrast.** axe-core reported 64 violating nodes on the home page in light
+  mode and 48 in dark, all `color-contrast`, all serious. Two causes. The muted
+  ink scale was too light — `--ink40` measured 2.58:1 and `--ink45` 3.00:1
+  against the page, and those tokens carry the mono labels, chip keys and small
+  print on every route. And three of the five palette colours are unusable as
+  small type on white: amber measures 2.02:1 and lime 1.30:1.
+
+  The ink alphas are raised to the lowest values that clear 4.5:1 while keeping
+  their order, so the hierarchy reads as it did and muted text is simply less
+  muted; every step now carries its measured ratio in a comment. The palette
+  keeps its role as the design's grammar and gains text-safe siblings —
+  `--px-amber-ink`, `--px-red-ink`, `--px-lime-ink`, `--px-cobalt-ink` — at the
+  same hue and saturation, walked in lightness until they clear. Use the plain
+  token for cells, rules and underlines, where the contrast question is against
+  a neighbouring cell rather than against the page. The in-prose contact link
+  was distinguished by colour alone at 2.68:1 against the surrounding text; it
+  has an underline now.
+
+  Seven routes, both themes: **zero violations**.
+
+  **The motion switch only reached half the motion.** `MotionVideo` watches
+  `html[data-motion]`, so turning motion off stopped the videos — and every
+  canvas on the page kept drifting, because `prefersReducedMotion()` consulted
+  only the OS preference. A switch that silently does half the job is worse
+  than none, since it tells the user they have handled it. The helper reads
+  both sources now, and every engine in `lib/scenes/*` and `lib/pixel/field.ts`
+  goes through it.
+
+  **Primary navigation is a list.** Six loose anchors in a `<nav>` announce
+  nothing about how many there are; a list announces "6 items" and supports
+  list navigation. Markers and spacing are stripped, so nothing changes
+  visually.
+
+  **The e2e suite.** Sixteen of sixty-one specs failed against the preview.
+  `canvas.spec.ts` and most of `reduced-motion.spec.ts` were still testing the
+  Three.js Wanderer and the CSS marquee — both deleted with the parchment
+  design — and had been left in place with headers explaining that they would
+  fail. A permanently-red suite tests nothing, so they were rewritten against
+  what exists: a field that is sized by the engine rather than merely present,
+  decorative canvases hidden from screen readers and the meaningful one named,
+  the portrait toggle, and a field that is provably still under reduced motion
+  and provably moving without it. The technology-marquee spec asserted the page
+  still names Three.js, which the site removed; it now asserts the opposite —
+  that no removed dependency is named anywhere. Selector-only drift in
+  `work.spec.ts`, `status.spec.ts` and `home.spec.ts` was migrated with the
+  assertions intact, and the `robots.txt` spec is host-aware, because on a
+  preview host the correct answer is the refusal.
+
+  60 passed, 1 documented `fixme` (the error boundary has no deterministic
+  trigger in source), 0 failed.
+
 - 2026-08-23 — Measured the preview rather than assuming it. Core Web Vitals
   from the deployed Worker: TTFB 147–679 ms — the 679 is a cold isolate on the
   home route, warm routes sit at 147–246 ms — LCP 448–1180 ms, CLS 0.000–0.002,

@@ -71,6 +71,31 @@
   text-align: justify;
 }
 
+/* A link inside a paragraph cannot be marked by colour alone — someone who
+   cannot separate the two hues has no way to tell it is a link. axe-core
+   measured 2.68:1 between this link and the prose around it in light mode and
+   1.73:1 in dark, well under the 3:1 that would let colour carry it by itself.
+   The underline does the work; the colour stays as emphasis. */
+.px-split-intro a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--px-cobalt);
+  transition: text-decoration-color 0.18s ease;
+}
+
+.px-split-intro a:hover,
+.px-split-intro a:focus-visible {
+  text-decoration-thickness: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .px-split-intro a {
+    transition: none;
+  }
+}
+
 /* ---------- ruled rows ---------- */
 .px-row {
   display: flex;
@@ -123,7 +148,7 @@
 }
 
 .px-matter:hover .px-matter-title {
-  color: var(--px-cobalt);
+  color: var(--px-cobalt-ink);
 }
 
 .px-matter-title {
@@ -139,18 +164,21 @@
   letter-spacing: 0.18em;
 }
 
-/* ---------- tone utilities ---------- */
+/* ---------- tone utilities ----------
+   These colour glyphs, so they take the text-safe siblings. The plain palette
+   tokens stay for cells, rules and underlines, where the contrast question is
+   against a neighbouring cell rather than against the page. See tokens.css. */
 .is-cobalt {
-  color: var(--px-cobalt);
+  color: var(--px-cobalt-ink);
 }
 .is-amber {
-  color: var(--px-amber);
+  color: var(--px-amber-ink);
 }
 .is-red {
-  color: var(--px-red);
+  color: var(--px-red-ink);
 }
 .is-lime {
-  color: var(--px-lime);
+  color: var(--px-lime-ink);
 }
 .is-ink {
   color: var(--ink);

@@ -29,6 +29,18 @@
   gap: clamp(12px, 2vw, 24px);
 }
 
+/* The links live in a <ul> so screen readers announce the item count and offer
+   list navigation. Sighted readers should see exactly the row they saw before,
+   so the list loses its markers, padding and block layout entirely. */
+.px-nav-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(12px, 2vw, 24px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
 /* The global `a` rule paints every link --ink. Nav links sit back at --ink60
    and come forward on hover, which is the global a:hover cobalt. */
 .px-nav a {

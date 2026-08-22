@@ -46,7 +46,7 @@
 }
 
 .px-writing-row:hover .px-writing-title {
-  color: var(--px-cobalt);
+  color: var(--px-cobalt-ink);
 }
 
 .px-writing-date {

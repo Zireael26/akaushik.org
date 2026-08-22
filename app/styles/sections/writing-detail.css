@@ -105,7 +105,7 @@
   transition: color 0.18s ease;
 }
 .px-article-crumb a:hover {
-  color: var(--px-cobalt);
+  color: var(--px-cobalt-ink);
 }
 
 .px-article-crumb a:focus-visible {
@@ -155,7 +155,7 @@
 }
 
 .px-article-byline a:hover {
-  color: var(--px-cobalt);
+  color: var(--px-cobalt-ink);
 }
 
 .px-article-byline a:focus-visible {
@@ -198,15 +198,15 @@
 
 /* The kicker is child one; the ruled rows begin at child two. */
 .px-article-short .px-row:nth-child(3n + 2) .px-row-tag {
-  color: var(--px-cobalt);
+  color: var(--px-cobalt-ink);
 }
 
 .px-article-short .px-row:nth-child(3n + 3) .px-row-tag {
-  color: var(--px-amber);
+  color: var(--px-amber-ink);
 }
 
 .px-article-short .px-row:nth-child(3n + 4) .px-row-tag {
-  color: var(--px-red);
+  color: var(--px-red-ink);
 }
 
 .px-article-short .px-row-body {

@@ -84,7 +84,7 @@
 
 .px-method-open-list a:hover code,
 .px-method-open-list a:focus-visible code {
-  color: var(--px-cobalt);
+  color: var(--px-cobalt-ink);
 }
 
 .px-method-open-list span {

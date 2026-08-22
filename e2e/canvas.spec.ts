@@ -1,221 +1,100 @@
 import { expect, test, type Page } from '@playwright/test';
 
-// Baseline hero canvas + Wanderer (Three.js) contract — parchment era.
-// Regression: pixel transplant removed the Three.js scene entirely:
-// `.scene-frame`, `.scene-svg`, `.scene-canvas-host`, `[data-canvas-active]`, `#companion`,
-// `.companion-svg`, `data-wanderer-renderer`, `data-wanderer-pose` are parchment markup.
-// Pixel hero is `div.px-heatfield` → `canvas.px-heatfield` (PixelField) with no companion.
-// These expectations are retained verbatim as the baseline behavioral contract and document
-// that pixel removed the wanderer/scene-frame. They will fail on pixel until the scene contract
-// is restored or the tests are intentionally migrated to the pixel field.
+/**
+ * The pixel canvases.
+ *
+ * This file used to test the Three.js Wanderer and the `.scene-frame` host.
+ * Both were deleted with the parchment design; the specs were kept "as the
+ * baseline behavioural contract" and were therefore permanently red. A suite
+ * that is known-red tests nothing, so they are gone and this covers what is
+ * actually on the page.
+ *
+ * Everything here is user-visible: a canvas that mounted and was sized by the
+ * engine, a decorative canvas that screen readers skip, a meaningful one that
+ * they do not, and a portrait that swaps to the photograph on click. No engine
+ * internals, no frame counting — a blend needs dozens of consecutive frames and
+ * asserting on one of them is how this suite gets flaky.
+ */
+test.describe.configure({ timeout: 60_000 });
 
-const DESKTOP_MIN_WIDTH = 861;
-const RENDERER_ATTRIBUTE = 'data-wanderer-renderer';
-const MAX_RENDER_PIXELS = 1920 * 1080;
-const PIXEL_CAP_DPR = 2;
-const PIXEL_CAP_VIEWPORT = { width: 1440, height: 900 };
-
-function isDesktop(page: Page): boolean {
-  return (page.viewportSize()?.width ?? 0) >= DESKTOP_MIN_WIDTH;
+/**
+ * A mounted field has a backing store the engine sized from the element's box
+ * and the device pixel ratio. An unmounted canvas keeps the HTML default of
+ * 300×150, so this distinguishes "the engine ran" from "the markup exists",
+ * which is the only distinction worth making here.
+ */
+async function expectFieldMounted(page: Page, selector: string) {
+  const canvas = page.locator(selector).first();
+  await expect(canvas).toBeAttached();
+  await expect
+    .poll(
+      async () =>
+        canvas.evaluate((c: HTMLCanvasElement) => `${c.width}x${c.height}`),
+      { timeout: 20_000 },
+    )
+    .not.toBe('300x150');
 }
 
-async function expectWandererCanvas(page: Page) {
-  const companion = page.locator('#companion');
-  const svg = companion.locator('.companion-svg');
-
-  await expect(companion).toBeVisible();
-  await expect(svg).toBeAttached();
-  await expect(companion).toHaveAttribute(RENDERER_ATTRIBUTE, 'canvas', {
-    timeout: 30_000,
-  });
-  await expect(companion.locator('canvas')).toBeVisible();
-  await expect(svg).toBeHidden();
-}
-
-async function expectWandererAbsent(page: Page) {
-  const companion = page.locator('#companion');
-
-  await expect(companion).toBeAttached();
-  await expect(companion).toBeHidden();
-  await expect(companion.locator('canvas')).toHaveCount(0);
-  await expect.poll(() => companion.getAttribute(RENDERER_ATTRIBUTE)).toBeNull();
-}
-
-test.describe.configure({ mode: 'serial', timeout: 90_000 });
-
-test.describe('hero canvas + wanderer', () => {
-  test('scene frame renders its SVG fallback and canvas host', async ({ browserName, page }) => {
-    test.skip(browserName !== 'chromium', 'The hero Three.js smoke remains Chromium-scoped.');
-
+test.describe('pixel canvases', () => {
+  test('the hero field mounts and is sized by the engine', async ({ page }) => {
     await page.goto('/');
-    const sceneFrame = page.locator('.scene-frame');
-    await expect(sceneFrame).toBeVisible();
-    await expect(sceneFrame.locator('.scene-svg')).toBeAttached();
-    await expect(sceneFrame.locator('.scene-canvas-host')).toBeAttached({
-      timeout: 30_000,
-    });
-    await expect(sceneFrame).toHaveAttribute('data-canvas-active', 'true', {
-      timeout: 30_000,
-    });
+    await expectFieldMounted(page, '.px-heatfield canvas');
   });
 
-  test('desktop Wanderer promotes its SVG floor and enforces the render-pixel cap', async ({
-    baseURL,
-    browser,
-    browserName,
-    page,
-  }) => {
-    test.skip(
-      browserName !== 'chromium' || !isDesktop(page),
-      'The positive WebGL renderer proof is Chromium-desktop scoped.',
-    );
-    if (!baseURL) throw new Error('Playwright baseURL is required for the DPR test context.');
+  test('decorative canvases are hidden from screen readers', async ({ page }) => {
+    await page.goto('/');
 
-    const runtimeErrors: string[] = [];
-    const renderContext = await browser.newContext({
-      baseURL,
-      deviceScaleFactor: PIXEL_CAP_DPR,
-      viewport: PIXEL_CAP_VIEWPORT,
-    });
-    const renderPage = await renderContext.newPage();
-    renderPage.on('pageerror', (error) => runtimeErrors.push(error.message));
-    renderPage.on('console', (message) => {
-      if (message.type() === 'error') runtimeErrors.push(message.text());
-    });
-
-    try {
-      await renderPage.goto('/');
-      await expectWandererCanvas(renderPage);
-      const renderMetrics = await renderPage.locator('#companion canvas').evaluate((element) => {
-        const canvas = element as HTMLCanvasElement;
-        const viewportPixels = window.innerWidth * window.innerHeight;
-        return {
-          actualPixels: canvas.width * canvas.height,
-          devicePixelRatio: window.devicePixelRatio,
-          theoreticalPixels: viewportPixels * window.devicePixelRatio ** 2,
-        };
-      });
-
-      expect(renderMetrics.devicePixelRatio).toBe(PIXEL_CAP_DPR);
-      expect(renderMetrics.theoreticalPixels).toBeGreaterThan(MAX_RENDER_PIXELS);
-      expect(renderMetrics.actualPixels).toBeGreaterThan(0);
-      expect(renderMetrics.actualPixels).toBeLessThanOrEqual(MAX_RENDER_PIXELS);
-      expect(runtimeErrors, runtimeErrors.join('\n')).toEqual([]);
-    } finally {
-      await renderContext.close();
+    for (const selector of ['.px-marquee', '.px-skyline', '.px-portrait-canvas']) {
+      await expect(page.locator(selector).first()).toHaveAttribute('aria-hidden', 'true');
     }
   });
 
-  test('desktop Wanderer settles on its SVG fallback when WebGL is unavailable', async ({
-    browserName,
-    page,
-  }) => {
-    test.skip(
-      browserName !== 'chromium' || !isDesktop(page),
-      'The forced WebGL failure proof is Chromium-desktop scoped.',
-    );
-
-    await page.addInitScript(() => {
-      const original = HTMLCanvasElement.prototype.getContext;
-      Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
-        configurable: true,
-        value: function (this: HTMLCanvasElement, contextId: string, ...args: unknown[]) {
-          if (this.parentElement?.id === 'companion' && contextId.startsWith('webgl')) {
-            const probe = window as unknown as { __wandererWebglAttempts?: number };
-            probe.__wandererWebglAttempts = (probe.__wandererWebglAttempts ?? 0) + 1;
-            return null;
-          }
-          return Reflect.apply(original, this, [contextId, ...args]);
-        },
-      });
-    });
-
+  test('the method band is announced, because it carries meaning', async ({ page }) => {
     await page.goto('/');
-    await expect
-      .poll(
-        () =>
-          page.evaluate(
-            () =>
-              (window as unknown as { __wandererWebglAttempts?: number }).__wandererWebglAttempts ??
-              0,
-          ),
-        { timeout: 30_000 },
-      )
-      .toBeGreaterThan(0);
 
-    const companion = page.locator('#companion');
-    await expect(companion).toHaveAttribute(RENDERER_ATTRIBUTE, 'fallback');
-    await expect(companion.locator('canvas')).toHaveCount(0);
-    await expect(companion.locator('.companion-svg')).toBeVisible();
+    // The four stage tiles are decoration around it; the band itself is the
+    // content, so it is the one canvas with a role and a name.
+    const band = page.locator('canvas.px-pipeline-band');
+    await expect(band).toHaveAttribute('role', 'img');
+    await expect(band).toHaveAttribute('aria-label', /method/i);
+    await expect(page.locator('canvas.px-pipeline-tile-canvas').first()).toHaveAttribute(
+      'aria-hidden',
+      'true',
+    );
   });
 
-  test('Wanderer is absent outside the pose-driven home route', async ({ page }) => {
-    test.skip(!isDesktop(page), 'Wanderer is already absent on narrow viewports.');
+  test('the portrait swaps to the photograph and back', async ({ page }) => {
+    await page.goto('/');
 
-    const response = await page.goto('/work/neev');
-    expect(response?.status()).toBe(200);
-    await expect(page.getByRole('heading', { name: 'Neev', exact: true })).toBeVisible();
-    await page.waitForLoadState('networkidle');
-    await expectWandererAbsent(page);
+    const toggle = page.locator('.px-portrait-toggle');
+    await expect(toggle).toBeVisible();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('.px-portrait-photo')).toBeVisible();
+
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
   });
 
-  test('client navigation tears down and restores the home-only scene', async ({
-    browserName,
-    page,
-  }) => {
-    test.skip(
-      browserName !== 'chromium' || !isDesktop(page),
-      'One desktop engine is sufficient for route lifecycle transitions.',
-    );
-
+  test('fields remount after a client-side navigation away and back', async ({ page }) => {
     await page.goto('/');
-    await expectWandererCanvas(page);
+    await expectFieldMounted(page, '.px-heatfield canvas');
 
-    await page.locator('#case-neev .case-link').click();
-    await expect(page).toHaveURL(/\/work\/neev$/);
-    await expectWandererAbsent(page);
+    await page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Writing' }).click();
+    await page.waitForURL('**/writing');
+    await expect(page.locator('.px-heatfield canvas')).toHaveCount(0);
 
     await page.goBack();
-    await expect(page).toHaveURL(/\/$/);
-    await expectWandererCanvas(page);
+    await page.waitForURL((url) => url.pathname === '/');
+    // The disposer has to have run and the effect re-mounted; a leaked loop or
+    // a dead canvas both show up here.
+    await expectFieldMounted(page, '.px-heatfield canvas');
   });
 
-  test('pose arbitration follows the most-visible home section', async ({ browserName, page }) => {
-    test.skip(
-      browserName !== 'chromium' || !isDesktop(page),
-      'One desktop engine is sufficient for IntersectionObserver choreography.',
-    );
-
-    await page.goto('/');
-    await expectWandererCanvas(page);
-    await page.locator('#writing').scrollIntoViewIfNeeded();
-    await expect(page.locator('#companion')).toHaveAttribute('data-wanderer-pose', 'writing');
-  });
-
-  test('Wanderer is absent below the desktop breakpoint', async ({ page }) => {
-    test.skip(isDesktop(page), 'This assertion targets tablet and mobile.');
-
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-    await expectWandererAbsent(page);
-  });
-
-  test('crossing the desktop breakpoint tears down and restores Wanderer', async ({
-    browserName,
-    page,
-  }) => {
-    test.skip(
-      browserName !== 'chromium' || !isDesktop(page),
-      'One desktop engine is sufficient for the live viewport transition.',
-    );
-
-    await page.goto('/');
-    await expectWandererCanvas(page);
-
-    await page.setViewportSize({ width: DESKTOP_MIN_WIDTH - 1, height: 900 });
-    await expectWandererAbsent(page);
-
-    await page.setViewportSize({ width: DESKTOP_MIN_WIDTH, height: 900 });
-    await expectWandererCanvas(page);
+  test('the status field mounts on the 404 route', async ({ page }) => {
+    await page.goto('/this-route-does-not-exist');
+    await expectFieldMounted(page, 'canvas.px-status-field');
   });
 });

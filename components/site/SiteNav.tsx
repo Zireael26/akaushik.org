@@ -33,12 +33,19 @@ export default function SiteNav() {
         akaushik.org
       </Link>
       <div className="px-header-end">
+        {/* A list, not bare anchors. Screen readers announce "list, 6 items"
+            and offer list navigation; a run of loose links announces nothing
+            about how many there are or where you are in them. The markers and
+            spacing are stripped in CSS, so this is invisible to sighted
+            readers and useful to everyone else. */}
         <nav className="px-nav" aria-label="Primary">
-          {NAV.map((item) => (
-            <Link key={item.href} href={item.href}>
-              {item.label}
-            </Link>
-          ))}
+          <ul className="px-nav-list">
+            {NAV.map((item) => (
+              <li key={item.href}>
+                <Link href={item.href}>{item.label}</Link>
+              </li>
+            ))}
+          </ul>
         </nav>
         <ThemeSwitch />
       </div>

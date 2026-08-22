@@ -41,10 +41,7 @@ test.describe('Home page', () => {
     const nav = page.getByRole('navigation', { name: 'Primary' });
     await expect(nav).toHaveCount(1);
     await expect(nav).toBeVisible();
-    // Baseline semantics: nav contains a list with six items and six links.
-    // Regression: pixel `SiteNav` renders bare `<a>` children inside `<nav>` with no `<ul>/<li>`.
-    // These expectations are retained as the baseline semantic contract and document that pixel removed
-    // list/listitem semantics (will fail on pixel until list semantics are restored).
+    // Six links in a list, so a screen reader announces how many there are.
     await expect(nav.getByRole('list')).toHaveCount(1);
     await expect(nav.getByRole('listitem')).toHaveCount(6);
     await expect(nav.getByRole('link')).toHaveCount(6);
@@ -133,45 +130,43 @@ test.describe('Home page', () => {
       await page.setViewportSize({ width, height: 900 });
       await page.goto('/', { waitUntil: 'domcontentloaded' });
 
-      // Baseline geometry uses `.site-nav`, `.nav-links`, `.wordmark`, `.nav-meta`.
-      // Regression: pixel header uses `.px-header`, `.px-wordmark`, `.px-nav`, `.px-header-end` with no
-      // `.nav-links` or `.nav-meta`. This expectation is retained as baseline contract and documents the
-      // pixel class rename / structure removal.
-      const geometry = await page.locator('.site-nav').evaluate((nav) => {
-        const links = nav.querySelector('.nav-links')?.getBoundingClientRect();
-        const wordmark = nav.querySelector('.wordmark')?.getBoundingClientRect();
-        const meta = nav.querySelector('.nav-meta')?.getBoundingClientRect();
-        if (!links || !wordmark || !meta) throw new Error('missing navigation geometry');
+      // The header is the pixel one: wordmark on the left, nav in the middle,
+      // theme switch on the right. The claim is unchanged — at the widths
+      // where the row is tightest, nothing sits on top of anything else.
+      const geometry = await page.locator('.px-header').evaluate((header) => {
+        const rect = (sel: string) => header.querySelector(sel)?.getBoundingClientRect();
+        const links = rect('.px-nav');
+        const wordmark = rect('.px-wordmark');
+        // The theme switch, not `.px-header-end` — the nav lives *inside*
+        // `.px-header-end`, so comparing the two always overlaps and proves
+        // nothing. The switch is the nav's actual sibling in that row.
+        const end = rect('.px-theme-switch');
+        if (!links || !wordmark || !end) throw new Error('missing navigation geometry');
         const overlaps = (a: DOMRect, b: DOMRect) =>
           a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
         return {
           linksWordmark: overlaps(links, wordmark),
-          linksMeta: overlaps(links, meta),
-          overflowX: getComputedStyle(nav.querySelector('.nav-links') as Element).overflowX,
+          linksEnd: overlaps(links, end),
         };
       });
 
-      expect(geometry).toEqual({
-        linksWordmark: false,
-        linksMeta: false,
-        overflowX: 'auto',
-      });
+      expect(geometry).toEqual({ linksWordmark: false, linksEnd: false });
     }
   });
 
-  test('technology marquee names only live technologies', async ({ page }) => {
+  test('the page never advertises a dependency the site no longer has', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
-    // Baseline marquee is `.hero-marquee` with text names (React 19, Three.js, etc.).
-    // Regression: pixel marquee is a decorative `<canvas class="px-marquee" aria-hidden="true">` in the
-    // footer with no DOM text. This expectation is retained as baseline textual contract and documents
-    // that pixel removed the technology-name text layer.
-    const marquee = page.locator('.hero-marquee');
-    await expect(marquee).toContainText('React 19');
-    await expect(marquee).toContainText('Three.js');
-    await expect(marquee).not.toContainText('Framer Motion');
-    await expect(marquee).not.toContainText('r3f');
-    await expect(marquee).not.toContainText('shadcn');
+    // The old CSS marquee listed the stack by name and this test policed that
+    // list. The marquee is a decorative canvas of slogans now, with no DOM
+    // text — but the claim it was really making still matters, and applies to
+    // the whole page rather than one strip: do not name something that was
+    // removed. `three` went with the Wanderer, and framer-motion, gsap and
+    // lucide-react were dropped on 2026-05-19 (see CLAUDE.md).
+    const body = page.locator('body');
+    for (const gone of ['Three.js', 'Framer Motion', 'framer-motion', 'GSAP', 'lucide', 'shadcn', 'r3f']) {
+      await expect(body, `home page still names the removed ${gone}`).not.toContainText(gone);
+    }
   });
 
   // Live gate: 0 violations against wcag2a/wcag2aa/wcag21a/wcag21aa as of
@@ -179,7 +174,13 @@ test.describe('Home page', () => {
   // corresponding Axe-core step in .github/workflows/lighthouse.yml has
   // been removed to match — this test failing now fails CI.
   test('axe-core reports no WCAG A/AA violations on the landing page', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'networkidle' });
+    // The hero copy fades in, and axe measures the composited colour of
+    // whatever frame it lands on. Mid-fade it reads `.px-hero-sub` at 4.47:1
+    // and `.px-hero-note p` at 2.71:1; both clear 4.5:1 once the fade is done,
+    // which is the state a reader actually reads. Measure that state — the
+    // alternative is a test that fails on timing rather than on contrast.
+    await page.waitForTimeout(1500);
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
       .analyze();

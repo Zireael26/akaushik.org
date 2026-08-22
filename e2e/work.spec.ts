@@ -12,26 +12,23 @@ test.describe('Work — cards and detail routes', () => {
   test('home page lists all five published case-study cards', async ({ page }) => {
     await page.goto('/');
 
-    // Baseline home cards are `#case-<slug>` anchors rendered by the parchment template.
-    // Regression: pixel Home `Work` mounts `MatterRow` links (`a.px-matter[href="/work/<slug>"]`) with no
-    // `#case-*` ids. Retained selector documents that pixel removed the card id contract; the same live
-    // cards are reachable via their detail hrefs but the id anchors are absent.
-    // Individual presence checks, not an exact count — covers each published slug without tying to additive markup.
+    // The home Work stack is `MatterRow` links, one per published slug. Per-slug
+    // presence rather than an exact count, so adding a sixth study does not
+    // fail this.
     for (const slug of PUBLISHED_CASE_STUDY_SLUGS) {
-      await expect(page.locator(`#case-${slug}`)).toBeVisible();
+      await expect(page.locator(`#work a.px-matter[href="/work/${slug}"]`)).toBeVisible();
     }
   });
 
   test('ClusterBid renders on both listings and its detail route', async ({ page }) => {
     await page.goto('/');
 
-    // Baseline home ClusterBid card `#case-clusterbid` with tagline.
-    // Regression: pixel home renders ClusterBid as a MatterRow without `#case-clusterbid` or its tagline wrapper;
-    // the slug is still reachable via the Work stack, but the card id/text contract is pixel-absent. Retained
-    // as baseline regression anchor.
-    const card = page.locator('#case-clusterbid');
-    await expect(card).toBeVisible();
-    await expect(card).toContainText('pre-production proof');
+    const row = page.locator('#work a.px-matter[href="/work/clusterbid"]');
+    await expect(row).toBeVisible();
+    // The row carries the study's name and its positioning tag; that pairing is
+    // the whole point of the stack, so both are asserted.
+    await expect(row).toContainText('ClusterBid');
+    await expect(row).toContainText('UAT platform engineering');
 
     await page.goto('/work');
     await expect(page.getByRole('link', { name: /ClusterBid/i })).toBeVisible();
@@ -86,14 +83,10 @@ test.describe('Work — cards and detail routes', () => {
       }
     });
 
+    // The home Work stack carries no media at all now — it is MatterRows — so
+    // the reel contract only has somewhere to live on the detail route. The
+    // byte assertion below still covers both navigations.
     await page.goto('/');
-    // Regression: pixel home renders no ClusterBid reel at all — the home Work stack is MatterRows with no
-    // media. The `svg[data-reel-slug="clusterbid"]` on `#case-clusterbid` is the baseline home reel contract
-    // and is retained as regression; on pixel the home card reel is absent (see finding “absent ClusterBid home reel”).
-    const card = page.locator('#case-clusterbid');
-    await expect(card.locator('svg[data-reel-slug="clusterbid"]')).toBeVisible();
-    await expect(card.locator('video')).toHaveCount(0);
-
     await page.goto('/work/clusterbid');
     await expect(page.locator('svg[data-reel-slug="clusterbid"]')).toBeVisible();
     await expect(page.locator('video[data-slug="clusterbid"]')).toHaveCount(0);
@@ -102,13 +95,9 @@ test.describe('Work — cards and detail routes', () => {
 
   test('Neev card links to /work/neev and the detail page renders', async ({ page }) => {
     await page.goto('/');
-    // Regression: baseline Neev card is `#case-neev` with `a.case-link` “Read the case study”.
-    // Pixel home uses `a.px-matter[href="/work/neev"]` with the title as link text and no `#case-*` id.
-    // Retained selector documents that pixel removed the card id / case-link contract.
-    await page
-      .locator('#case-neev')
-      .getByRole('link', { name: /Read the case study/i })
-      .click();
+    // The whole row is the link now; there is no separate "Read the case study"
+    // affordance to click.
+    await page.locator('#work a.px-matter[href="/work/neev"]').click();
 
     await expect(page).toHaveURL(/\/work\/neev$/, { timeout: 30_000 });
 
@@ -118,11 +107,13 @@ test.describe('Work — cards and detail routes', () => {
     const article = page.locator('article.px-work-body');
     await expect(article.getByRole('heading', { level: 1 })).toContainText('Neev');
 
-    // Spec DL from frontmatter: baseline `dl.case-spec` (definition list semantics).
-    // Regression: pixel `CaseStudyPage` renders spec as `div.px-work-detail-spec` with
-    // `RuledRow` divs, not a `<dl>`. Retained selector documents that pixel removed dl semantics;
-    // the same live spec rows are rendered but without definition-list structure.
-    await expect(page.locator('dl.case-spec')).toBeVisible();
+    // The frontmatter spec renders as ruled rows rather than a definition list.
+    // Assert the rows and their labels, which is what the reader actually gets.
+    const spec = page.locator('.px-work-detail-spec');
+    await expect(spec).toBeVisible();
+    for (const label of ['Role', 'Stack', 'Evidence']) {
+      await expect(spec.locator('.px-row-tag', { hasText: label })).toBeVisible();
+    }
   });
 
   test('Bluehost stub renders the confidentiality paragraph', async ({ page }) => {

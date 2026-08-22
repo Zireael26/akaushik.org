@@ -65,7 +65,22 @@ export function fitCanvas(
   return ctx;
 }
 
+/**
+ * Should anything move?
+ *
+ * Two sources, either of which is a no: the OS-level preference, and the
+ * site's own switch at `html[data-motion="off"]`. The second was being ignored
+ * here, which meant turning motion off stopped the videos — `MotionVideo`
+ * watches the attribute — and left every canvas on the page still drifting.
+ * A motion switch that only reaches half the motion is worse than none,
+ * because it tells the user they have handled it.
+ *
+ * Every engine in `lib/scenes/*` and `lib/pixel/field.ts` reads this, so both
+ * sources reach all of them from here. Called per frame, so it stays two cheap
+ * lookups and no allocation.
+ */
 export function prefersReducedMotion(): boolean {
+  if (document.documentElement.getAttribute('data-motion') === 'off') return true;
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 

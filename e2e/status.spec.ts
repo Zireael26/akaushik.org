@@ -33,10 +33,11 @@ test.describe('status surfaces', () => {
 
     // Decorative canvas: `StatusField` → `PixelField variant="not-found"` renders a `canvas.px-status-field`
     // with `aria-hidden="true"` because the surrounding copy already states the status.
-    const field = page.locator('.px-status-field');
-    await expect(field).toBeAttached();
-    const canvas = field.locator('canvas').first();
-    // PixelField without `label` sets `aria-hidden="true"` and no `role="img"`.
+    // `.px-status-field` is the canvas itself, not a wrapper around one.
+    const canvas = page.locator('canvas.px-status-field');
+    await expect(canvas).toBeAttached();
+    // A field with no label is decoration; the copy beside it already states
+    // the status, so a screen reader should skip it.
     await expect(canvas).toHaveAttribute('aria-hidden', 'true');
     // Decorative canvas never takes focus, even if somehow focused programmatically.
     await expect(canvas).not.toBeFocused();
