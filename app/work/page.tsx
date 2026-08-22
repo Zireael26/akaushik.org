@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { CASE_STUDIES } from '@/components/sections/Work';
+import { getAllPosts, type CaseStudyFrontmatter } from '@/lib/content';
 import { canonical } from '@/lib/canonical';
+import { SectionHead } from '@/components/pixel/SectionHead';
+import { MatterRow, RuledRow } from '@/components/pixel/RuledRow';
 
 const DESCRIPTION =
   'Five case studies — Neev, VeriCite, Bluehost agents framework, curat.money, and ClusterBid — ordered by strategic weight.';
@@ -25,42 +27,67 @@ export const metadata: Metadata = {
   },
 };
 
+const TAG_TONES = ['cobalt', 'amber', 'red', 'ink'] as const;
+
+function tagTone(i: number): (typeof TAG_TONES)[number] {
+  switch (i % 4) {
+    case 0:
+      return 'cobalt';
+    case 1:
+      return 'amber';
+    case 2:
+      return 'red';
+    default:
+      return 'ink';
+  }
+}
+
 export default function WorkIndex() {
+  const studies = getAllPosts('case-studies')
+    .slice()
+    .sort((a, b) => a.frontmatter.index.localeCompare(b.frontmatter.index));
+
   return (
-    <main id="top" className="work-index">
-      <div className="work-index-inner">
-        <Link href="/" className="work-stub-back">
-          ← Back to home
-        </Link>
-        <h1 className="work-index-title">Selected work</h1>
-        <p className="work-index-lede">
-          Each case study is a problem in the client&apos;s words, an approach,
-          what shipped, and honest scope on what was and wasn&apos;t included.
-        </p>
-        <ol className="work-index-list" role="list">
-          {CASE_STUDIES.filter((c) => c.draft !== true).map((c) => (
-            <li key={c.slug} className="work-index-item">
-              <span className="case-index">{c.index}</span>
-              <div className="work-index-body">
-                <Link href={`/work/${c.slug}`} className="work-index-link">
-                  <h2 className="work-index-item-title">{c.title}</h2>
-                  <p className="work-index-item-dek">{c.dek}</p>
-                </Link>
-                <p className="work-index-item-lede">{c.lede}</p>
-                <dl className="work-index-item-spec">
-                  {c.spec.map((s) => (
-                    <div key={s.term}>
-                      <dt>{s.term}</dt>
-                      <dd>{s.def}</dd>
-                    </div>
-                  ))}
-                </dl>
+    <main id="top" className="px-work-index">
+      <Link href="/" className="px-work-back">
+        ← Back to home
+      </Link>
+      <SectionHead as="h1" heading="Selected work." label="2025 — present" id="work-head" />
+      <p className="px-work-index-lede">
+        Each case study is a problem in the client&apos;s words, an approach, what shipped, and
+        honest scope on what was and wasn&apos;t included.
+      </p>
+      <ol className="px-work-index-list" role="list">
+        {studies.map((post, i) => {
+          const fm = post.frontmatter as CaseStudyFrontmatter;
+          const isLast = i === studies.length - 1;
+          return (
+            <li key={post.slug} className={`px-work-index-item${isLast ? ' is-last' : ''}`}>
+              <div className="px-work-index-item-head">
+                <span className="px-work-index-index">{fm.index}</span>
+                <div className="px-work-index-main">
+                  <MatterRow
+                    title={fm.title}
+                    tag={fm.tag}
+                    tagTone={tagTone(i)}
+                    href={`/work/${post.slug}`}
+                    titleAs="h2"
+                  />
+                  <p className="px-work-index-dek">{fm.dek}</p>
+                  <div className="px-work-index-spec">
+                    <RuledRow tag="Role">{fm.role}</RuledRow>
+                    <RuledRow tag="Stack">{fm.stack.join(' · ')}</RuledRow>
+                    <RuledRow tag="Evidence" last>
+                      {fm.evidenceOf}
+                    </RuledRow>
+                  </div>
+                  <div className="px-work-index-year">{fm.year}</div>
+                </div>
               </div>
-              <span className="case-year">{c.year}</span>
             </li>
-          ))}
-        </ol>
-      </div>
+          );
+        })}
+      </ol>
     </main>
   );
 }

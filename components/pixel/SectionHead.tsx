@@ -17,6 +17,8 @@ export function SectionHead({
   headingTarget = false,
   headingMax,
   id,
+  as: asProp,
+  level,
 }: {
   heading: string;
   label: string;
@@ -25,17 +27,21 @@ export function SectionHead({
   /** max-width in ch, column variant only. */
   headingMax?: number;
   id?: string;
+  /** Heading level for page hierarchy. Defaults to h2 for section context. Use h1 for page-level headings. */
+  as?: 'h1' | 'h2';
+  level?: 1 | 2;
 }) {
+  const HeadingTag = (asProp ?? (level === 1 ? 'h1' : level === 2 ? 'h2' : 'h2')) as 'h1' | 'h2';
   return (
     <div className={`px-head px-head--${variant}`}>
-      <h2
+      <HeadingTag
         className="px-head-title"
         id={id}
         style={headingMax ? { maxWidth: `${headingMax}ch` } : undefined}
         data-cursor-target={headingTarget ? '1' : undefined}
       >
         {heading}
-      </h2>
+      </HeadingTag>
       <div className="px-head-label" data-cursor-target="1">
         {label}
       </div>

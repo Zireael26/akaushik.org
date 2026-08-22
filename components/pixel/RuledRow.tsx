@@ -35,16 +35,24 @@ export function MatterRow({
   tag,
   tagTone,
   href,
+  titleAs,
+  level,
 }: {
   title: string;
   tag: string;
   /** Tag colour rotates cobalt -> amber -> red -> ink. */
   tagTone: 'cobalt' | 'amber' | 'red' | 'ink';
   href?: string;
+  /** Heading level for the title. Defaults to span for section context; use h2 for page-level index items. */
+  titleAs?: 'span' | 'h2' | 'h3';
+  level?: 2 | 3;
 }) {
+  const TitleTag = (titleAs ?? (level === 2 ? 'h2' : level === 3 ? 'h3' : 'span')) as 'span' | 'h2' | 'h3';
   const inner = (
     <>
-      <span className="px-matter-title">{title}</span>
+      <TitleTag className="px-matter-title" style={TitleTag !== 'span' ? { margin: 0 } : undefined}>
+        {title}
+      </TitleTag>
       <span className={`px-matter-tag is-${tagTone}`}>{tag}</span>
     </>
   );
