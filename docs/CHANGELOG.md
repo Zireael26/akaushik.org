@@ -6,6 +6,19 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-08-22 — Split the final canvas port at the ownership boundary the new
+  site needs: `lib/scenes/cursor.ts` keeps gaurijha.com's proximity ordering,
+  target-pointing lime arrow and two-layer velocity trail, while method art is
+  no longer drawn by the cursor pass. Elements carrying `data-pixel-hover`
+  instead receive bubbling `pixel:cursor-near` events with border distance and
+  a symmetric 0..1 dissolve ramp, followed by `pixel:cursor-leave` when that
+  ramp clears. The law-specific heart and gavel are replaced by a blinking
+  terminal block in the page gutters and an amber Return keycap that drops onto
+  its one-cell wall for 150 ms with four red spark cells. The client wrapper and
+  new cursor stylesheet keep the fixed canvas decorative and click-transparent;
+  fine-pointer, reduced-motion and site motion gates restore the native cursor,
+  and the React disposer cancels its frame, listeners and theme subscription.
+
 - 2026-08-22 — Re-drew the law-specific pixel art for this site. The hero's
   four exhibits are now an agent graph, a shell prompt, a trellis, and the "AK."
   wordmark, replacing gaurijha.com's scales, section sign, gavel and "GJ."; the
