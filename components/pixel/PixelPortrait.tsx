@@ -65,6 +65,12 @@ export function PixelPortrait({
   const [failed, setFailed] = useState(false);
   const [showPhoto, setShowPhoto] = useState(false);
 
+  // `crop` arrives as an object literal from the call site, so it is a new
+  // identity on every render and would rebuild the whole grid sixty times a
+  // second if it went into the dependency array as-is. The effect depends on
+  // its four numbers, which are what actually change.
+  const { x: cropX, y: cropY, w: cropW, h: cropH } = crop ?? {};
+
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
@@ -76,7 +82,21 @@ export function PixelPortrait({
       .then((img) => {
         if (cancelled || !ref.current) return;
         handle = mountField(ref.current, {
-          sources: [fromImage(img, { floor, gamma, invert, crop, fit: 'cover' })],
+          sources: [
+            fromImage(img, {
+              floor,
+              gamma,
+              invert,
+              crop:
+                cropX === undefined ||
+                cropY === undefined ||
+                cropW === undefined ||
+                cropH === undefined
+                  ? undefined
+                  : { x: cropX, y: cropY, w: cropW, h: cropH },
+              fit: 'cover',
+            }),
+          ],
           preset: 'tile',
           cellSize,
           interactive: true,
@@ -91,7 +111,7 @@ export function PixelPortrait({
       cancelled = true;
       handle?.dispose();
     };
-  }, [src, floor, gamma, invert, cellSize]);
+  }, [src, floor, gamma, invert, cellSize, cropX, cropY, cropW, cropH]);
 
   const toggle = useCallback(() => setShowPhoto((v) => !v), []);
 

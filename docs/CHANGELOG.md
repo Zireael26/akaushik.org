@@ -54,7 +54,9 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   restaurant out and low enough to keep gradation inside the face.
 
   The option is on the shared image source, not on the portrait, so every
-  image the pixel system converts gets it.
+  image the pixel system converts gets it. The portrait's effect depends on the
+  crop's four numbers rather than on the object, because an inline literal is a
+  new identity every render and would rebuild the grid sixty times a second.
 
 - 2026-08-23 — The site runs on Cloudflare Workers. Three things had to change
   for that, and each was a runtime incompatibility rather than a preference.
