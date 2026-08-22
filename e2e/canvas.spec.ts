@@ -1,5 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
 
+// Baseline hero canvas + Wanderer (Three.js) contract — parchment era.
+// Regression: pixel transplant removed the Three.js scene entirely:
+// `.scene-frame`, `.scene-svg`, `.scene-canvas-host`, `[data-canvas-active]`, `#companion`,
+// `.companion-svg`, `data-wanderer-renderer`, `data-wanderer-pose` are parchment markup.
+// Pixel hero is `div.px-heatfield` → `canvas.px-heatfield` (PixelField) with no companion.
+// These expectations are retained verbatim as the baseline behavioral contract and document
+// that pixel removed the wanderer/scene-frame. They will fail on pixel until the scene contract
+// is restored or the tests are intentionally migrated to the pixel field.
+
 const DESKTOP_MIN_WIDTH = 861;
 const RENDERER_ATTRIBUTE = 'data-wanderer-renderer';
 const MAX_RENDER_PIXELS = 1920 * 1080;

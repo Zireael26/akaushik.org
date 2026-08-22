@@ -9,7 +9,9 @@ test.describe('Theme toggle', () => {
     // Read the initial mode (depends on prefers-color-scheme + any saved pref).
     const initialMode = await page.locator('html').getAttribute('data-mode');
 
-    const toggle = page.getByRole('button', { name: /toggle color theme/i });
+    // Pixel button is `aria-label="Switch between day and night"` (was "Toggle color theme" in parchment).
+    // Same live theme switch, accessible name renamed — selector migrated, assertion strength preserved.
+    const toggle = page.getByRole('button', { name: /switch between day and night/i });
     await toggle.click();
 
     const afterMode = await page.locator('html').getAttribute('data-mode');
