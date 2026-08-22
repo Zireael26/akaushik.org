@@ -124,3 +124,38 @@
   width: 100%;
   aspect-ratio: 3 / 4;
 }
+
+/* The portrait is a toggle: pixel field by default, the photograph on click.
+   Both layers stay in the DOM and cross-fade, so the swap is instant and the
+   field does not have to rebuild its grid on the way back. */
+.px-portrait-toggle {
+  display: block;
+  position: relative;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  line-height: 0;
+}
+
+.px-portrait-toggle > * {
+  transition: opacity 0.28s ease;
+}
+
+.px-portrait-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+}
+
+.px-portrait-toggle.is-photo .px-portrait-canvas {
+  opacity: 0;
+}
+
+.px-portrait-toggle.is-photo .px-portrait-photo {
+  opacity: 1;
+}

@@ -10,7 +10,7 @@
  * never receives pointer events, and restores the native cursor on every
  * inactive or teardown path.
  */
-import { PALETTE, inkAlpha, isFinePointer, navy, prefersReducedMotion } from '../pixel';
+import { PALETTE, canvasBg, h, inkAlpha, isFinePointer, navy, prefersReducedMotion } from '../pixel';
 import { isDark, onThemeChange } from '../pixel-theme';
 
 export const CURSOR_NEAR_EVENT = 'pixel:cursor-near';
@@ -234,6 +234,57 @@ function drawMode(
   }
 }
 
+/** Cell size of the button noise band, and how often it re-hashes. */
+const BTN_CELL = 6;
+const BTN_RETICK_MS = 90;
+
+/**
+ * The CTA hover effect: a band of noise pixels inside any [data-btnfx] element
+ * the pointer is over, with the middle left clear so the label stays readable.
+ *
+ * It draws into the cursor overlay rather than into the button, which is why it
+ * lives here and not in a component — the overlay already sits above everything
+ * at the right z-index, and painting into the button would mean a second canvas
+ * per CTA. The 26x12px inset that defines the clear zone is the prototype's, and
+ * it is measured from the button's padding, so a CTA with different padding will
+ * want a different inset rather than this one scaled.
+ */
+function drawButtonNoise(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  now: number,
+  dark: boolean,
+): void {
+  for (const button of document.querySelectorAll('[data-btnfx]')) {
+    const r = button.getBoundingClientRect();
+    if (!r.width || x < r.left || x > r.right || y < r.top || y > r.bottom) continue;
+
+    const tick = Math.floor(now / BTN_RETICK_MS);
+    const cols = Math.ceil(r.width / BTN_CELL);
+    const rows = Math.ceil(r.height / BTN_CELL);
+    const padX = Math.ceil(26 / BTN_CELL);
+    const padY = Math.ceil(12 / BTN_CELL);
+    const noise = [PALETTE.lime, PALETTE.amber, PALETTE.cobalt, PALETTE.red, canvasBg(dark)];
+
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        // The text zone stays clear.
+        if (col >= padX && col < cols - padX && row >= padY && row < rows - padY) continue;
+        const hv = h(col * 19 + tick * 5, row * 23 + tick * 11);
+        if (hv < 0.78) continue;
+        ctx.fillStyle = noise[Math.floor(hv * 500) % 5]!;
+        ctx.fillRect(
+          r.left + col * BTN_CELL + 1,
+          r.top + row * BTN_CELL + 1,
+          BTN_CELL - 2,
+          BTN_CELL - 2,
+        );
+      }
+    }
+  }
+}
+
 function distanceToRect(x: number, y: number, rect: DOMRect): number {
   const dx = x < rect.left ? rect.left - x : x > rect.right ? x - rect.right : 0;
   const dy = y < rect.top ? rect.top - y : y > rect.bottom ? y - rect.bottom : 0;
@@ -440,6 +491,10 @@ export function mountCursor(canvas: HTMLCanvasElement): () => void {
     }
 
     const now = performance.now();
+    // Before the mode branch and before the caret's blink gate, so a CTA keeps
+    // its noise band while the caret is in an off beat.
+    drawButtonNoise(ctx, mouseX, mouseY, now, isDark());
+
     const hasArrowTarget = findArrowTarget();
     const mode: VisibleMode = hasArrowTarget ? 'arrow' : isInGutter() ? 'caret' : 'keycap';
     if (mode === 'caret' && previousMode !== 'caret') caretEnteredAt = now;

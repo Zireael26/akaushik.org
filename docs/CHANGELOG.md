@@ -6,6 +6,24 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-08-22 — The About portrait is now a toggle: pixel field by default, the
+  photograph on click, cross-fading between them. Both layers stay mounted and
+  the field keeps running underneath, because tearing it down on each toggle
+  would re-run the grid build and the luminance stretch for something that
+  should feel instant. It is a real `<button>` with `aria-pressed` and a label
+  that states which view is showing, so the swap is available to keyboard and
+  screen-reader users rather than being a mouse-only trick; if the image fails
+  to load there is nothing to toggle to and it collapses to a plain labelled
+  canvas rather than a button that does nothing.
+
+  Restored the CTA hover effect from the reference design. Any element carrying
+  `data-btnfx` gets a band of noise pixels inside its padding while the pointer
+  is over it, re-hashing every 90ms on a 6px cell, with the middle left clear so
+  the label stays readable. It draws into the cursor overlay rather than into the
+  button — the overlay is already above everything at the right z-index, and
+  painting into the button would mean a second canvas per CTA. The footer's
+  "Get in touch" already carried the attribute from the port; only the engine
+  side was missing.
 - 2026-08-22 — Mounted the pixel cursor overlay in the root layout and wired
   its stylesheet. The engine itself arrived on `feat/pixel-cursor`; this is the
   integration. It is mounted last in `<body>` and is decorative in the strict

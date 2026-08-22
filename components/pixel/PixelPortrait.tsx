@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { mountField, type FieldHandle } from '@/lib/pixel/field';
 import { fromImage, loadImage, seedFrom } from '@/lib/pixel/sources';
 
@@ -24,7 +24,8 @@ export type PixelPortraitProps = {
 };
 
 /**
- * A photograph, rendered as a living pixel field.
+ * A photograph, rendered as a living pixel field — and clickable, to see the
+ * photograph underneath.
  *
  * The image is sampled into the cell grid, luminance becomes alpha, and from
  * there it is an ordinary field: the site's five-colour ramp applies, the
@@ -32,16 +33,18 @@ export type PixelPortraitProps = {
  * photograph arrives already speaking the design's language instead of sitting
  * inside it as a foreign rectangle.
  *
+ * Clicking swaps to the real photograph and back. Both layers are always in the
+ * DOM and cross-fade on opacity, because mounting and tearing down the field on
+ * every toggle would re-run the whole grid build and the luminance stretch for
+ * what should feel instant. The field keeps running underneath while the photo
+ * is showing; it is one rAF loop over a small grid, and stopping it would cost a
+ * rebuild on the way back.
+ *
  * Two things worth knowing before using this on another image. The grid is
  * coarse — a portrait at cellSize 4 is roughly 75 cells across — so faces
  * survive and fine detail does not; crop tight. And the source has to be
  * same-origin or CORS-enabled, because the field reads pixels back out of the
  * canvas and a tainted canvas throws on getImageData.
- *
- * Until the image loads there is nothing to draw, so the canvas stays blank
- * rather than showing a placeholder that would flash and be replaced. On a load
- * failure it stays blank too, and the alt text is what carries the meaning —
- * which is the same outcome a broken <img> would give, minus the broken icon.
  */
 export function PixelPortrait({
   src,
@@ -54,6 +57,7 @@ export function PixelPortrait({
 }: PixelPortraitProps) {
   const ref = useRef<HTMLCanvasElement>(null);
   const [failed, setFailed] = useState(false);
+  const [showPhoto, setShowPhoto] = useState(false);
 
   useEffect(() => {
     const canvas = ref.current;
@@ -83,12 +87,29 @@ export function PixelPortrait({
     };
   }, [src, floor, gamma, invert, cellSize]);
 
+  const toggle = useCallback(() => setShowPhoto((v) => !v), []);
+
+  // If the image never loaded there is nothing to toggle to, so the control
+  // collapses to a plain labelled canvas rather than a button that does nothing.
+  if (failed) {
+    return (
+      <canvas ref={ref} className={className} role="img" aria-label={`${alt} (image unavailable)`} />
+    );
+  }
+
   return (
-    <canvas
-      ref={ref}
-      className={className}
-      role="img"
-      aria-label={failed ? `${alt} (image unavailable)` : alt}
-    />
+    <button
+      type="button"
+      className={`px-portrait-toggle${showPhoto ? ' is-photo' : ''}`}
+      onClick={toggle}
+      aria-pressed={showPhoto}
+      aria-label={
+        showPhoto ? `${alt}. Showing the photograph — activate for pixel art.` : `${alt}. Showing pixel art — activate for the photograph.`
+      }
+    >
+      <canvas ref={ref} className={className} aria-hidden="true" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="px-portrait-photo" src={src} alt="" aria-hidden="true" />
+    </button>
   );
 }
