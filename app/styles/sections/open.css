@@ -10,29 +10,9 @@
    intro. The grid is the section's evidence, and burying it under a paragraph
    would put the copy ahead of the receipt. */
 
-.px-open-spark {
-  margin: 0 0 clamp(20px, 3vh, 30px);
-}
-
 /* height:auto with the intrinsic viewBox ratio keeps the cells square at every
    width. Stretching to fill would turn them into rectangles, which is the one
    thing the pixel language does not permit. */
-.px-open-spark-svg {
-  display: block;
-  width: 100%;
-  max-width: 440px;
-  height: auto;
-}
-
-.px-open-spark figcaption {
-  margin-top: 12px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink40);
-}
-
 /* "AUG 2026" does not fit the shared 56px tag column. */
 .px-open .px-row-tag {
   flex: 0 0 82px;
@@ -49,4 +29,66 @@
 
 .px-open-meta a {
   color: inherit;
+}
+
+/* ---------- the contribution field ---------- */
+/* Larger than the sparkline it replaces, and interrogable: every week is a real
+   focusable column, so the chart works with a keyboard and reads to a screen
+   reader. Columns size themselves off the container so 53 weeks always span it. */
+.px-open-contrib {
+  margin: 0 0 26px;
+}
+
+.px-contrib {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 2px;
+  align-items: end;
+  padding: 4px 0;
+}
+
+.px-contrib:focus-visible {
+  outline: 2px solid var(--px-cobalt);
+  outline-offset: 6px;
+}
+
+.px-contrib-col {
+  display: grid;
+  gap: 2px;
+  opacity: 0.92;
+  transition: opacity 0.14s ease;
+}
+
+/* Dim the rest rather than brightening one — the palette is already at full
+   saturation, so there is no brighter to go. */
+.px-contrib:hover .px-contrib-col,
+.px-contrib:focus-within .px-contrib-col {
+  opacity: 0.34;
+}
+
+.px-contrib:hover .px-contrib-col.is-active,
+.px-contrib:focus-within .px-contrib-col.is-active {
+  opacity: 1;
+}
+
+.px-contrib-cell {
+  display: block;
+  aspect-ratio: 1;
+  min-height: 7px;
+  background: transparent;
+}
+
+.px-contrib-readout {
+  margin: 0 0 22px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink45);
+}
+
+.px-contrib-readout strong {
+  font-weight: 400;
+  color: var(--ink);
 }

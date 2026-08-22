@@ -1,3 +1,4 @@
+import { ContributionField } from '@/components/pixel/ContributionField';
 import { RuledRow } from '@/components/pixel/RuledRow';
 import { SectionHead } from '@/components/pixel/SectionHead';
 import { formatMonthYear } from '@/lib/dates';
@@ -20,14 +21,6 @@ import { getStats } from '@/lib/stats';
  */
 
 /** 7px cell, 1px gutter. Eight rows is the tallest column the scale allows. */
-const SPARK_CELL = 7;
-const SPARK_ROWS = 8;
-
-function cellTone(row: number): 'cobalt' | 'amber' | 'red' {
-  if (row < 4) return 'cobalt';
-  if (row < 6) return 'amber';
-  return 'red';
-}
 
 function formatRelativeDays(iso: string): string {
   const then = new Date(iso).getTime();
@@ -42,18 +35,9 @@ function formatRelativeDays(iso: string): string {
 
 export default function OpenSource() {
   const stats = getStats();
-  const peakWeek = Math.max(...stats.weeks, 1);
 
   // One entry per filled cell. A week with any activity keeps at least one cell,
   // so a quiet week reads as quiet rather than as missing.
-  const cells = stats.weeks.flatMap((count, week) =>
-    count > 0
-      ? Array.from(
-          { length: Math.max(1, Math.ceil((count / peakWeek) * SPARK_ROWS)) },
-          (_, row) => ({ week, row }),
-        )
-      : [],
-  );
 
   return (
     <section className="px-section px-split px-open" id="open" data-screen-label="07 In the open">
@@ -66,26 +50,7 @@ export default function OpenSource() {
       />
 
       <div className="px-split-body">
-        <figure className="px-open-spark">
-          <svg
-            className="px-open-spark-svg"
-            viewBox={`0 0 ${stats.weeks.length * SPARK_CELL} ${SPARK_ROWS * SPARK_CELL}`}
-            aria-hidden="true"
-          >
-            {cells.map(({ week, row }) => (
-              <rect
-                className={`is-${cellTone(row)}`}
-                fill="currentColor"
-                height={SPARK_CELL - 1}
-                key={`${week}-${row}`}
-                width={SPARK_CELL - 1}
-                x={week * SPARK_CELL}
-                y={(SPARK_ROWS - 1 - row) * SPARK_CELL}
-              />
-            ))}
-          </svg>
-          <figcaption>{stats.weeks.length} weeks, oldest to newest</figcaption>
-        </figure>
+        <ContributionField className="px-open-contrib" weeks={stats.weeks} />
 
         <p className="px-split-intro">
           Counts come from the GitHub contributions API

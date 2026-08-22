@@ -6,6 +6,29 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-08-22 — The footer marquee carries five slogans instead of one, and the
+  contribution chart became interrogable. The marquee rasterises every slogan
+  into a single ribbon separated by middots, so cycling is just the scroll
+  arriving at the next one — there is no swap, no cross-fade and no state
+  machine, because a hard swap mid-scroll jumps the glyphs sideways. Each slogan
+  records which raster columns belong to it and takes its own dominant accent, so
+  the colour follows the words rather than the viewport. Hovering slows the
+  ribbon to a crawl so a line can be read; clicking advances to the next
+  slogan's start. Both stop under `prefers-reduced-motion`.
+
+  The GitHub sparkline is replaced by a taller field where every week is a real
+  focusable column: hovering or arrowing through it dims the rest and reads out
+  that week's count. It is built from CSS grid cells rather than through the
+  canvas field engine, because a canvas cannot say which week the pointer is
+  over without hit-testing maths and cannot be reached by a keyboard at all —
+  and this is the one piece of art on the site that carries data. `stats.json`
+  holds **weekly** totals, not daily, so this is not and cannot be a
+  GitHub-style day calendar; each column is a week, scaled against the peak, and
+  any week with work in it keeps at least one cell rather than rounding away to
+  a claim that nothing happened.
+
+  Added the X profile to the footer, matching the `twitter:creator` handle
+  already declared in the root metadata.
 - 2026-08-22 — The About portrait is now a toggle: pixel field by default, the
   photograph on click, cross-fading between them. Both layers stay mounted and
   the field keeps running underneath, because tearing it down on each toggle

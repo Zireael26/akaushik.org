@@ -1,40 +1,70 @@
 /**
- * The footer marquee — "it has to work on a tuesday · " sampled from type into
- * pixel cells. The phrase is his own, lifted from the Services copy; gaurijha's
- * "see you in court" was a litigator's sign-off.
+ * The footer marquee — a ribbon of slogans sampled from type into pixel cells.
  *
  * Ported from gaurijha.com's src/scripts/marquee.ts (itself from _mkText/_drawMq
- * in the design-refs prototype). The glyphs are rasterised once from Cabinet
- * Grotesk 500 at 16px into a 20-row grid, then every cell on the right or bottom
- * edge of a stroke is marked as an edge cell and drawn navy; interior cells are
- * amber-dominant with lime, red and cobalt sprinkles. Scroll is 0.09 cells/frame.
+ * in the design-refs prototype). Glyphs are rasterised once from Cabinet Grotesk
+ * 500 at 16px into a 20-row grid; every cell on the right or bottom edge of a
+ * stroke is marked as an edge cell and drawn navy, and interior cells are
+ * sprinkled from the palette. Base scroll is 0.09 cells/frame.
  *
- * Two deliberate changes from the source, both forced by this codebase:
+ * Three deliberate changes from the source:
  *
- *   1. mountMarquee takes its canvas and returns a teardown. The original
- *      queried for a data attribute and mounted once for the lifetime of the
- *      document, never cleaning up. Under React the wrapper already holds the
- *      ref, and StrictMode in dev mounts twice — so listeners go through an
- *      AbortController and the caller gets a disposer.
- *   2. The document.fonts.ready callback is guarded against firing after
- *      disposal.
+ *   1. mountMarquee takes its canvas and returns a teardown, because under React
+ *      the wrapper holds the ref and StrictMode mounts twice.
+ *   2. It carries several slogans rather than one. They are rasterised into a
+ *      single ribbon separated by middots, so "cycling" is just the scroll
+ *      arriving at the next one — there is no swap, no cross-fade, and no state
+ *      machine. A hard swap mid-scroll would jump the glyphs sideways.
+ *   3. Each slogan gets its own dominant accent. The raster records which line
+ *      every column belongs to, so the colour follows the words rather than the
+ *      viewport.
+ *
+ * Interaction: hovering slows the ribbon to a crawl so a line can actually be
+ * read, and clicking advances to the next slogan's start. Both are decorative
+ * and both stop under prefers-reduced-motion, where the ribbon is static.
  */
 import { PALETTE, h, navy, prefersReducedMotion } from '../pixel';
 import { isDark, onThemeChange } from '../pixel-theme';
 
-const TEXT = 'it has to work on a tuesday · ';
+/**
+ * Copy is his, drawn from docs/voice.md and the site's own sections. Editing
+ * these is an editorial act, not a code change — keep them lowercase, short,
+ * and free of the AI-tells voice.md bans.
+ */
+export const MARQUEE_LINES: readonly string[] = [
+  'the loop is the thing',
+  'receipts, not summaries',
+  'none of this is clever',
+  'built in the open',
+  'agents that stay in production',
+];
+
+const SEPARATOR = '  ·  ';
 const FONT = '500 16px "Cabinet Grotesk", sans-serif';
 const CELL = 7;
 const ROWS = 20;
 
-export function mountMarquee(canvas: HTMLCanvasElement): () => void {
+/** Dominant accent per slogan, rotating. Edge cells stay navy regardless. */
+const ACCENTS = [PALETTE.amber, PALETTE.cobalt, PALETTE.red, PALETTE.lime, PALETTE.amber] as const;
+
+export type MarqueeOptions = {
+  lines?: readonly string[];
+};
+
+export function mountMarquee(canvas: HTMLCanvasElement, options: MarqueeOptions = {}): () => void {
+  const lines = options.lines?.length ? options.lines : MARQUEE_LINES;
   const ac = new AbortController();
   const { signal } = ac;
 
   let dpr = 1;
   let tw = 0;
   let on: Uint8Array = new Uint8Array(0);
+  /** Which slogan each raster column belongs to; drives the accent. */
+  let lineOf: Uint8Array = new Uint8Array(0);
+  /** Raster x where each slogan begins, for click-to-advance. */
+  let starts: number[] = [];
   let offsetX = 0;
+  let speed = 0.09;
   let raf = 0;
   let disposed = false;
 
@@ -47,28 +77,49 @@ export function mountMarquee(canvas: HTMLCanvasElement): () => void {
     canvas.style.height = `${ROWS * CELL}px`;
 
     const oc = document.createElement('canvas');
-    let octx = oc.getContext('2d')!;
+    const octx = oc.getContext('2d')!;
     octx.font = FONT;
-    tw = Math.ceil(octx.measureText(TEXT).width) + 4;
+
+    // Measure every slogan first so the ribbon can be laid out in one pass and
+    // each column can be attributed to the line that drew it.
+    const widths = lines.map((l) => Math.ceil(octx.measureText(l + SEPARATOR).width));
+    tw = widths.reduce((a, b) => a + b, 0) + 4;
+
     oc.width = tw;
     oc.height = ROWS;
-    octx = oc.getContext('2d')!;
-    octx.font = FONT;
-    octx.textBaseline = 'middle';
-    octx.fillStyle = PALETTE.navy;
-    octx.fillText(TEXT, 0, ROWS / 2 + 1);
+    const o = oc.getContext('2d')!;
+    o.font = FONT;
+    o.textBaseline = 'middle';
+    o.fillStyle = '#fff';
 
-    const data = octx.getImageData(0, 0, tw, ROWS).data;
+    starts = [];
+    let x = 0;
+    lines.forEach((line, i) => {
+      starts.push(x);
+      o.fillText(line + SEPARATOR, x, ROWS / 2 + 1);
+      x += widths[i]!;
+    });
+
+    const img = o.getImageData(0, 0, tw, ROWS).data;
     on = new Uint8Array(tw * ROWS);
-    for (let i = 0; i < on.length; i++) on[i] = data[i * 4 + 3]! > 150 ? 1 : 0;
-    // 2 marks a right or bottom edge cell — those carry the navy outline.
+    lineOf = new Uint8Array(tw);
+
+    for (let col = 0; col < tw; col++) {
+      // Attribute the column to the last slogan that started at or before it.
+      let which = 0;
+      for (let i = 0; i < starts.length; i++) if (col >= starts[i]!) which = i;
+      lineOf[col] = which;
+    }
+
     for (let y = 0; y < ROWS; y++) {
-      for (let x = 0; x < tw; x++) {
-        const i = y * tw + x;
-        if (!on[i]) continue;
-        const rEdge = x + 1 >= tw || !on[i + 1];
-        const bEdge = y + 1 >= ROWS || !on[i + tw];
-        if (rEdge || bEdge) on[i] = 2;
+      for (let col = 0; col < tw; col++) {
+        const i = y * tw + col;
+        if (img[i * 4 + 3]! <= 128) continue;
+        // Edge cells are the ones with nothing to their right or below — the
+        // trick that gives the glyphs their weight without a second pass.
+        const rightEmpty = col + 1 >= tw || img[(y * tw + col + 1) * 4 + 3]! <= 128;
+        const belowEmpty = y + 1 >= ROWS || img[((y + 1) * tw + col) * 4 + 3]! <= 128;
+        on[i] = rightEmpty || belowEmpty ? 2 : 1;
       }
     }
   }
@@ -82,8 +133,10 @@ export function mountMarquee(canvas: HTMLCanvasElement): () => void {
     const wCells = Math.ceil(w / CELL);
     ctx.clearRect(0, 0, w, ROWS * CELL);
     const off = Math.floor(offsetX);
+
     for (let x = 0; x < wCells; x++) {
       const sx = (x + off) % tw;
+      const accent = ACCENTS[lineOf[sx]! % ACCENTS.length]!;
       for (let y = 0; y < ROWS; y++) {
         const v = on[y * tw + sx];
         if (!v) continue;
@@ -98,7 +151,7 @@ export function mountMarquee(canvas: HTMLCanvasElement): () => void {
                 ? PALETTE.lime
                 : hv > 0.72
                   ? PALETTE.red
-                  : PALETTE.amber;
+                  : accent;
         }
         ctx.fillRect(x * CELL, y * CELL, CELL - 1, CELL - 1);
       }
@@ -107,9 +160,26 @@ export function mountMarquee(canvas: HTMLCanvasElement): () => void {
 
   function loop(): void {
     raf = requestAnimationFrame(loop);
-    offsetX = (offsetX + 0.09) % tw;
+    if (!prefersReducedMotion()) offsetX = (offsetX + speed) % tw;
     draw();
   }
+
+  canvas.addEventListener('pointerenter', () => { speed = 0.02; }, { signal });
+  canvas.addEventListener('pointerleave', () => { speed = 0.09; }, { signal });
+
+  canvas.addEventListener(
+    'pointerdown',
+    () => {
+      if (!tw || starts.length < 2) return;
+      // Jump to the next slogan's start, measured from what is currently at the
+      // left edge of the viewport.
+      const current = Math.floor(offsetX) % tw;
+      const next = starts.find((s) => s > current) ?? starts[0]!;
+      offsetX = next;
+      draw();
+    },
+    { signal },
+  );
 
   window.addEventListener(
     'resize',
@@ -119,6 +189,7 @@ export function mountMarquee(canvas: HTMLCanvasElement): () => void {
     },
     { signal },
   );
+
   const unsubscribeTheme = onThemeChange(draw);
   if (document.fonts?.ready) {
     void document.fonts.ready.then(() => {
@@ -129,8 +200,7 @@ export function mountMarquee(canvas: HTMLCanvasElement): () => void {
   }
 
   build();
-  draw();
-  if (!prefersReducedMotion()) raf = requestAnimationFrame(loop);
+  loop();
 
   return () => {
     disposed = true;
