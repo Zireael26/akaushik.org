@@ -1,6 +1,6 @@
 # Handoff
 
-_Written 2026-08-23, ~02:20 IST, at the end of an unattended L4 run._
+_Written 2026-08-23, ~03:30 IST, at the end of an unattended L4 run._
 
 ## Where things are
 
@@ -43,11 +43,40 @@ ADR-0019 and in `docs/CHANGELOG.md`:
 
 ## Verified on the deployed preview
 
-21 routes answer; both Markdown negotiation patterns work; the nonce CSP
-reaches every script tag; all six discovery `Link` rels are present; `POST
-/api/mcp` returns a real `tools/list`; all three OG card shapes were downloaded
-and inspected; preview is refused by both `X-Robots-Tag` and `robots.txt`.
-Vitals: LCP 448–1180 ms, CLS ≤ 0.002.
+- 21 routes answer. Both Markdown negotiation patterns work. The nonce CSP
+  reaches every script tag. All six discovery `Link` rels are present. `POST
+  /api/mcp` returns a real `tools/list`. All three OG card shapes were
+  downloaded and looked at. The preview is refused by both `X-Robots-Tag` and
+  `robots.txt`.
+- **Accessibility:** axe-core across seven routes in both themes, zero WCAG
+  A/AA violations. It was 64 nodes light / 48 dark before tonight.
+- **Playwright:** 60 pass / 1 documented fixme / 0 fail on `chromium-desktop`
+  against the live preview. See the caveat below.
+- **Responsive:** no horizontal overflow at 320, 375 or 768 on the home,
+  article or case-study routes. The home page was scrolling sideways at every
+  phone width before tonight.
+- Vitals: LCP 448–1180 ms, CLS ≤ 0.002.
+
+## Things found by looking that no gate could see
+
+Every one of these passed typecheck, lint and vitest while broken. They were
+found by running against a real deployment, which is the point.
+
+1. Four dead GitHub links on the home page — private repos, 404 for every
+   reader. Private repos are named and not linked now.
+2. The whole site failed WCAG AA contrast.
+3. The site's motion switch stopped videos and left every canvas animating.
+4. The home page scrolled sideways on a phone.
+5. Sixteen of sixty-one e2e specs failed; two whole files were testing
+   components deleted weeks ago and had been committed knowingly red.
+
+## Caveat on the e2e suite
+
+Only `chromium-desktop` has been run to completion. A full five-project run
+(305 specs) was started twice and did not finish — Firefox stalls somewhere in
+`e2e/canvas.spec.ts`, and with a 60s per-test timeout and CI retries a single
+slow spec costs three minutes. **Do not read "60 passed" as cross-browser
+coverage.** Firefox and WebKit are unverified against the new specs.
 
 ## Open, in rough priority order
 
