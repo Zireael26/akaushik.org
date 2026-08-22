@@ -92,7 +92,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             stored choice or system preference and sets html[data-mode] before
             first paint. The sync load is deliberate: an async/deferred script
             would paint first, then flip theme, causing FOUC for dark-preference
-            users. Matches components/site/ThemeToggle.tsx (storage key + fallback). */}
+            users. Matches components/pixel/ThemeSwitch.tsx (storage key + fallback). */}
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script nonce={nonce} src="/init-theme.js" />
         {/* RFC 8288 Link header duplicates — for crawlers that skip HTTP

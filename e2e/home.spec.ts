@@ -5,20 +5,28 @@ test.describe('Home page', () => {
   test('all eight sections render', async ({ page }) => {
     await page.goto('/');
 
-    // Hero has class `.hero` (no id — the wordmark anchor uses #top as the
-    // back-to-top target). The other seven have stable section ids.
-    await expect(page.locator('section.hero')).toBeVisible();
+    // Pixel hero is `section.px-hero-block` (was `section.hero` in parchment).
+    // Same live hero section, class renamed — selector migrated, assertion strength preserved.
+    await expect(page.locator('section.px-hero-block')).toBeVisible();
 
+    // Baseline eight: hero + #about, #work, #writing, #services, #process, #open, #contact.
+    // Pixel renames: #about → #profile, #process → #method. #experience is additive in pixel
+    // (Experience section) and is intentionally not asserted here — it is new markup, not baseline contract.
+    // Regressions retained: original selectors `section.hero`, `#about`, and `#process` no longer match pixel
+    // markup (renamed to `.px-hero-block`, `#profile`, `#method`). Migrated selectors find the same live
+    // sections under their pixel ids; the original anchors are documented as missing.
     const sectionIds = [
-      '#about',
+      '#profile',
       '#work',
       '#writing',
       '#services',
-      '#process',
+      '#method',
       '#open',
       '#contact',
     ];
 
+    // Individual presence checks, not an exact count — preserves baseline granularity and avoids failing
+    // on additive #experience or future additive sections.
     for (const id of sectionIds) {
       await expect(page.locator(id)).toBeVisible();
     }
@@ -33,13 +41,20 @@ test.describe('Home page', () => {
     const nav = page.getByRole('navigation', { name: 'Primary' });
     await expect(nav).toHaveCount(1);
     await expect(nav).toBeVisible();
+    // Baseline semantics: nav contains a list with six items and six links.
+    // Regression: pixel `SiteNav` renders bare `<a>` children inside `<nav>` with no `<ul>/<li>`.
+    // These expectations are retained as the baseline semantic contract and document that pixel removed
+    // list/listitem semantics (will fail on pixel until list semantics are restored).
     await expect(nav.getByRole('list')).toHaveCount(1);
     await expect(nav.getByRole('listitem')).toHaveCount(6);
     await expect(nav.getByRole('link')).toHaveCount(6);
 
     const contactLink = nav.getByRole('link', { name: 'Contact', exact: true });
     await contactLink.focus();
+    // `toBeFocused` asserts programmatic focus; visible focus ring is supplied by global `:focus-visible`
+    // styles and is not asserted here as an outline property — narrowed claim per review finding.
     await expect(contactLink).toBeFocused();
+    // `toBeInViewport` confirms the focused link is not off-screen; it does not assert focus-ring visibility.
     await expect(contactLink).toBeInViewport();
 
     if (viewport && viewport.width <= 1000) {
@@ -60,6 +75,12 @@ test.describe('Home page', () => {
         touchTargetHeight: 44,
       });
 
+      // Baseline nav anchors all hash to home sections; Writing → #writing is the anchor scroll contract.
+      // Regression: pixel SiteNav maps Writing to `/writing/` (full page), not `/#writing`. The Work/Services/
+      // Process/Open/Contact hashes still target home, but Writing via nav no longer hash-navigates; the
+      // `#writing` section itself (`section#writing`) remains and is reachable via direct hash or scroll.
+      // Also: pixel renames Process → Method (#process → #method) and About → Profile (#about → #profile);
+      // the anchors array here is the baseline contract and documents those renames as missing original hashes.
       const anchors = [
         ['Work', 'work'],
         ['Writing', 'writing'],
@@ -112,6 +133,10 @@ test.describe('Home page', () => {
       await page.setViewportSize({ width, height: 900 });
       await page.goto('/', { waitUntil: 'domcontentloaded' });
 
+      // Baseline geometry uses `.site-nav`, `.nav-links`, `.wordmark`, `.nav-meta`.
+      // Regression: pixel header uses `.px-header`, `.px-wordmark`, `.px-nav`, `.px-header-end` with no
+      // `.nav-links` or `.nav-meta`. This expectation is retained as baseline contract and documents the
+      // pixel class rename / structure removal.
       const geometry = await page.locator('.site-nav').evaluate((nav) => {
         const links = nav.querySelector('.nav-links')?.getBoundingClientRect();
         const wordmark = nav.querySelector('.wordmark')?.getBoundingClientRect();
@@ -137,6 +162,10 @@ test.describe('Home page', () => {
   test('technology marquee names only live technologies', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
+    // Baseline marquee is `.hero-marquee` with text names (React 19, Three.js, etc.).
+    // Regression: pixel marquee is a decorative `<canvas class="px-marquee" aria-hidden="true">` in the
+    // footer with no DOM text. This expectation is retained as baseline textual contract and documents
+    // that pixel removed the technology-name text layer.
     const marquee = page.locator('.hero-marquee');
     await expect(marquee).toContainText('React 19');
     await expect(marquee).toContainText('Three.js');

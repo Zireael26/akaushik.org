@@ -1,5 +1,15 @@
 import { expect, test, type Page, type Response } from '@playwright/test';
 
+// Baseline reduced-motion + marquee + Wanderer resource-gate contract.
+// Regression: pixel transplant removed the CSS marquee (`.hero-marquee .marquee-track` with
+// `animationName`/`animationPlayState`) and the Three.js Wanderer scene (`#companion`,
+// `data-wanderer-renderer`, `data-wanderer-pose`, `companion-svg`, lazy scene chunk).
+// Pixel marquee is a decorative `canvas.px-marquee[aria-hidden]` with JS-driven cells that
+// no-ops its scroll under `prefers-reduced-motion` and `data-motion="off"`; the hero field is
+// `canvas.px-heatfield`. These expectations are retained verbatim as the baseline contract and
+// document that pixel removed the tracked CSS animation and wanderer resource. They will fail
+// on pixel until that contract is restored or intentionally migrated to the pixel field metrics.
+
 const DESKTOP_MIN_WIDTH = 861;
 const RENDERER_ATTRIBUTE = 'data-wanderer-renderer';
 const SCENE_RESOURCE_MARKERS = [RENDERER_ATTRIBUTE, 'data-wanderer-pose', 'companion-svg'] as const;

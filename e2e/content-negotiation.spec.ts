@@ -1,10 +1,10 @@
 import { expect, test } from '@playwright/test';
 
-// Guard against a future proxy.ts edit (matcher regex, prefersMarkdown
-// check, rewrite URL construction) silently breaking either content
-// negotiation pattern. AGENT_READINESS §4.1 is the contract. The
-// isitagentready.com scan hits both patterns; losing either drops the
-// score without warning.
+// Guards the two content-negotiation patterns promised by AGENT_READINESS §4.1.
+// The “.md suffix” and “Accept: text/markdown” patterns are both hit by
+// isitagentready.com; losing either drops the score without warning. Keeping
+// these assertions ensures Link discovery and Markdown alternate delivery stay
+// intact across server refactors.
 //
 // Runs only on one project — Playwright's `request` API doesn't care about
 // the viewport/browser matrix and content-negotiation is a server-side
@@ -42,7 +42,7 @@ test.describe('content negotiation', () => {
     expect(body.startsWith('# ')).toBe(true);
   });
 
-  test('Pattern A: Accept: text/markdown on /work/<slug> rewrites', async ({
+  test('Pattern A: Accept: text/markdown on /work/<slug> serves Markdown', async ({
     request,
   }) => {
     const response = await request.get('/work/neev', {
@@ -55,7 +55,7 @@ test.describe('content negotiation', () => {
     );
   });
 
-  test('Pattern A: Accept: text/markdown on / rewrites to llms.txt', async ({
+  test('Pattern A: Accept: text/markdown on / serves Markdown (llms.txt)', async ({
     request,
   }) => {
     const response = await request.get('/', {

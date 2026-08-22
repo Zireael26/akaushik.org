@@ -11,10 +11,8 @@ import OpenSource from '@/components/sections/OpenSource';
  * Home — the single-page scroll, in the pixel design.
  *
  * There is no Contact section any more. In this design contact lives in the
- * footer, next to the marquee and the notched button, the way gaurijha.com does
- * it; a standalone contact block would repeat it. `components/sections/Contact.tsx`
- * still exists on disk and is now unreferenced — it goes when the old
- * parchment-era components are swept.
+ * footer (components/site/SiteFooter.tsx), next to the marquee and the notched
+ * button, the way gaurijha.com does it; a standalone contact block would repeat it.
  */
 export default function Home() {
   return (
