@@ -1,0 +1,551 @@
+/* docs — /api/docs human-readable OpenAPI page.
+   Owned by R2 (app/api/docs/page.tsx). Ported to the pixel language from
+   the parchment template that shipped as app/api/docs/page.tsx on origin/main
+   (the api-docs div with api-docs-path / api-docs-op). The template kept the
+   OpenAPI/MCP facts in JSX reading lib/openapi-spec.ts and lib/mcp.ts, which
+   this file preserves — only the presentation moves.
+
+   Structure mirrors the pixel index and article shells (app/styles/sections/
+   work-detail.css, writing-detail.css): the strip field sits at the top as
+   texture, the head is a statement (SectionHead) with the summary and the five-
+   surface description as subordinate prose, the meta and TOC are ruled rows
+   and matter rows, and each method / tool / schema is a ruled stack with a
+   mono kicker. Every colour goes through app/styles/tokens.css — no hex
+   here — and the TypeScript field source goes through lib/pixel.ts.
+
+   Imported from app/layout.tsx alongside the other section files by the
+   foreman, not chained through globals.css. The foreman owns the final root
+   import, so this file is not imported elsewhere. */
+
+/* ---------- shell ---------- */
+.px-docs {
+  max-width: var(--wrap-max);
+  margin: 0 auto;
+  padding: clamp(56px, 9vh, 118px) var(--wrap-pad) clamp(40px, 6vh, 72px);
+}
+
+/* ---------- strip field ---------- */
+.px-docs-field {
+  display: block;
+  width: 100%;
+  height: clamp(84px, 12vh, 136px);
+  margin-bottom: clamp(24px, 4vh, 36px);
+}
+
+.px-docs-field:focus {
+  outline: none;
+}
+
+/* ---------- back link (mono, like work & writing) ---------- */
+.px-docs-back {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink60);
+  text-decoration: none;
+  margin-bottom: 22px;
+}
+
+.px-docs-back:hover {
+  color: var(--ink);
+}
+
+.px-docs-back:focus-visible {
+  outline: 2px solid var(--px-cobalt);
+  outline-offset: 2px;
+}
+
+/* ---------- head ---------- */
+.px-docs .px-head-label {
+  color: var(--ink60);
+}
+
+.px-docs-head {
+  margin-bottom: clamp(28px, 4vh, 44px);
+}
+
+.px-docs-summary {
+  margin: 16px 0 0;
+  max-width: var(--prose-max);
+  font-size: 14.5px;
+  line-height: 1.75;
+  color: var(--ink70);
+}
+
+.px-docs-description {
+  margin: 12px 0 0;
+  max-width: var(--prose-max);
+  font-size: 14.5px;
+  line-height: 1.75;
+  color: var(--ink70);
+  text-align: justify;
+  hyphens: auto;
+}
+
+.px-docs-head a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
+}
+
+.px-docs-head a:hover {
+  text-decoration-color: var(--px-cobalt);
+  color: var(--ink);
+}
+
+.px-docs-head a:focus-visible {
+  outline: 2px solid var(--px-cobalt);
+  outline-offset: 2px;
+}
+
+/* ---------- meta (ruled rows) ---------- */
+.px-docs-meta {
+  margin-top: 22px;
+  max-width: var(--prose-max);
+}
+
+.px-docs-meta .px-row-tag {
+  flex-basis: 64px;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--ink60);
+}
+
+.px-docs-meta code,
+.px-docs-meta a code {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+/* ---------- TOC ---------- */
+.px-docs-toc {
+  margin-top: clamp(24px, 4vh, 36px);
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.px-docs-toc-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px clamp(24px, 4vw, 56px);
+  align-items: flex-start;
+}
+
+.px-docs-toc-group {
+  flex: 1 1 180px;
+  min-width: min(100%, 200px);
+}
+
+.px-docs-toc-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink60);
+  margin-bottom: 8px;
+}
+
+.px-docs-toc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.px-docs-toc-list li + li {
+  margin-top: 6px;
+}
+
+.px-docs-toc-list a {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--ink60);
+  text-decoration: none;
+}
+
+.px-docs-toc-list a:hover {
+  color: var(--ink);
+}
+
+.px-docs-toc-list a:focus-visible {
+  outline: 2px solid var(--px-cobalt);
+  outline-offset: 2px;
+}
+
+.px-docs-toc-list code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: inherit;
+}
+
+/* MatterRow TOC variant — where MatterRow is used for path anchors,
+   keep glyphs on accessible ink and move the pixel accent to the underline. */
+.px-docs-toc .px-matter {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.px-docs-toc .px-matter:first-of-type {
+  border-top: 1px solid var(--line);
+}
+
+.px-docs-toc .px-matter:hover .px-matter-title {
+  color: var(--ink);
+}
+
+.px-docs-toc .px-matter-tag {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.px-docs-toc .px-matter-tag.is-cobalt {
+  color: var(--ink60);
+  text-decoration-color: var(--px-cobalt);
+}
+
+.px-docs-toc .px-matter-tag.is-amber {
+  color: var(--ink60);
+  text-decoration-color: var(--px-amber);
+}
+
+.px-docs-toc .px-matter-tag.is-red {
+  color: var(--ink60);
+  text-decoration-color: var(--px-red);
+}
+
+.px-docs-toc .px-matter-tag.is-ink {
+  text-decoration-color: var(--ink);
+}
+
+/* ---------- kickers ---------- */
+.px-docs-kicker {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink60);
+  margin-bottom: 10px;
+}
+
+/* ---------- sections ---------- */
+.px-docs-section {
+  margin-top: clamp(36px, 6vh, 56px);
+}
+
+.px-docs-section .px-head--block {
+  margin-bottom: 18px;
+}
+
+/* ---------- MCP tools ---------- */
+.px-docs-mcp {
+  margin-top: clamp(36px, 6vh, 56px);
+}
+
+.px-docs-mcp-copy {
+  max-width: var(--prose-max);
+  font-size: 14.5px;
+  line-height: 1.75;
+  color: var(--ink70);
+  margin: 0 0 12px;
+}
+
+.px-docs-mcp-copy code {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--ink);
+  background: transparent;
+}
+
+.px-docs-mcp-copy a {
+  color: inherit;
+}
+
+.px-docs-tool {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.px-docs-tool:last-of-type {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 18px;
+}
+
+.px-docs-tool-head {
+  margin: 0 0 8px;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+.px-docs-tool-head code {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.px-docs-tool-desc {
+  margin: 0 0 14px;
+  max-width: var(--prose-max);
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ink70);
+}
+
+.px-docs-block {
+  margin-top: 14px;
+}
+
+.px-docs-block .px-row-tag {
+  flex: 0 1 160px;
+  min-width: 96px;
+  max-width: 220px;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  color: var(--ink60);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.px-docs-block .px-row-body {
+  font-size: 13.5px;
+}
+
+.px-docs-block .px-row-body code {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.px-docs-required {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--px-red);
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+
+.px-docs-annotations {
+  margin: 14px 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink60);
+}
+
+/* ---------- paths ---------- */
+.px-docs-path {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.px-docs-path:last-of-type {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 22px;
+}
+
+.px-docs-path-head {
+  margin: 0 0 16px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+.px-docs-path-head code {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.px-docs-op {
+  margin-top: 18px;
+  padding: 16px 0 0;
+  border-top: 1px solid var(--line);
+}
+
+.px-docs-op:first-of-type {
+  margin-top: 0;
+}
+
+.px-docs-op-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: baseline;
+}
+
+.px-docs-method {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+  padding: 2px 6px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.px-docs-method.is-cobalt {
+  color: var(--ink);
+  border-color: var(--px-cobalt);
+}
+
+.px-docs-method.is-amber {
+  color: var(--ink);
+  border-color: var(--px-amber);
+}
+
+.px-docs-method.is-red {
+  color: var(--ink);
+  border-color: var(--px-red);
+}
+
+.px-docs-method.is-ink {
+  color: var(--ink);
+}
+
+.px-docs-op-summary {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.px-docs-op-desc {
+  margin: 8px 0 0;
+  max-width: var(--prose-max);
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ink70);
+}
+
+.px-docs-op .px-docs-block .px-row-tag {
+  flex-basis: 72px;
+}
+
+.px-docs-content-types {
+  color: var(--ink60);
+  font-size: 12.5px;
+}
+
+/* ---------- schemas ---------- */
+.px-docs-schema {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.px-docs-schema:last-of-type {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 18px;
+}
+
+.px-docs-schema-head {
+  margin: 0 0 12px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.px-docs-schema-head code {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.px-docs-schema .px-row-tag {
+  flex: 0 1 160px;
+  min-width: 96px;
+  max-width: 220px;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  color: var(--ink60);
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* ---------- footer ---------- */
+.px-docs-footer {
+  margin-top: clamp(36px, 6vh, 56px);
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.px-docs-footer p {
+  max-width: var(--prose-max);
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--ink60);
+  margin: 0;
+}
+
+.px-docs-footer a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
+}
+
+.px-docs-footer a:hover {
+  color: var(--ink);
+  text-decoration-color: var(--px-cobalt);
+}
+
+.px-docs-footer a:focus-visible {
+  outline: 2px solid var(--px-cobalt);
+  outline-offset: 2px;
+}
+
+.px-docs-footer code {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+/* ---------- prose links & code (general) ---------- */
+.px-docs a {
+  text-decoration-thickness: 1px;
+}
+
+.px-docs a:hover {
+  color: var(--ink);
+}
+
+.px-docs a:focus-visible {
+  outline: 2px solid var(--px-cobalt);
+  outline-offset: 2px;
+}
+
+.px-docs code {
+  font-family: var(--font-mono);
+}
+
+/* ---------- reduced motion & focus ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .px-docs .px-matter {
+    transition: color 0.18s ease;
+  }
+
+  .px-docs .px-matter:hover {
+    padding-left: 0;
+  }
+
+  .px-docs a {
+    transition: none;
+  }
+}
