@@ -3,19 +3,23 @@ import { MDXRemote } from 'next-mdx-remote/rsc';
 import type { Post, CaseStudyFrontmatter } from '@/lib/content';
 import { MDX_OPTIONS } from '@/lib/mdx-options';
 import { HyperframesLoop } from '@/components/media/hyperframes-loop';
+import { RouteField } from '@/components/pixel/RouteField';
 import { RuledRow } from '@/components/pixel/RuledRow';
 import { Reel, type ReelSlug } from './reels';
 
 export function CaseStudyPage({
   post,
-  slug,
+  routeSlug,
+  reelSlug,
 }: {
   post: Post<'case-studies'>;
-  slug: ReelSlug | null;
+  routeSlug: string;
+  reelSlug: ReelSlug | null;
 }) {
   const fm = post.frontmatter as CaseStudyFrontmatter;
   return (
     <main id="top" className="px-work-detail">
+      <RouteField slug={routeSlug} />
       <Link href="/#work" className="px-work-back">
         ← Back to selected work
       </Link>
@@ -35,11 +39,11 @@ export function CaseStudyPage({
           ) : null}
         </div>
       </header>
-      {slug === 'neev' ? (
+      {reelSlug === 'neev' ? (
         <HyperframesLoop kind="work-inline" slug="neev" className="px-work-inline-loop" />
-      ) : slug ? (
+      ) : reelSlug ? (
         <figure className="px-work-detail-reel" aria-hidden="true">
-          <Reel slug={slug} variant="card" />
+          <Reel slug={reelSlug} variant="card" />
         </figure>
       ) : null}
       <article className="px-work-body">

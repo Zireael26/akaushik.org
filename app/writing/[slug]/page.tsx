@@ -16,7 +16,7 @@ import { MDX_OPTIONS } from '@/lib/mdx-options';
 import { articleGraph, breadcrumbGraph, jsonLdString } from '@/lib/structured-data';
 import { JsonLdScript } from '@/components/seo/JsonLdScript';
 import { HyperframesLoop, type WritingLoopSlug } from '@/components/media/hyperframes-loop';
-import { ArticleField } from '@/components/pixel/ArticleField';
+import { RouteField } from '@/components/pixel/RouteField';
 import { MatterRow, RuledRow } from '@/components/pixel/RuledRow';
 import { ARTICLE_COPY, type FaqRow } from './article-copy';
 
@@ -161,9 +161,7 @@ export default async function WritingPost({ params }: { params: Promise<{ slug: 
   const nonce = (await headers()).get('x-nonce') ?? undefined;
   const post = getPost('writing', slug);
   if (!post) notFound();
-  // Writing frontmatter has no topic field today; ArticleField deliberately
-  // falls back to one restrained source when topic is undefined.
-  const fm = post.frontmatter as WritingFrontmatter & { topic?: string };
+  const fm = post.frontmatter as WritingFrontmatter;
   if (isDraftHidden(fm)) notFound();
   const readingTime = fm.readingTime ?? getReadingTime(post.content);
   const loopSlug = WRITING_LOOPS[slug];
@@ -194,7 +192,7 @@ export default async function WritingPost({ params }: { params: Promise<{ slug: 
 
       <article className="px-article">
         <header>
-          <ArticleField slug={slug} topic={fm.topic} />
+          <RouteField slug={slug} />
 
           <nav className="px-article-crumb" aria-label="Breadcrumb">
             <Link href="/writing">Writing</Link>

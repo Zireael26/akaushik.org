@@ -76,7 +76,7 @@ export default async function WorkDetail({
   return (
     <>
       {ldScripts}
-      <CaseStudyPage post={mdx} slug={reelSlug} />
+      <CaseStudyPage post={mdx} routeSlug={slug} reelSlug={reelSlug} />
     </>
   );
 }

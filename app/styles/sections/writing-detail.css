@@ -80,9 +80,14 @@
   padding: clamp(32px, 6vh, 72px) var(--wrap-pad) clamp(56px, 9vh, 110px);
 }
 
-/* The per-article field sits at the top of .px-article. Its own sheet
-   (article-field.css) reserves the rect and paints via lib/pixel/field.ts. */
-.px-article .px-article-field {
+/* ---------- RouteField — shared detail route strip ---------- */
+/* The same full-width rectangle can sit above writing and case-study detail
+   chrome. PixelField owns the canvas paint and reduced-motion behaviour; this
+   block only reserves the strip and the gap below it. */
+.px-route-field {
+  display: block;
+  width: 100%;
+  height: clamp(84px, 12vh, 136px);
   margin-bottom: clamp(24px, 4vh, 36px);
 }
 
