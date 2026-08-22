@@ -37,7 +37,7 @@
   /* Type */
   --font-display: 'Cabinet Grotesk', system-ui, sans-serif;
   --font-body: 'General Sans', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 
   /* Layout */
   --wrap-max: 1560px;
