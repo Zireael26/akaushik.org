@@ -1,35 +1,41 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useEffect, useRef } from 'react';
+import { mountThemeSwitch } from '@/lib/scenes/theme-switch';
 
 /**
- * SHIM. The real one is a 52×26 pixel canvas — an outlined track with an amber
- * sun / lime moon knob that slides on toggle — and is being built on the
- * feat/pixel-engines branch. Expect a conflict on this path at merge, and take
- * theirs.
+ * The pixel theme switch button.
  *
- * This exists because SiteNav imports it and the whole site 500s without it.
- * The behaviour below is the contract the canvas version must keep: write
- * html[data-mode] and persist under `abhishek.portfolio.mode`, the key
- * public/init-theme.js reads before first paint. A second key would reintroduce
- * the FOUC that key exists to prevent.
+ * Same island shape as Heatfield: a ref, an effect, a disposer. This one owns a
+ * real <button> because the switch is interactive — the engine derives it from
+ * the canvas via closest() and manages click, persistence and aria-pressed.
+ *
+ * Decorative canvas: aria-hidden. Global :focus-visible styles already supply
+ * the visible focus ring on the button.
  */
-const STORAGE_KEY = 'abhishek.portfolio.mode';
-
 export function ThemeSwitch() {
-  const toggle = useCallback(() => {
-    const next = document.documentElement.getAttribute('data-mode') === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-mode', next);
-    try {
-      window.localStorage.setItem(STORAGE_KEY, next);
-    } catch {
-      // Private browsing: the attribute still applied, only persistence is lost.
-    }
+  const ref = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    return mountThemeSwitch(canvas);
   }, []);
 
   return (
-    <button type="button" className="px-theme-switch" aria-label="Toggle colour theme" onClick={toggle}>
-      <span className="px-theme-switch-track" aria-hidden="true" />
+    <button
+      type="button"
+      className="px-theme-switch"
+      aria-label="Switch between day and night"
+      style={{ border: 0, padding: 0, background: 'transparent', cursor: 'pointer', lineHeight: 0 }}
+    >
+      <canvas
+        ref={ref}
+        aria-hidden="true"
+        width={104}
+        height={52}
+        style={{ display: 'block', width: 52, height: 26 }}
+      />
     </button>
   );
 }

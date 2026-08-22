@@ -1,14 +1,18 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { mountPixelBand } from '@/lib/scenes/pixel-band';
 
 /**
- * static decorative strip.
+ * The static pixel band canvas.
  *
- * STUB — the engine lands from the canvas-engine port (branch
- * feat/pixel-engines). The contract is fixed here so sections can import and
- * lay out against it now: a decorative canvas that fills its container and
- * takes no props. When the engine arrives, only the body of the effect changes.
+ * Same React surface as every pixel island: a ref, an effect, a disposer. The
+ * engine owns its listeners and theme subscription and hands back a teardown,
+ * which is what makes StrictMode's double-mount in dev a no-op rather than two
+ * competing rebuilds.
+ *
+ * Decorative: aria-hidden. Static by design — no loop to gate behind
+ * prefers-reduced-motion.
  */
 export function PixelBand() {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -16,7 +20,7 @@ export function PixelBand() {
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
-    return undefined;
+    return mountPixelBand(canvas);
   }, []);
 
   return <canvas ref={ref} className="px-pixel-band" aria-hidden="true" />;

@@ -6,6 +6,17 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-08-22 — Ported the method band, marquee, Delhi legal skyline, pixel
+  band, and theme switch canvas engines from gaurijha.com's `public-site-v1`
+  tag into `lib/scenes/`, with their React wrappers in `components/pixel/`.
+  Each mount now owns its passed canvas and returns a teardown because React
+  remounts would otherwise leak animation-frame loops, listeners, and theme
+  subscriptions. Theme state now reads `html[data-mode]` through the shared
+  MutationObserver rather than the source site's setter because
+  `public/init-theme.js` and the existing theme toggle already write that
+  attribute; the canvas switch persists the same `abhishek.portfolio.mode`
+  key. The engine constants and law-themed art remained unchanged in this
+  faithful port; the art redraw remains separate work.
 - 2026-08-22 — Replaced the parchment-on-ink design with the pixel language
   built for gaurijha.com, and rebuilt the home page on it. Tokens, the four
   self-hosted faces, and the reset move to `app/styles/`; section styles split

@@ -1,14 +1,18 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { mountMarquee } from '@/lib/scenes/marquee';
 
 /**
- * scrolling glyph-sampled marquee.
+ * The footer marquee canvas — "see you in court · " scrolled as pixel cells.
  *
- * STUB — the engine lands from the canvas-engine port (branch
- * feat/pixel-engines). The contract is fixed here so sections can import and
- * lay out against it now: a decorative canvas that fills its container and
- * takes no props. When the engine arrives, only the body of the effect changes.
+ * This is the whole React surface of a pixel island: a ref, an effect, a
+ * disposer. The engine owns its own loop, listener and theme subscription and
+ * hands back a teardown — which is what makes StrictMode's double-mount in dev
+ * a no-op rather than two competing rAF loops.
+ *
+ * Decorative: aria-hidden, and the engine already no-ops its scroll under
+ * prefers-reduced-motion.
  */
 export function Marquee() {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -16,7 +20,7 @@ export function Marquee() {
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
-    return undefined;
+    return mountMarquee(canvas);
   }, []);
 
   return <canvas ref={ref} className="px-marquee" aria-hidden="true" />;

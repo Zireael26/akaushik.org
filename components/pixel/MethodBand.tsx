@@ -1,14 +1,18 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { mountMethodBand } from '@/lib/scenes/method-band';
 
 /**
- * method flow band, 4 colour zones.
+ * The method flow band canvas.
  *
- * STUB — the engine lands from the canvas-engine port (branch
- * feat/pixel-engines). The contract is fixed here so sections can import and
- * lay out against it now: a decorative canvas that fills its container and
- * takes no props. When the engine arrives, only the body of the effect changes.
+ * Same surface as every pixel island: a ref, an effect, a disposer. The engine
+ * owns its loop, listeners and theme subscription and hands back a teardown,
+ * which makes StrictMode's double-mount a no-op rather than two competing rAF
+ * loops.
+ *
+ * Decorative: aria-hidden. Under prefers-reduced-motion the engine draws one
+ * static frame and re-themes it via its subscription.
  */
 export function MethodBand() {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -16,7 +20,7 @@ export function MethodBand() {
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
-    return undefined;
+    return mountMethodBand(canvas);
   }, []);
 
   return <canvas ref={ref} className="px-method-band" aria-hidden="true" />;
