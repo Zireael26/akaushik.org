@@ -1,38 +1,40 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { unstable_doesMiddlewareMatch } from 'next/experimental/testing/server.js';
 import { NextRequest } from 'next/server';
-import { config, proxy, securityHeaders } from './proxy';
+import { config, proxy } from './proxy';
 
-describe('securityHeaders', () => {
+/**
+ * The CSP itself is `lib/agent-proxy.ts`'s and is tested in
+ * `lib/agent-proxy.test.ts`, where the Worker adapter reads it from too. What
+ * is still this adapter's job — and so is tested here — is deciding whether
+ * production is in effect at all, which it does from `process.env.NODE_ENV`.
+ */
+describe('proxy production gating', () => {
   afterEach(() => {
     vi.unstubAllEnvs();
   });
 
-  it('returns CSP, X-Frame-Options, and HSTS in production', () => {
+  it('serves the full production header set when NODE_ENV says production', () => {
     vi.stubEnv('NODE_ENV', 'production');
 
-    const headers = securityHeaders('test-nonce');
-    const csp = headers['content-security-policy']!;
-    const scriptSrc = csp.split('; ').find((directive) => directive.startsWith('script-src '));
+    const response = proxy(new NextRequest('https://akaushik.org/'));
 
-    expect(csp).toContain("default-src 'self'");
-    expect(csp).toContain("frame-ancestors 'none'");
-    expect(csp).toContain("style-src 'self' 'unsafe-inline'");
-    expect(scriptSrc).toContain("'nonce-");
-    expect(scriptSrc).toContain("'nonce-test-nonce'");
-    expect(scriptSrc).toContain("'strict-dynamic'");
-    expect(scriptSrc).toContain('https://static.cloudflareinsights.com');
-    expect(scriptSrc).not.toContain("'unsafe-inline'");
-    expect(headers['x-frame-options']).toBe('DENY');
-    expect(headers['strict-transport-security']).toBe(
+    expect(response.headers.get('content-security-policy')).toContain("'strict-dynamic'");
+    expect(response.headers.get('x-frame-options')).toBe('DENY');
+    expect(response.headers.get('strict-transport-security')).toBe(
       'max-age=63072000; includeSubDomains; preload',
     );
   });
 
-  it('returns no production security headers in development', () => {
+  it('leaves the CSP off in development, where strict-dynamic would break dev', () => {
     vi.stubEnv('NODE_ENV', 'development');
 
-    expect(securityHeaders('test-nonce')).toEqual({});
+    const response = proxy(new NextRequest('https://akaushik.org/'));
+
+    expect(response.headers.get('content-security-policy')).toBeNull();
+    expect(response.headers.get('x-frame-options')).toBeNull();
+    // The discovery contract is not a production-only thing and stays on.
+    expect(response.headers.get('link')).toContain('rel="describedby"');
   });
 });
 

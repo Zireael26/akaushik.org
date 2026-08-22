@@ -1,7 +1,7 @@
+import { createElement } from 'react';
 import Link from 'next/link';
-import { MDXRemote } from 'next-mdx-remote/rsc';
 import type { Post, CaseStudyFrontmatter } from '@/lib/content';
-import { MDX_OPTIONS } from '@/lib/mdx-options';
+import { getMdxModule } from '@/lib/mdx/generated';
 import { HyperframesLoop } from '@/components/media/hyperframes-loop';
 import { RouteField } from '@/components/pixel/RouteField';
 import { RuledRow } from '@/components/pixel/RuledRow';
@@ -47,8 +47,31 @@ export function CaseStudyPage({
         </figure>
       ) : null}
       <article className="px-work-body">
-        <MDXRemote source={post.content} options={MDX_OPTIONS} />
+        <MdxBody slug={post.slug} />
       </article>
     </main>
   );
+}
+
+/**
+ * The compiled body for this case study.
+ *
+ * MDX is compiled during the build (`scripts/build-mdx-modules.ts`) rather
+ * than per request: Cloudflare Workers refuse both halves of runtime
+ * compilation — `new Function` and instantiating Shiki's WebAssembly grammar
+ * engine — so `next-mdx-remote` cannot run there at all.
+ *
+ * A missing module means a slug reached this component without a compiled
+ * body, which the route's own `notFound()` should have caught. Render nothing
+ * rather than throw: the header, spec rows and media above are still the
+ * correct page.
+ */
+function MdxBody({ slug }: { slug: string }) {
+  // `createElement` rather than `<MDXContent />`: the registry is a
+  // module-scope constant, so the reference is stable across renders, but the
+  // capitalised-local-from-a-call shape reads to react-hooks/static-components
+  // as a component being minted during render. This says the same thing
+  // without the false positive.
+  const mdx = getMdxModule('case-studies', slug);
+  return mdx ? createElement(mdx) : null;
 }

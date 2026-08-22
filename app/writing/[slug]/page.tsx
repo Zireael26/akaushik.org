@@ -1,8 +1,8 @@
+import { createElement } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
-import { MDXRemote } from 'next-mdx-remote/rsc';
 import {
   getAllPosts,
   getAllPostsWithReadingTime,
@@ -12,7 +12,7 @@ import {
 } from '@/lib/content';
 import { canonical } from '@/lib/canonical';
 import { getReadingTime } from '@/lib/reading-time';
-import { MDX_OPTIONS } from '@/lib/mdx-options';
+import { getMdxModule } from '@/lib/mdx/generated';
 import { articleGraph, breadcrumbGraph, jsonLdString } from '@/lib/structured-data';
 import { JsonLdScript } from '@/components/seo/JsonLdScript';
 import { HyperframesLoop, type WritingLoopSlug } from '@/components/media/hyperframes-loop';
@@ -40,28 +40,6 @@ function formatBylineDate(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
   return BYLINE_DATE.format(d);
-}
-
-/**
- * The authored bodies under content/writing/ open with an H1 and a blockquote
- * dek that mirror the frontmatter title and dek. The article template renders
- * the H1 and the dek from frontmatter (the design's chrome: breadcrumb, H1,
- * dek, byline, short answer), so that leading pair is stripped from the
- * rendered body rather than duplicated. Everything from the first H2 on
- * renders verbatim — this is presentation only; the MDX files are untouched.
- */
-function stripTitleChrome(body: string): string {
-  const lines = body.split('\n');
-  let i = 0;
-  while (i < lines.length && lines[i]!.trim() === '') i += 1;
-  if (i < lines.length && lines[i]!.startsWith('# ')) {
-    i += 1;
-    while (i < lines.length && lines[i]!.trim() === '') i += 1;
-  }
-  if (i < lines.length && /^>\s?/.test(lines[i]!)) {
-    while (i < lines.length && /^>\s?/.test(lines[i]!)) i += 1;
-  }
-  return lines.slice(i).join('\n').trim();
 }
 
 /**
@@ -235,7 +213,7 @@ export default async function WritingPost({ params }: { params: Promise<{ slug: 
         ) : null}
 
         <div className="px-article-body">
-          <MDXRemote source={stripTitleChrome(post.content)} options={MDX_OPTIONS} />
+          <MdxBody slug={post.slug} />
         </div>
         {faq.length > 0 ? (
           <section className="px-article-faq" aria-labelledby={`faq-${slug}`}>
@@ -283,4 +261,24 @@ function nextTone(i: number): (typeof NEXT_TONES)[number] {
     default:
       return 'red';
   }
+}
+
+/**
+ * The compiled body for this article.
+ *
+ * MDX is compiled during the build (`scripts/build-mdx-modules.ts`) rather
+ * than per request, because Cloudflare Workers refuse both halves of runtime
+ * compilation: `new Function`, and instantiating Shiki's WebAssembly grammar
+ * engine. The generator also applies `stripTitleChrome`, which used to run
+ * here — the authored H1 and blockquote dek are rendered from frontmatter by
+ * the chrome above, so the body starts at the first H2.
+ */
+function MdxBody({ slug }: { slug: string }) {
+  // `createElement` rather than `<MDXContent />`: the registry is a
+  // module-scope constant, so the reference is stable across renders, but the
+  // capitalised-local-from-a-call shape reads to react-hooks/static-components
+  // as a component being minted during render. This says the same thing
+  // without the false positive.
+  const mdx = getMdxModule('writing', slug);
+  return mdx ? createElement(mdx) : null;
 }
