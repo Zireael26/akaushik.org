@@ -1,0 +1,260 @@
+/* arcade — a playable coda on the page surface, not a cabinet. */
+
+.px-arcade-game {
+  min-width: 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.px-arcade-status {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.px-arcade-status > div {
+  min-width: 0;
+  padding: 12px 14px 13px 0;
+}
+
+.px-arcade-status dt {
+  margin: 0 0 5px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink40);
+}
+
+.px-arcade-status dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.px-arcade-canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 25 / 17;
+  background: var(--bg);
+  touch-action: none;
+}
+
+.px-arcade-canvas:focus-visible {
+  outline: 2px solid var(--px-cobalt);
+  outline-offset: 4px;
+}
+
+.px-arcade-controls {
+  display: flex;
+  gap: 18px;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+}
+
+.px-arcade-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.px-arcade-action,
+.px-arcade-direction {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font: 500 11px/1 var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.px-arcade-action {
+  padding: 0 14px;
+}
+
+.px-arcade-action:hover,
+.px-arcade-action:focus-visible,
+.px-arcade-direction:hover,
+.px-arcade-direction:focus-visible,
+.px-arcade-action[aria-pressed='true'] {
+  border-color: var(--ink);
+  outline: none;
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.px-arcade-directions {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: repeat(3, 44px);
+  grid-template-rows: repeat(2, 44px);
+  gap: 4px;
+}
+
+.px-arcade-direction {
+  padding: 0;
+  font-size: 18px;
+  letter-spacing: 0;
+}
+
+.px-arcade-direction.is-up {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.px-arcade-direction.is-left {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.px-arcade-direction.is-down {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.px-arcade-direction.is-right {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.px-arcade-note {
+  margin: 16px 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.65;
+  color: var(--ink40);
+}
+
+.px-arcade-legend {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 20px;
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.px-arcade-legend p {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  min-width: 0;
+  margin: 0;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink70);
+}
+
+.px-arcade-legend strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.px-arcade-mark {
+  position: relative;
+  display: inline-block;
+  flex: 0 0 14px;
+  width: 14px;
+  height: 14px;
+  color: var(--ink);
+}
+
+.px-arcade-mark.is-player {
+  border-top: 3px solid currentcolor;
+  border-bottom: 3px solid currentcolor;
+  border-left: 3px solid currentcolor;
+}
+
+.px-arcade-mark.is-direct {
+  color: var(--px-cobalt-ink);
+}
+
+.px-arcade-mark.is-direct::before {
+  position: absolute;
+  top: 0;
+  left: 6px;
+  width: 3px;
+  height: 14px;
+  background: currentcolor;
+  content: '';
+}
+
+.px-arcade-mark.is-cutline {
+  color: var(--px-lime-ink);
+}
+
+.px-arcade-mark.is-cutline::before {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 8px;
+  height: 8px;
+  border-right: 3px solid currentcolor;
+  border-bottom: 3px solid currentcolor;
+  transform: rotate(-45deg);
+  content: '';
+}
+
+.px-arcade-mark.is-drift {
+  color: var(--px-amber-ink);
+}
+
+.px-arcade-mark.is-drift::before,
+.px-arcade-mark.is-drift::after {
+  position: absolute;
+  background: currentcolor;
+  content: '';
+}
+
+.px-arcade-mark.is-drift::before {
+  top: 5px;
+  left: 0;
+  width: 14px;
+  height: 4px;
+}
+
+.px-arcade-mark.is-drift::after {
+  top: 0;
+  left: 5px;
+  width: 4px;
+  height: 14px;
+}
+
+@media (max-width: 640px) {
+  .px-arcade-status {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .px-arcade-status > div:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .px-arcade-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .px-arcade-directions {
+    align-self: center;
+  }
+
+  .px-arcade-legend {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .px-arcade-note,
+  .px-arcade-status dt {
+    font-size: 12px;
+  }
+}

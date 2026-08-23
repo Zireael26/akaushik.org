@@ -24,6 +24,15 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   suspended/closed contexts and teardown; separate 48kHz WAV receipts are
   rendered from the production scheduler for human acceptance.
 
+- 2026-08-23 — Finished the playable home-page field after “In the open.” The
+  canvas uses the authored board, a single owned animation loop and the shared
+  pixel palette; keyboard, visible direction buttons and axis-qualified swipes
+  feed the same run. A ruled DOM register exposes score, lives, readings and
+  phase, while the legend, fallback text and polite announcements preserve the
+  objective and state outside the canvas. Theme changes redraw in place, either
+  motion veto switches play to one-input discrete turns, and unmount aborts
+  listeners, observers, animation and audio ownership.
+
 ### Fixed
 
 - 2026-08-23 — The CI accessibility gate stopped failing on a page that is

@@ -46,24 +46,24 @@ apex owns final visual acceptance and every push, deploy or merge.
   scheduling, mute, teardown and non-melodic jitter bounds → SC8
 - [ ] T17 Render a WAV from the production scheduler; inspect duration, peak and
   waveform and listen for harshness or recognizable patterns → SC8
-- [ ] T18 Run focused audio and typecheck receipts; commit U2
+- [x] T18 Run focused audio and typecheck receipts; commit U2
 
 ## U3 — Playable home-page section
 
-- [ ] T19 Read the installed Next.js 16 client-component guide before writing the
+- [x] T19 Read the installed Next.js 16 client-component guide before writing the
   wrapper
-- [ ] T20 Add one-loop canvas mounting, drawing, input, theme, motion and disposal
+- [x] T20 Add one-loop canvas mounting, drawing, input, theme, motion and disposal
   in `lib/scenes/arcade.ts` → SC4, SC6, SC7, SC10
-- [ ] T21 Add accessible HUD, live state, fallback text, sound, start/restart and
+- [x] T21 Add accessible HUD, live state, fallback text, sound, start/restart and
   direction controls in `components/pixel/ArcadeGame.tsx` → SC4, SC5, SC8
-- [ ] T22 Add the server section shell in `components/sections/Arcade.tsx` and
+- [x] T22 Add the server section shell in `components/sections/Arcade.tsx` and
   place it immediately after `<OpenSource />` in `app/page.tsx` → SC11
-- [ ] T23 Add token-only responsive rules in `app/styles/sections/arcade.css` and
+- [x] T23 Add token-only responsive rules in `app/styles/sections/arcade.css` and
   import them before `_mobile.css` → SC5, SC11
-- [ ] T24 Add the arcade CHANGELOG entry in the same implementation unit → SC12
-- [ ] T25 Smoke-play the actual section at 1440px and 375px, both themes and both
+- [x] T24 Add the arcade CHANGELOG entry in the same implementation unit → SC12
+- [x] T25 Smoke-play the actual section at 1440px and 375px, both themes and both
   motion states; fix visual/audio failures before tests → SC6–SC8, SC11
-- [ ] T26 Run focused unit, typecheck and process receipts; commit U3
+- [x] T26 Run focused unit, typecheck and process receipts; commit U3
 
 ## U4 — Observable browser contract
 
