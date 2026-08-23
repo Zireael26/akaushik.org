@@ -6,6 +6,21 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Added
 
+- 2026-08-23 — Began "Ship It", the maze-chase rebuild that replaces the
+  arcade field. `lib/shipit/` adds the pure rule core: `layout.ts` for the
+  28x31 board under the original's structural grammar but with our own wall
+  drawing, `targeting.ts` for the four chase personalities (direct, ambush
+  including the documented up-direction overflow, flank, and shy), and
+  `game.ts` for the state machine — corner-stuck input latching so a blocked
+  actor holds its desired direction instead of bouncing back, cornering that
+  only the player gets, scatter/chase timing with forced reversal on mode
+  change, fright, and ghost-house release. Rules are implemented from the
+  documented mechanics, which are not copyrightable; no original maze drawing,
+  character art or audio is reproduced. **Not yet green**: 44 of 46 tests pass,
+  with the Cruise Elroy speed-up and the discrete reduced-motion step still
+  failing. Committed as a checkpoint, not as a done claim; no rendering layer
+  or section wiring exists yet.
+
 - 2026-08-23 — Began the original arcade field: a fixed asymmetric 25×17 board
   and deterministic maze-chase state machine with buffered keyboard movement,
   three distinct routing strategies, score, lives, collision/respawn, win/loss
