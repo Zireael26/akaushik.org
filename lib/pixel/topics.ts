@@ -76,6 +76,7 @@ const agentProcessArt: FieldSource = (o, { cols, rows, t, seed }) => {
   const top = cy - ((NR - 1) * s) / 2;
 
   // The gate: one post, and a barrier held clear of the conduit.
+  o.globalAlpha = 0.72;
   o.lineWidth = Math.max(1, rows * 0.045);
   o.beginPath();
   o.moveTo(cols * 0.06, cy - s * 1.6);
@@ -87,6 +88,7 @@ const agentProcessArt: FieldSource = (o, { cols, rows, t, seed }) => {
   o.stroke();
 
   // Conduit from the gate into the matrix.
+  o.globalAlpha = 0.56;
   o.lineWidth = Math.max(1, rows * 0.03);
   o.beginPath();
   o.moveTo(cols * 0.06, cy);
@@ -98,30 +100,41 @@ const agentProcessArt: FieldSource = (o, { cols, rows, t, seed }) => {
   const px =
     cols * 0.06 +
     (right + s - cols * 0.06) * (sweepP * sweepP * (3 - 2 * sweepP));
+  const packet = Math.max(1.5, Math.min(s * 0.18, rows * 0.06));
+  const packetX = Math.min(right - packet / 2, Math.max(cols * 0.06 + packet / 2, px));
 
-  // Hollow cells are the open findings; the sweep closes each one for good —
-  // until the wrap reopens the matrix, because the audits never end.
+  // The matrix stays traced. A swept hollow cell earns only a small closure
+  // mark, so the audit reads as ink on a grid rather than a filled barcode.
+  o.lineWidth = Math.max(0.75, rows * 0.018);
   for (let r = 0; r < NR; r++) {
     for (let i = 0; i < NC; i++) {
       const x = left + i * colW + (colW - s) / 2;
       const y = top + r * s;
       const hollow = jit(seed, i, r) < 0.3;
-      if (!hollow || px >= x + s) {
-        o.fillRect(x, y, s, s);
-      } else {
-        o.lineWidth = Math.max(1, rows * 0.02);
-        o.strokeRect(x, y, s, s);
-      }
+      o.globalAlpha = hollow ? 0.36 : 0.6;
+      o.strokeRect(x, y, s, s);
+      if (!hollow || px < x + s) continue;
+
+      const mark = Math.max(1, s * 0.14);
+      o.globalAlpha = 0.78;
+      o.fillRect(x + (s - mark) / 2, y + (s - mark) / 2, mark, mark);
     }
   }
 
-  // Receipts: one tick per column the sweep has cleared.
+  // A single packet makes the current pass legible without turning the rail
+  // into another solid bar.
+  o.globalAlpha = 0.78;
+  o.fillRect(packetX - packet / 2, cy - packet / 2, packet, packet);
+
+  // Receipts: one small tick per column the sweep has cleared.
   const railY = rows * 0.86;
   const tick = Math.max(1.5, rows * 0.035);
+  o.globalAlpha = 0.64;
   for (let i = 0; i < NC; i++) {
     if (px < left + i * colW + s) continue;
     o.fillRect(left + i * colW + (colW - tick) / 2, railY, tick, tick);
   }
+  o.globalAlpha = 1;
 };
 
 /* ------------------------------------------------------------------ *
@@ -138,13 +151,24 @@ const retrievalArt: FieldSource = (o, { cols, rows, t, seed }) => {
   const cycle = (t * RETRIEVAL_RATE) % 1;
   const epoch = Math.floor(t * RETRIEVAL_RATE);
 
-  // Query bar, pulsing.
+  // Query register, with one small packet pulsing through the outlined slot.
   const qh = rows * 0.4;
-  o.globalAlpha = 0.35 + 0.55 * Math.abs(Math.sin(t * 1.7));
-  o.fillRect(cols * 0.07, rows * 0.5 - qh / 2, cols * 0.055, qh);
-  o.globalAlpha = 1;
+  const qx = cols * 0.07;
+  const qy = rows * 0.5 - qh / 2;
+  const qw = cols * 0.055;
+  o.globalAlpha = 0.3 + 0.24 * Math.abs(Math.sin(t * 1.7));
+  o.lineWidth = Math.max(0.75, rows * 0.018);
+  o.strokeRect(qx, qy, qw, qh);
+  const queryPacket = Math.max(1, Math.min(qw * 0.42, rows * 0.055));
+  o.globalAlpha = 0.72;
+  o.fillRect(
+    qx + (qw - queryPacket) / 2,
+    qy + (qh - queryPacket) * jit(seed, epoch, 6),
+    queryPacket,
+    queryPacket,
+  );
 
-  // The store: a grid of chunks, two rows lit per epoch.
+  // The store is a lightly ruled index rather than a field of solid chunks.
   const SN = 12;
   const SR = 4;
   const sx = cols * 0.24;
@@ -152,42 +176,71 @@ const retrievalArt: FieldSource = (o, { cols, rows, t, seed }) => {
   const colW = (ex - sx) / SN;
   const rowH = (rows * 0.52) / SR;
   const sy = rows * 0.24;
-  const cw = Math.min(colW * 0.6, rows * 0.075);
   const lit0 = Math.floor(jit(seed, epoch, 1) * SR);
   const lit1 = (lit0 + 1 + Math.floor(jit(seed, epoch, 2) * (SR - 1))) % SR;
 
+  o.globalAlpha = 0.38;
+  o.lineWidth = Math.max(0.75, rows * 0.016);
+  o.strokeRect(sx, sy, ex - sx, rowH * SR);
   for (let r = 0; r < SR; r++) {
     const lit = r === lit0 || r === lit1;
-    o.globalAlpha = lit ? 1 : 0.26;
+    const y = sy + (r + 0.5) * rowH;
+    o.globalAlpha = lit ? 0.62 : 0.2;
+    o.beginPath();
+    o.moveTo(sx, y);
+    o.lineTo(ex, y);
+    o.stroke();
+
+    const tickH = Math.max(1, Math.min(1.5, rowH * 0.2));
+    o.beginPath();
     for (let i = 0; i < SN; i++) {
-      o.fillRect(sx + i * colW + (colW - cw) / 2, sy + r * rowH, cw, Math.max(1, rowH * 0.42));
+      const x = sx + (i + 0.5) * colW;
+      o.moveTo(x, y - tickH / 2);
+      o.lineTo(x, y + tickH / 2);
     }
+    o.stroke();
+
+    if (!lit) continue;
+    const node = Math.max(1, Math.min(rowH * 0.38, colW * 0.18));
+    const selected = Math.floor(jit(seed, epoch + r, 4) * SN);
+    o.globalAlpha = 0.74;
+    o.fillRect(sx + (selected + 0.5) * colW - node / 2, y - node / 2, node, node);
   }
-  o.globalAlpha = 1;
 
   // Links from the lit rows converge on the answer.
   const ax = cols * 0.76;
   const aw = cols * 0.17;
   o.lineWidth = Math.max(0.75, rows * 0.02);
-  o.globalAlpha = 0.5;
+  o.globalAlpha = 0.42;
   for (const r of [lit0, lit1]) {
     o.beginPath();
     o.moveTo(ex, sy + r * rowH + rowH / 2);
     o.lineTo(ax, rows * 0.33);
     o.stroke();
   }
-  o.globalAlpha = 1;
 
-  // The answer: quote marks first, then the lines assemble.
-  o.fillRect(ax, rows * 0.2, aw * 0.06, rows * 0.09);
-  o.fillRect(ax + aw * 0.1, rows * 0.2, aw * 0.06, rows * 0.09);
-  const lineH = Math.max(1, rows * 0.04);
+  // The answer is framed and ruled; quote marks and lines arrive in ink.
+  o.globalAlpha = 0.56;
+  o.lineWidth = Math.max(0.75, rows * 0.018);
+  o.strokeRect(ax, rows * 0.2, aw, rows * 0.56);
+  for (const qx of [ax + aw * 0.06, ax + aw * 0.16]) {
+    o.beginPath();
+    o.moveTo(qx + aw * 0.035, rows * 0.2);
+    o.lineTo(qx, rows * 0.245);
+    o.lineTo(qx + aw * 0.035, rows * 0.29);
+    o.stroke();
+  }
   for (let l = 0; l < 3; l++) {
     // The lead line is always there; the rest arrive as the cycle runs.
     if (l > 0 && cycle <= 0.3 + l * 0.18) continue;
     const w = l === 2 ? 0.55 : 0.95;
-    o.fillRect(ax, rows * (0.38 + l * 0.12), aw * w, lineH);
+    o.globalAlpha = 0.52;
+    o.beginPath();
+    o.moveTo(ax + aw * 0.06, rows * (0.38 + l * 0.12));
+    o.lineTo(ax + aw * (0.06 + w * 0.84), rows * (0.38 + l * 0.12));
+    o.stroke();
   }
+  o.globalAlpha = 1;
 };
 
 /* ------------------------------------------------------------------ *
@@ -223,13 +276,24 @@ const foundationsArt: FieldSource = (o, { cols, rows, t, seed }) => {
 
   const baseY = rows * 0.82;
   const leftX = (cols - steps * u) / 2;
+  const marker = Math.max(1, Math.min(u * 0.16, rows * 0.045));
+  o.lineWidth = Math.max(0.75, rows * 0.018);
   let count = 0;
   for (let i = 0; i < steps && count < laid; i++) {
-    for (let j = 0; j < heights[i]! && count < laid; j++, count++) {
+    for (let j = 0; j < heights[i]! && count < laid; j++) {
       const g = (jit(seed, i, j) - 0.5) * Math.min(1, u * 0.16);
-      o.fillRect(leftX + i * u + 0.5 + g, baseY - (j + 1) * u + 0.5 + g, u - 1, u - 1);
+      const x = leftX + i * u + 0.5 + g;
+      const y = baseY - (j + 1) * u + 0.5 + g;
+      o.globalAlpha = 0.4 + jit(seed, i, j + 13) * 0.2;
+      o.strokeRect(x, y, u - 1, u - 1);
+      if (count === laid - 1) {
+        o.globalAlpha = 0.78;
+        o.fillRect(x + (u - marker) / 2, y + (u - marker) / 2, marker, marker);
+      }
+      count++;
     }
   }
+  o.globalAlpha = 0.68;
 
   // The foundation: a heavier base line under the staircase.
   o.lineWidth = Math.max(1, rows * 0.04);
@@ -237,6 +301,7 @@ const foundationsArt: FieldSource = (o, { cols, rows, t, seed }) => {
   o.moveTo(leftX - u * 0.5, baseY);
   o.lineTo(leftX + steps * u + u * 0.5, baseY);
   o.stroke();
+  o.globalAlpha = 1;
 };
 
 /* ------------------------------------------------------------------ *
@@ -265,6 +330,7 @@ const fieldWorkArt: FieldSource = (o, { cols, rows, t, seed }) => {
   const rx = cols * 0.8;
   const ty = rows * 0.36;
   const by = rows * 0.88;
+  o.globalAlpha = 0.56;
   o.lineWidth = Math.max(1, rows * 0.03);
   o.strokeRect(lx, ty, rx - lx, by - ty);
   o.lineWidth = 1;
@@ -292,30 +358,37 @@ const fieldWorkArt: FieldSource = (o, { cols, rows, t, seed }) => {
   for (let k = 0; k < ARRIVALS; k++) {
     const x = lx + (rx - lx) * ((k + 0.5) / ARRIVALS) + (jit(seed, k, 3) - 0.5) * cols * 0.02;
     const arrived = cycle >= (slots[k] ?? 1);
-    o.globalAlpha = arrived ? 0.3 : 1;
+    o.globalAlpha = arrived ? 0.4 : 0.72;
     o.fillRect(x - d / 2, laneY - d / 2, d, d);
     if (!arrived) continue;
     const rowIdx = rowOf(k);
     const rowTop = ty + rowIdx * rowH;
-    o.lineWidth = 1;
+    o.globalAlpha = 0.5;
+    o.lineWidth = Math.max(0.75, rows * 0.016);
     o.beginPath();
     o.moveTo(x, laneY + d / 2);
     o.lineTo(x, rowTop + rowH * 0.55);
     o.stroke();
-    // The tick: a bar on the row's line, starting inside the margin.
-    o.fillRect(lx + (rx - lx) * 0.18, rowTop + rowH * 0.42, (rx - lx) * 0.3, Math.max(1, rowH * 0.16));
+    // The entry is a ruled trace across its row, not a solid status bar.
+    o.globalAlpha = 0.58;
+    o.lineWidth = Math.max(0.75, rowH * 0.08);
+    o.beginPath();
+    o.moveTo(lx + (rx - lx) * 0.18, rowTop + rowH * 0.5);
+    o.lineTo(lx + (rx - lx) * 0.48, rowTop + rowH * 0.5);
+    o.stroke();
   }
+  o.globalAlpha = 1;
 };
 
 /* ------------------------------------------------------------------ *
  * site-craft — building-this-portfolio
  *
  * The page builds itself in ship order: frame first, then header, hero,
- * column, column, footer — each region filling as its turn comes, with a
- * commit dot accruing beneath the frame for every region shipped. Each
- * build leaves exactly one region as an outlined slot — the thing that
- * build did not finish — rotating through the regions as the builds
- * advance, so the artefact is visibly always under construction.
+ * column, column, footer — each region is traced in as its turn comes, with a
+ * commit dot accruing beneath the frame for every region shipped. Each build
+ * leaves exactly one region as an outlined slot — the thing that build did not
+ * finish — rotating through the regions as the builds advance, so the artefact
+ * is visibly always under construction.
  * ------------------------------------------------------------------ */
 const SITECRAFT_RATE = 0.3; // ≈ 9s per build
 // Region layout in frame fractions: header, hero, column one, column two,
@@ -341,31 +414,62 @@ const siteCraftArt: FieldSource = (o, { cols, rows, t, seed }) => {
   const fy = rows * 0.14;
   const fh = rows * 0.68;
 
-  // The frame is always there; regions fill into it.
+  // The frame is always there; completed regions become light, ruled traces.
+  o.globalAlpha = 0.62;
   o.lineWidth = Math.max(1, rows * 0.035);
   o.strokeRect(fx, fy, fw, fh);
-  // Regions fill in ship order. This build's planned gap is outlined from
-  // the first frame — visible early, still open at the end — while regions
-  // ahead of the build simply are not there yet.
+  o.globalAlpha = 0.38;
+  o.lineWidth = Math.max(0.75, rows * 0.016);
+  const frameTickX = fx + fw * (0.12 + jit(seed, build, 14) * 0.76);
+  o.beginPath();
+  o.moveTo(frameTickX, fy);
+  o.lineTo(frameTickX, fy + Math.max(1, fh * 0.06));
+  o.stroke();
+
+  // Regions arrive in ship order. The deferred slot remains a plain outline;
+  // completed regions gain a few short rules instead of a solid panel.
   SITE_REGIONS.forEach(([rx, ry, rw, rh], i) => {
     const x = fx + rx * fw;
     const y = fy + ry * fh;
     const w = rw * fw;
     const hgt = rh * fh;
     if (!deferred(i)) {
-      if (i < done) o.fillRect(x, y, w, hgt);
+      if (i >= done) return;
+
+      o.globalAlpha = 0.58;
+      o.lineWidth = Math.max(0.75, rows * 0.018);
+      o.strokeRect(x, y, w, hgt);
+      const rules = hgt > rows * 0.14 ? 2 : 1;
+      o.globalAlpha = 0.34;
+      o.lineWidth = Math.max(0.75, rows * 0.014);
+      for (let rule = 0; rule < rules; rule++) {
+        const ruleY = y + hgt * ((rule + 1) / (rules + 1));
+        const ruleEnd = x + w * (0.38 + jit(seed, i * 3 + rule, 11) * 0.42);
+        o.beginPath();
+        o.moveTo(x + Math.min(w * 0.08, 1), ruleY);
+        o.lineTo(ruleEnd, ruleY);
+        o.stroke();
+      }
       return;
     }
-    o.lineWidth = Math.max(1, rows * 0.02);
+
+    o.globalAlpha = 0.4;
+    o.lineWidth = Math.max(0.75, rows * 0.02);
     o.strokeRect(x, y, w, hgt);
   });
 
-  // Commit dots: one per shipped region.
+  // Commit dots: one small receipt per shipped region.
   const dd = Math.max(1.5, rows * 0.045);
   const dy = fy + fh + rows * 0.07;
+  o.globalAlpha = 0.66;
   for (let i = 0; i < SITE_REGIONS.length && i < done; i++) {
-    o.fillRect(fx + (fw / (SITE_REGIONS.length + 1)) * (i + 1) - dd / 2, dy, dd, dd);
+    const x =
+      fx +
+      (fw / (SITE_REGIONS.length + 1)) * (i + 1) +
+      (jit(seed, i, 13) - 0.5) * Math.min(dd * 0.45, fw * 0.015);
+    o.fillRect(x - dd / 2, dy, dd, dd);
   }
+  o.globalAlpha = 1;
 };
 
 /* ------------------------------------------------------------------ *
@@ -385,6 +489,7 @@ const operationsArt: FieldSource = (o, { cols, rows, t, seed }) => {
 
   // Threshold.
   const thY = rows * 0.3;
+  o.globalAlpha = 0.56;
   o.lineWidth = Math.max(0.75, rows * 0.02);
   o.beginPath();
   o.moveTo(lx, thY);
@@ -396,6 +501,7 @@ const operationsArt: FieldSource = (o, { cols, rows, t, seed }) => {
   const amp = rows * 0.13;
   const spikeCentre = rx + cols * 0.05 - (rx - lx + cols * 0.2) * cycle;
   const spikeW = cols * 0.07;
+  o.globalAlpha = 0.68;
   o.lineWidth = Math.max(1, rows * 0.028);
   o.beginPath();
   const STEPS = 48;
@@ -412,7 +518,7 @@ const operationsArt: FieldSource = (o, { cols, rows, t, seed }) => {
 
   // The detector: a faint picket from the marker lane down to the trace.
   const detX = cols * 0.42;
-  o.globalAlpha = 0.4;
+  o.globalAlpha = 0.28;
   o.lineWidth = 1;
   o.beginPath();
   o.moveTo(detX, rows * 0.1);
@@ -422,9 +528,11 @@ const operationsArt: FieldSource = (o, { cols, rows, t, seed }) => {
   // down the picket, so even an 18-row strip keeps them inside the frame.
   const mw = Math.max(1.5, rows * 0.05);
   const markers = Math.min(3, Math.floor(cycle / 0.34));
+  o.globalAlpha = 0.66;
   for (let m = 0; m < markers; m++) {
     o.fillRect(detX - mw / 2, rows * 0.14 + m * mw * 1.9, mw, mw);
   }
+  o.globalAlpha = 1;
 };
 
 /**
