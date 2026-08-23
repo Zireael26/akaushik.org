@@ -52,6 +52,30 @@ function totalFillArea(stub: StubContext): number {
     return sum;
   }, 0);
 }
+function fillCount(stub: StubContext): number {
+  return stub.calls.filter(({ fn }) => fn === 'fillRect' || fn === 'fill').length;
+}
+
+function assertStrokeRestraint(stub: StubContext, cols: number, rows: number): void {
+  const canvasArea = cols * rows;
+  const fillArea = totalFillArea(stub);
+  expect(fillArea / canvasArea, 'filled alpha should stay sparse').toBeLessThanOrEqual(0.04);
+
+  for (const { fn, args } of stub.calls) {
+    if (fn !== 'fillRect') continue;
+    const width = args[2];
+    const height = args[3];
+    if (typeof width !== 'number' || typeof height !== 'number' || width <= 0 || height <= 0) continue;
+    expect(width, 'large semantic boxes should be outlined, not filled').toBeLessThanOrEqual(cols * 0.3);
+    expect(height, 'large semantic boxes should be outlined, not filled').toBeLessThanOrEqual(rows * 0.3);
+    expect(width * height, 'filled accents should remain cell-sized').toBeLessThanOrEqual(canvasArea * 0.02);
+  }
+
+  expect(
+    stub.calls.filter(({ fn }) => fn === 'strokeRect' || fn === 'stroke').length,
+    'outline/path ink should dominate filled accents',
+  ).toBeGreaterThan(fillCount(stub));
+}
 
 function assertInk(stub: StubContext): void {
   const painted = stub.calls.some(({ fn, args }) => {
@@ -185,7 +209,7 @@ function vericiteEncodes(stub: StubContext, cols: number, rows: number): StubCon
   const line = Math.max(1, rows * 0.022);
   const h = Math.max(1, rows * 0.024);
   return stub.calls.filter(({ fn, args }) => {
-    if (fn !== 'fillRect') return false;
+    if (fn !== 'strokeRect') return false;
     const x = args[0];
     const hh = args[3];
     const w = args[2];
@@ -229,6 +253,30 @@ function curatStamps(stub: StubContext, cols: number, rows: number): StubContext
       Math.abs(args[3] - h) < 0.12,
   );
 }
+function neevLedgerAccents(stub: StubContext, cols: number, rows: number): StubContext['calls'] {
+  const ledgerX = cols * 0.55;
+  const ledgerY = rows * 0.17;
+  const ledgerW = cols * 0.405;
+  const ledgerH = rows * 0.65;
+  const bubbleCount = rows < 40 ? 4 : 6;
+  const ledgerRowH = ledgerH / bubbleCount;
+  const h = Math.max(1, ledgerRowH * 0.14);
+
+  return stub.calls.filter(({ fn, args }) => {
+    if (fn !== 'strokeRect') return false;
+    const x = args[0];
+    const y = args[1];
+    const height = args[3];
+    if (typeof x !== 'number' || typeof y !== 'number' || typeof height !== 'number') return false;
+    return (
+      x >= ledgerX &&
+      x <= ledgerX + ledgerW &&
+      y >= ledgerY &&
+      y <= ledgerY + ledgerH &&
+      Math.abs(height - h) < 0.01
+    );
+  });
+}
 
 describe('product source registry', () => {
   it('exposes the five case studies in their content order', () => {
@@ -269,6 +317,8 @@ describe.each(PRODUCTS)('%s product field', (slug, source) => {
     assertInGrid(moving, cols, rows);
     assertThemeAgnostic(resting);
     assertThemeAgnostic(moving);
+    assertStrokeRestraint(resting, cols, rows);
+    assertStrokeRestraint(moving, cols, rows);
 
     expect(resting.signature()).toBe(render(source, cols, rows, seed, 0).signature());
     expect(moving.signature()).toBe(render(source, cols, rows, seed, 3.17).signature());
@@ -285,6 +335,18 @@ describe.each(PRODUCTS)('%s product field', (slug, source) => {
       expect(nextSeed, `${slug} should vary with seed at ${cols}×${rows}`).not.toBe(later);
       // If the source ignored t, the phase-specific helpers below would also be dead.
       expect(callDiffRatio(render(source, cols, rows, seed, 0), render(source, cols, rows, seed, 3.17))).toBeGreaterThan(0.05);
+    }
+  });
+});
+describe('product stroke accents', () => {
+  it.each(PROFILES)('keeps small emphasis while outlines carry the structure at $label size', ({ cols, rows }) => {
+    for (const [slug, source] of PRODUCTS) {
+      const seed = seedFrom(slug);
+      const frames = [0, 1.35, 3.17].map((t) => render(source, cols, rows, seed, t));
+      expect(
+        frames.some((stub) => fillCount(stub) > 0),
+        `${slug} should retain a small node, packet, or lit accent`,
+      ).toBe(true);
     }
   });
 });
@@ -385,12 +447,12 @@ describe('tiny legibility', () => {
       assertInGrid(resting, cols, rows);
       assertInGrid(moving, cols, rows);
 
-      // Fill area is quantized to 1 px at this size but must still be >5 px² for every
-      // product except clusterbid's intentional wireframe resting state.
-      if (slug !== 'clusterbid') {
-        expect(totalFillArea(resting), `${slug} tiny resting fill area`).toBeGreaterThan(5);
-      }
-      expect(totalFillArea(moving), `${slug} tiny moving fill area`).toBeGreaterThan(5);
+      const active = render(source, cols, rows, seed, 1.35);
+      assertStrokeRestraint(active, cols, rows);
+      expect(
+        [resting, active, moving].some((stub) => fillCount(stub) > 0),
+        `${slug} should retain a small active accent across its cycle`,
+      ).toBe(true);
 
       // Wireframe alone is not enough: each silhouette must emit several stroked rects
       // and the combined stroke+fill count must stay substantial.
@@ -401,13 +463,13 @@ describe('tiny legibility', () => {
     }
   });
 
-  it('clusterbid resting is wireframe but moving is filled, even at tiny', () => {
+  it('clusterbid resting is wireframe but moving carries packets, even at tiny', () => {
     const cols = 24;
     const rows = 12;
     const resting = render(clusterbid, cols, rows, seedFrom('clusterbid'), 0);
     const moving = render(clusterbid, cols, rows, seedFrom('clusterbid'), 3.17);
     expect(resting.calls.filter(({ fn }) => fn === 'fillRect').length, 'resting should be wireframe').toBe(0);
-    expect(moving.calls.filter(({ fn }) => fn === 'fillRect').length, 'moving should have pod fills').toBeGreaterThan(4);
+    expect(moving.calls.filter(({ fn }) => fn === 'fillRect').length, 'moving should retain packet accents').toBeGreaterThanOrEqual(4);
   });
 });
 
@@ -421,7 +483,7 @@ describe('vericite pipeline phases', () => {
     const encoding = render(vericite, cols, rows, seed, 0.9); // cycle 0.252 ∈ [0.18,0.42]
     expect(vericiteEncodes(resting, cols, rows)).toHaveLength(0);
     const midEncodes = vericiteEncodes(encoding, cols, rows);
-    expect(midEncodes.length, 'expected 3 embedding bars to be filled during encode').toBeGreaterThan(0);
+    expect(midEncodes.length, 'expected 3 embedding bars to be outlined during encode').toBeGreaterThan(0);
     // If the encode branch were deleted, the mid frame would look identical to resting
     expect(encoding.signature()).not.toBe(resting.signature());
     expect(callDiffRatio(resting, encoding)).toBeGreaterThan(0.05);
@@ -465,14 +527,14 @@ describe('vericite pipeline phases', () => {
     // At 3.07 cite≈0.71, at 3.17 cite≈0.92, so x moves left toward store (lerp answer→store)
     expect(earlyCite).toBeGreaterThan(lateCite);
 
-    // Answer bars: the moving frame should have more / larger fills than resting
-    const answerFillsRest = resting.calls.filter(
-      ({ fn, args }) => fn === 'fillRect' && typeof args[0] === 'number' && args[0] > cols * 0.68,
+    // Answer bars: the moving frame should add outlined progress accents.
+    const answerAccentsRest = resting.calls.filter(
+      ({ fn, args }) => fn === 'strokeRect' && typeof args[0] === 'number' && args[0] > cols * 0.68,
     ).length;
-    const answerFillsMoving = assembling.calls.filter(
-      ({ fn, args }) => fn === 'fillRect' && typeof args[0] === 'number' && args[0] > cols * 0.68,
+    const answerAccentsMoving = assembling.calls.filter(
+      ({ fn, args }) => fn === 'strokeRect' && typeof args[0] === 'number' && args[0] > cols * 0.68,
     ).length;
-    expect(answerFillsMoving, 'answer assembly should add fills').toBeGreaterThan(answerFillsRest);
+    expect(answerAccentsMoving, 'answer assembly should add outlined accents').toBeGreaterThan(answerAccentsRest);
 
     // At encode time there is no citation yet
     expect(vericiteCitations(render(vericite, cols, rows, seed, 0.9), cols, rows)).toHaveLength(0);
@@ -520,16 +582,16 @@ describe('neev pipeline phases', () => {
     }
   });
 
-  it('fills ledger rows progressively, never regressing', () => {
+  it('rules ledger rows progressively, never regressing', () => {
     const t0 = render(neev, cols, rows, seed, 0);
     const tMid = render(neev, cols, rows, seed, 1.35); // cycle 0.324
-    const tLate = render(neev, cols, rows, seed, 3.17); // cycle 0.761 heavily filled
-    const fills0 = t0.calls.filter(({ fn }) => fn === 'fillRect').length;
-    const fillsMid = tMid.calls.filter(({ fn }) => fn === 'fillRect').length;
-    const fillsLate = tLate.calls.filter(({ fn }) => fn === 'fillRect').length;
-    expect(fillsMid).toBeGreaterThan(fills0);
-    expect(fillsLate).toBeGreaterThan(fillsMid);
-    expect(fillsLate).toBeGreaterThan(25);
+    const tLate = render(neev, cols, rows, seed, 3.17); // cycle 0.761 heavily ruled
+    const accents0 = neevLedgerAccents(t0, cols, rows).length;
+    const accentsMid = neevLedgerAccents(tMid, cols, rows).length;
+    const accentsLate = neevLedgerAccents(tLate, cols, rows).length;
+    expect(accentsMid).toBeGreaterThan(accents0);
+    expect(accentsLate).toBeGreaterThan(accentsMid);
+    expect(accentsLate, 'late ledger should carry many ruled cell accents').toBeGreaterThan(12);
   });
 
   it('produces distinct signatures across ledger phases', () => {

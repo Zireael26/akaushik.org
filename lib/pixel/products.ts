@@ -115,8 +115,8 @@ export const vericite: FieldSource = (o, { cols, rows, t, seed }) => {
   // Query: a compact request card with two uneven request lines.
   o.lineWidth = line;
   o.strokeRect(queryX, queryY, queryW, queryH);
-  o.fillRect(queryX + queryW * 0.18, queryY + queryH * 0.3, queryW * (0.54 + jitter(seed, 12) * 0.12), Math.max(1, queryH * 0.08));
-  o.fillRect(queryX + queryW * 0.18, queryY + queryH * 0.57, queryW * (0.36 + jitter(seed, 13) * 0.13), Math.max(1, queryH * 0.08));
+  o.strokeRect(queryX + queryW * 0.18, queryY + queryH * 0.3, queryW * (0.54 + jitter(seed, 12) * 0.12), Math.max(1, queryH * 0.08));
+  o.strokeRect(queryX + queryW * 0.18, queryY + queryH * 0.57, queryW * (0.36 + jitter(seed, 13) * 0.13), Math.max(1, queryH * 0.08));
   if (queryPulse > 0) {
     const pulseW = queryW * (0.16 + queryPulse * 0.18);
     const pulseH = queryH * (0.12 + queryPulse * 0.16);
@@ -130,7 +130,7 @@ export const vericite: FieldSource = (o, { cols, rows, t, seed }) => {
     o.strokeRect(embedX, y - rows * 0.024, w, rows * 0.048);
     if (cycle >= 0.18 && cycle <= 0.42) {
       const encode = phase(cycle, 0.18 + bar * 0.035, 0.31 + bar * 0.035);
-      o.fillRect(embedX + line, y - rows * 0.012, Math.max(0, (w - line * 2) * encode), Math.max(1, rows * 0.024));
+      o.strokeRect(embedX + line, y - rows * 0.012, Math.max(0, (w - line * 2) * encode), Math.max(1, rows * 0.024));
     }
   }
 
@@ -146,7 +146,7 @@ export const vericite: FieldSource = (o, { cols, rows, t, seed }) => {
     const y = storeY + storeGap + row * (storeRowH + storeGap);
     const barW = storeW * (0.4 + jitter(seed, 30 + row) * 0.32);
     o.strokeRect(storeX + storeGap, y, storeW - storeGap * 2, storeRowH);
-    o.fillRect(storeX + storeGap * 2, y + storeRowH * 0.39, barW, Math.max(1, storeRowH * 0.15));
+    o.strokeRect(storeX + storeGap * 2, y + storeRowH * 0.39, barW, Math.max(1, storeRowH * 0.15));
     if (row === match) {
       const scanW = (storeW - storeGap * 4) * (0.2 + retrieve * 0.8);
       o.fillRect(storeX + storeGap * 2, y + storeRowH * 0.16, scanW, Math.max(1, storeRowH * 0.2));
@@ -167,7 +167,7 @@ export const vericite: FieldSource = (o, { cols, rows, t, seed }) => {
     o.strokeRect(answerX + answerW * 0.16, y, w, Math.max(1, answerH * 0.045));
     const progress = clamp01(assemble * (compact ? 3 : 4) - bar);
     if (progress > 0) {
-      o.fillRect(answerX + answerW * 0.16, y, w * progress, Math.max(1, answerH * 0.045));
+      o.strokeRect(answerX + answerW * 0.16, y, w * progress, Math.max(1, answerH * 0.045));
     }
   }
   const citationY = answerY + answerH * 0.88;
@@ -193,8 +193,8 @@ export const vericite: FieldSource = (o, { cols, rows, t, seed }) => {
  * Irregular incoming messages become one ruled ledger row each.
  *
  * Bubble outlines and the complete ledger are persistent. The animated pass
- * moves a message toward the parser, then fills its own ledger row left to
- * right; timing comes from cumulative seeded gaps rather than a metronome.
+ * moves a message toward the parser, then reveals its own ruled ledger row left
+ * to right; timing comes from cumulative seeded gaps rather than a metronome.
  */
 export const neev: FieldSource = (o, { cols, rows, t, seed }) => {
   const compact = rows < 40;
@@ -236,7 +236,7 @@ export const neev: FieldSource = (o, { cols, rows, t, seed }) => {
 
   // Ledger frame, header, rules, and empty cells are the resting structure.
   o.strokeRect(ledgerX, ledgerY, ledgerW, ledgerH);
-  o.fillRect(ledgerX, ledgerY + ledgerRowH * 0.13, ledgerW, Math.max(1, ledgerRowH * 0.09));
+  o.strokeRect(ledgerX, ledgerY + ledgerRowH * 0.13, ledgerW, Math.max(1, ledgerRowH * 0.09));
   for (let column = 1; column < ledgerColumns; column++) {
     segment(o, ledgerX + ledgerColW * column, ledgerY, ledgerX + ledgerColW * column, ledgerY + ledgerH, line);
   }
@@ -271,10 +271,10 @@ export const neev: FieldSource = (o, { cols, rows, t, seed }) => {
       segment(o, bubbleX + bubbleW - tail, bubbleY + bubbleH, bubbleX + bubbleW, bubbleY + bubbleH + tail, line);
       segment(o, bubbleX + bubbleW, bubbleY + bubbleH + tail, bubbleX + bubbleW - tail * 2, bubbleY + bubbleH, line);
     }
-    o.fillRect(bubbleX + bubbleW * 0.16, bubbleY + bubbleH * 0.3, bubbleW * (0.43 + jitter(seed, 140 + message) * 0.16), Math.max(1, bubbleH * 0.1));
-    o.fillRect(bubbleX + bubbleW * 0.16, bubbleY + bubbleH * 0.58, bubbleW * (0.28 + jitter(seed, 150 + message) * 0.15), Math.max(1, bubbleH * 0.1));
+    o.strokeRect(bubbleX + bubbleW * 0.16, bubbleY + bubbleH * 0.3, bubbleW * (0.43 + jitter(seed, 140 + message) * 0.16), Math.max(1, bubbleH * 0.1));
+    o.strokeRect(bubbleX + bubbleW * 0.16, bubbleY + bubbleH * 0.58, bubbleW * (0.28 + jitter(seed, 150 + message) * 0.15), Math.max(1, bubbleH * 0.1));
 
-    // Arrival travels toward parsing before this message is allowed to fill a row.
+    // Arrival travels toward parsing before this message is allowed to reveal a row.
     if (arrive > 0 && arrive < 1) {
       const packetX = lerp(bubbleX + bubbleW, parserX, arrive);
       const packetY = lerp(bubbleY + bubbleH * 0.5, parserY + parserH * 0.5, arrive);
@@ -284,7 +284,7 @@ export const neev: FieldSource = (o, { cols, rows, t, seed }) => {
       o.fillRect(parserX + parserW * 0.35, parserY + parserH * 0.38, parserW * 0.3, parserH * 0.24);
     }
 
-    // A parsed message fills exactly its corresponding row, left to right.
+    // A parsed message reveals exactly its corresponding ruled row, left to right.
     const rowProgress = parsed * clear;
     for (let column = 0; column < ledgerColumns; column++) {
       const cellProgress = clamp01(rowProgress * ledgerColumns - column);
@@ -292,7 +292,7 @@ export const neev: FieldSource = (o, { cols, rows, t, seed }) => {
       const x = ledgerX + ledgerColW * column + ledgerColW * 0.14;
       const y = rowY + ledgerRowH * 0.48;
       const width = ledgerColW * (0.44 + jitter(seed, 160 + message * 7 + column) * 0.24) * cellProgress;
-      o.fillRect(x, y, width, Math.max(1, ledgerRowH * 0.14));
+      o.strokeRect(x, y, width, Math.max(1, ledgerRowH * 0.14));
     }
   }
 
@@ -322,7 +322,7 @@ export const bluehostAgents: FieldSource = (o, { cols, rows, t, seed }) => {
 
   o.lineWidth = line;
   o.strokeRect(barX, barY, barW, barH);
-  o.fillRect(barX + barW * 0.03, barY + barH * 0.55, barW * 0.94, Math.max(1, barH * 0.16));
+  o.strokeRect(barX + barW * 0.03, barY + barH * 0.55, barW * 0.94, Math.max(1, barH * 0.16));
 
   for (let agent = 0; agent < count; agent++) {
     const fraction = (agent + 0.5) / count;
@@ -345,9 +345,9 @@ export const bluehostAgents: FieldSource = (o, { cols, rows, t, seed }) => {
 
     // Completed calls leave bounded runtime ticks instead of a growing history.
     const tickOffset = signedJitter(seed, 260 + agent, callIndex) * marker * 0.45;
-    o.fillRect(endX - marker * 0.35 + tickOffset, barY + barH * 0.69, marker * 0.7, Math.max(1, barH * 0.13));
+    o.strokeRect(endX - marker * 0.35 + tickOffset, barY + barH * 0.69, marker * 0.7, Math.max(1, barH * 0.13));
     if (jitter(seed, 270 + agent, callIndex) > 0.5) {
-      o.fillRect(endX + marker * 0.52, barY + barH * 0.69, marker * 0.42, Math.max(1, barH * 0.13));
+      o.strokeRect(endX + marker * 0.52, barY + barH * 0.69, marker * 0.42, Math.max(1, barH * 0.13));
     }
 
     if (local >= active) continue;
@@ -430,7 +430,7 @@ export const curatMoney: FieldSource = (o, { cols, rows, t, seed }) => {
   // Shared rubric: frame, header, columns and source slots are always present.
   o.lineWidth = line;
   o.strokeRect(gridX, gridY, gridW, gridH);
-  o.fillRect(gridX, gridY + rowPitch * 0.1, gridW, Math.max(1, rowPitch * 0.1));
+  o.strokeRect(gridX, gridY + rowPitch * 0.1, gridW, Math.max(1, rowPitch * 0.1));
   for (let term = 1; term < termCount; term++) {
     segment(o, gridX + (gridW * term) / termCount, gridY, gridX + (gridW * term) / termCount, gridY + gridH, line);
   }
@@ -450,11 +450,11 @@ export const curatMoney: FieldSource = (o, { cols, rows, t, seed }) => {
     // A row frame keeps identity visible while it moves through the comparison.
     o.lineWidth = line;
     o.strokeRect(gridX + gridW * 0.025, y, gridW * 0.93, rowH);
-    o.fillRect(gridX + gridW * 0.06, y + rowH * 0.28, identityW, Math.max(1, rowH * 0.24));
+    o.strokeRect(gridX + gridW * 0.06, y + rowH * 0.28, identityW, Math.max(1, rowH * 0.24));
     for (let term = 1; term < termCount; term++) {
       const cellW = gridW / termCount;
       const value = 0.32 + jitter(seed, 380 + row * 9 + term, epoch) * 0.5;
-      o.fillRect(
+      o.strokeRect(
         gridX + cellW * term + cellW * 0.13,
         y + rowH * 0.32,
         cellW * value,
@@ -475,7 +475,7 @@ export const curatMoney: FieldSource = (o, { cols, rows, t, seed }) => {
 };
 
 /**
- * CI checks converge on a scheduler, then fill only the non-UAT pod columns.
+ * CI checks converge on a scheduler, then trace only the non-UAT pod columns.
  * The final UAT column is always wireframe; even the last packet stops at its
  * boundary so the unfinished pre-production state cannot be mistaken for live.
  */
@@ -511,7 +511,7 @@ export const clusterbid: FieldSource = (o, { cols, rows, t, seed }) => {
     segment(o, checkX + checkW, y + checkH * 0.5, schedulerX, schedulerY + schedulerH * 0.5, line);
     if (complete > 0) {
       const innerW = (checkW - line * 2) * complete;
-      o.fillRect(checkX + line, y + checkH * 0.3, Math.max(0, innerW), Math.max(1, checkH * 0.18));
+      o.strokeRect(checkX + line, y + checkH * 0.3, Math.max(0, innerW), Math.max(1, checkH * 0.18));
       segment(o, checkX + checkW * 0.31, y + checkH * 0.57, checkX + checkW * 0.44, y + checkH * 0.72, line);
       segment(o, checkX + checkW * 0.44, y + checkH * 0.72, checkX + checkW * 0.75, y + checkH * 0.3, line);
     }
@@ -555,10 +555,10 @@ export const clusterbid: FieldSource = (o, { cols, rows, t, seed }) => {
       const pulling = phase(cycle, start, start + 0.08);
       const running = phase(cycle, start + 0.08, start + 0.18);
       if (pulling > 0 && running < 1) {
-        o.fillRect(x + line, y + podH * (0.18 + pulling * 0.5), podW - line * 2, Math.max(1, podH * 0.13));
+        o.strokeRect(x + line, y + podH * (0.18 + pulling * 0.5), podW - line * 2, Math.max(1, podH * 0.13));
       }
       if (running > 0) {
-        o.fillRect(x + line, y + line, Math.max(0, (podW - line * 2) * running), Math.max(0, podH - line * 2));
+        o.strokeRect(x + line, y + line, Math.max(0, (podW - line * 2) * running), Math.max(0, podH - line * 2));
       }
       schedulable++;
     }
