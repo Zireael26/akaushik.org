@@ -1,0 +1,22 @@
+{
+  "argv": [
+    "uvx",
+    "--from",
+    "geo-optimizer-skill==4.16",
+    "geo",
+    "audit",
+    "--url",
+    "https://akaushik.org",
+    "--format",
+    "json",
+    "--verbose",
+    "--no-plugins"
+  ],
+  "exit_code": 0,
+  "finished_at": "2026-08-23T05:19:59Z",
+  "source": "command",
+  "started_at": "2026-08-23T05:19:53Z",
+  "stderr_path": "raw/geo-optimizer.stderr",
+  "stdout_path": "raw/geo-optimizer.stdout",
+  "timed_out": false
+}

@@ -1,0 +1,12 @@
+{
+  "checkout": "akaushik.org",
+  "domain": "https://akaushik.org",
+  "live_html_sha256": "c276c99d59f795c575d3e54900bcfbff7582788fb44e58ccfd7199ec6cec9347",
+  "live_marker_sha256": "9fda16cfd695c228c534b1a5e06620f01cf68575c44c221d438ad68bdad94145",
+  "local_marker_sha256": "9fda16cfd695c228c534b1a5e06620f01cf68575c44c221d438ad68bdad94145",
+  "local_source_sha256": "3be394e0bcc388a1b38b919be8fef6ac601d0bed18e6274f2a781a51019fcf59",
+  "marker_file": "app/layout.tsx",
+  "project": "akaushik.org",
+  "reason": "configured deployment identity and deterministic content marker were observed (2 local, 10 live)",
+  "status": "PASS"
+}

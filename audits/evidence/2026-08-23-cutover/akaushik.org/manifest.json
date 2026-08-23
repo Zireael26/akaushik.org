@@ -1,0 +1,68 @@
+{
+  "artifacts": [
+    {
+      "bytes": 4399,
+      "path": "baseline.json",
+      "sha256": "162d50eddd5d6d85d6824acd292fe3edcb5a8236c6e3f030a0c2478ba751c7c3"
+    },
+    {
+      "bytes": 1175,
+      "path": "baseline.md",
+      "sha256": "768051a2aefa5226d47c209837ab582de4c46785a87627ac40a2742b5bc84d3f"
+    },
+    {
+      "bytes": 441,
+      "path": "raw/geo-optimizer.receipt.json",
+      "sha256": "a063ebf735727fae49110df034aa9d0ea768e840867d45e3e036a17308a31060"
+    },
+    {
+      "bytes": 2092,
+      "path": "raw/geo-optimizer.stderr",
+      "sha256": "c0a6f5eb9ba0a110af30cb4a397e6ccf8048565705e17bd6d76d57a2fa9087e5"
+    },
+    {
+      "bytes": 17770,
+      "path": "raw/geo-optimizer.stdout",
+      "sha256": "cc181dc2429870fae727a37d72278b1ae961651846660847072c6bf3322340d0"
+    },
+    {
+      "bytes": 633,
+      "path": "raw/mapping.json",
+      "sha256": "d727647377301a6a637b6cc0b3c40a247c2a67a6898d7e6720177c818b703f12"
+    },
+    {
+      "bytes": 2427,
+      "path": "raw/probe-chatgpt-user.json",
+      "sha256": "5b043a1a5e528261d7c6dd008bca3125aa7bfa2f11c4bdb982f7f05ebe264c7b"
+    },
+    {
+      "bytes": 2427,
+      "path": "raw/probe-claudebot.json",
+      "sha256": "cf8bbb17392fcfa59e48dccb713dd17e707d8821af330d8b895b9349aa9658ed"
+    },
+    {
+      "bytes": 99836,
+      "path": "raw/probe-gptbot.html",
+      "sha256": "5180b347101f641a2098ac4c8375058467d5336079652f321c44a664c3888274"
+    },
+    {
+      "bytes": 2429,
+      "path": "raw/probe-gptbot.json",
+      "sha256": "6af4659c7c5f7439ceb9d14e58dfb7ea4cc7cb8dee48102877cf7136fd670ec8"
+    },
+    {
+      "bytes": 2437,
+      "path": "raw/probe-perplexitybot.json",
+      "sha256": "9311b036839f9f219989d09e3cc24eb21921e2e98a3ee09b4db29df8b2cc7d5c"
+    }
+  ],
+  "metadata": {
+    "commit": "009f1710314511c99d64c6c1662cb3a5cda3b961",
+    "domain": "https://akaushik.org",
+    "generated_at": "2026-08-23T05:19:53Z",
+    "project": "akaushik.org",
+    "scanner": "geo-optimizer-skill==4.16",
+    "schema": "aeo-gate.baseline.v1"
+  },
+  "schema": "aeo-gate.evidence-manifest.v1"
+}

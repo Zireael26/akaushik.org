@@ -1,0 +1,27 @@
+Downloading lxml (8.2MiB)
+ Downloaded lxml
+Installed 11 packages in 14ms
+DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): akaushik.org:443
+DEBUG:urllib3.connectionpool:https://akaushik.org:443 "GET / HTTP/1.1" 200 None
+DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): akaushik.org:443
+DEBUG:urllib3.connectionpool:https://akaushik.org:443 "GET /robots.txt HTTP/1.1" 200 None
+DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): akaushik.org:443
+DEBUG:urllib3.connectionpool:https://akaushik.org:443 "GET /llms.txt HTTP/1.1" 200 None
+DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): akaushik.org:443
+DEBUG:urllib3.connectionpool:https://akaushik.org:443 "GET /llms-full.txt HTTP/1.1" 200 None
+DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): akaushik.org:443
+DEBUG:urllib3.connectionpool:https://akaushik.org:443 "GET /.well-known/ai.txt HTTP/1.1" 404 None
+DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): akaushik.org:443
+DEBUG:urllib3.connectionpool:https://akaushik.org:443 "GET /ai/summary.json HTTP/1.1" 404 None
+DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): akaushik.org:443
+DEBUG:urllib3.connectionpool:https://akaushik.org:443 "GET /ai/faq.json HTTP/1.1" 404 None
+DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): akaushik.org:443
+DEBUG:urllib3.connectionpool:https://akaushik.org:443 "GET /ai/service.json HTTP/1.1" 404 None
+DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): akaushik.org:443
+DEBUG:urllib3.connectionpool:https://akaushik.org:443 "GET / HTTP/1.1" 200 None
+DEBUG:urllib3.connectionpool:https://akaushik.org:443 "GET / HTTP/1.1" 200 None
+DEBUG:urllib3.connectionpool:https://akaushik.org:443 "GET / HTTP/1.1" 200 None
+DEBUG:urllib3.connectionpool:https://akaushik.org:443 "GET / HTTP/1.1" 200 None
+DEBUG:urllib3.connectionpool:https://akaushik.org:443 "GET / HTTP/1.1" 200 None
+DEBUG:urllib3.connectionpool:https://akaushik.org:443 "GET / HTTP/1.1" 200 None
+DEBUG:urllib3.connectionpool:https://akaushik.org:443 "GET / HTTP/1.1" 200 None
