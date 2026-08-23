@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 /**
  * A private repository must never be rendered as a link.
@@ -63,17 +63,22 @@ vi.mock('@/components/pixel/ContributionField', () => ({
 
 const { default: OpenSource } = await import('./OpenSource');
 
-function render(): string {
-  return renderToStaticMarkup(<OpenSource />);
+async function render(): Promise<string> {
+  const tree = await OpenSource();
+  return renderToStaticMarkup(tree);
 }
 
 describe('OpenSource repository rows (live data)', () => {
-  getStatsMock.current.mockReturnValue({
-    stats: LIVE,
-    degraded: false,
-    reason: 'live',
+  let html = '';
+
+  beforeAll(async () => {
+    getStatsMock.current.mockReturnValue({
+      stats: LIVE,
+      degraded: false,
+      reason: 'live',
+    });
+    html = await render();
   });
-  const html = render();
 
   it('links a repository a reader can actually open', () => {
     expect(html).toContain('href="https://github.com/o/open"');
@@ -108,14 +113,14 @@ describe('OpenSource repository rows (live data)', () => {
 });
 
 describe('OpenSource degraded states', () => {
-  it('says the numbers are stale instead of quoting them as current', () => {
+  it('says the numbers are stale instead of quoting them as current', async () => {
     const stale = {
       ...LIVE,
       generatedAt: '2026-08-13T05:50:08.537Z',
       totalContributions: 12434,
     };
     getStatsMock.current.mockReturnValue({ stats: stale, degraded: true, reason: 'stale' });
-    const html = render();
+    const html = await render();
     expect(html).toContain('px-open-degraded');
     expect(html).toContain('px-open-meta--degraded');
     expect(html).toContain('the daily refresh has been failing');
@@ -125,20 +130,19 @@ describe('OpenSource degraded states', () => {
     expect(html).toContain('as of the last good snapshot');
   });
 
-  it('says the numbers come from the checked-in fallback when KV has nothing', () => {
+  it('says the numbers come from the checked-in fallback when KV has nothing', async () => {
     getStatsMock.current.mockReturnValue({ stats: LIVE, degraded: true, reason: 'missing' });
-    const html = render();
+    const html = await render();
     expect(html).toContain('Live refresh not connected yet');
     expect(html).toContain('snapshot checked into this repo');
     // The age is folded into the sentence — one line, one claim.
     expect(html).toMatch(/last measured (today|yesterday|\d+ days ago)/);
   });
 
-  it('never renders a degraded state without an age for the last good data', () => {
+  it('never renders a degraded state without an age for the last good data', async () => {
     const stale = { ...LIVE, generatedAt: '2026-08-13T05:50:08.537Z' };
     getStatsMock.current.mockReturnValue({ stats: stale, degraded: true, reason: 'stale' });
-    const html = render();
-    // "2 days ago" — the age of the fixture's generatedAt from Date.now().
+    const html = await render();
     expect(html).toMatch(/Last good \d+ days? ago|Last good yesterday|Last good today/);
   });
 });

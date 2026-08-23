@@ -19,6 +19,14 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   a snapshot older than ~36h renders a "data stale" label and a provenance line
   reading "Last good N days ago", so an old number is never presented as
   current. The Actions workflow is retained until the Worker path is proven.
+  Component tests render the now-async `OpenSource` through awaited trees
+  instead of a synchronous `renderToStaticMarkup(<OpenSource />)` call, which
+  suspended under React 19's server renderer.
+  current. The Actions workflow is retained until the Worker path is proven.
+  Test harness note: the fake-GitHub fetch stub matches repo-root and
+  `/commits` URLs explicitly rather than by a `?` prefix that never fires, so
+  the per-repo branches are exercised as written.
+  current. The Actions workflow is retained until the Worker path is proven.
   The Workers runtime types (`ScheduledController`, `ExecutionContext`) are
   declared ambient in `worker/env.d.ts`, so a fresh clone typechecks before any
   build or `wrangler types` run. Tests cover normalize, staleness boundaries,

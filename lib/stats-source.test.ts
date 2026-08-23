@@ -68,18 +68,15 @@ function githubHarness(options?: {
       });
     }
     for (const entry of STATS_REPOS) {
-      if (url === `https://api.github.com/repos/${entry.repo}`) {
-        // The unauthenticated public check. Private repos answer 404.
-        const status = options?.repoStatuses?.[entry.repo] ?? 200;
+      const repoRoot = `https://api.github.com/repos/${entry.repo}`;
+      const status = options?.repoStatuses?.[entry.repo] ?? 200;
+      if (url === repoRoot) {
         return new Response(null, { status });
       }
-      if (url.startsWith(`https://api.github.com/repos/${entry.repo}?`)) {
-        const status = options?.repoStatuses?.[entry.repo];
-        if (status && status !== 200) {
+      if (url.startsWith(`${repoRoot}/commits`)) {
+        if (status !== 200) {
           return new Response('nope', { status });
         }
-        // The twelve-month windowed list carries a Link header saying 42
-        // pages; the latest-commit call (no `since=`) returns one commit.
         if (!url.includes('since=')) {
           return json([{ commit: { author: { date: '2026-08-20T01:02:03Z' } } }]);
         }
