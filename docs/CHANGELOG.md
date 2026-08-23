@@ -4,6 +4,48 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ## [Unreleased]
 
+### Fixed
+
+- 2026-08-23 — Nav links on a touch device were 40.3px tall. `header.css` has
+  said `hit targets >= 44px on touch` since the port and nothing was checking
+  it; the `@media (pointer: coarse)` rule fired correctly, its padding was
+  simply four pixels short. A 13px link renders ~16.3px tall and 12px either
+  side lands at 40.3 — measured on an iPhone SE against production, because
+  `line-height: normal` makes the text box a property of the font's metrics and
+  no arithmetic from `font-size` would have found it.
+
+  Found by CI, on the `chromium-tablet` and `webkit-mobile` Playwright
+  projects. Locally only `chromium-desktop` and `webkit-desktop` had been run,
+  and neither can see this.
+
+- 2026-08-23 — The Writing nav item linked to `/writing/`, which the app serves
+  as a 308 to `/writing`. Every click on it paid a redirect.
+
+- 2026-08-23 — `stripTitleChrome` would eat a leading blockquote in a body that
+  had no H1 above it — an epigraph the author meant to publish, deleted at
+  build time with a green build and no error to trace it by. The strip is now
+  gated on actually finding the H1 whose dek it exists to remove. Latent, not
+  live: all fourteen writing bodies open with an H1, so the rendered output is
+  byte-identical. Found by writing the function's first test.
+
+### Changed
+
+- 2026-08-23 — Coverage thresholds now exclude the canvas *mount* engines
+  (`lib/scenes/**`, `lib/pixel/field.ts`) and the generated MDX modules.
+
+  A mount engine is `mount(canvas) => dispose`: it reads element geometry and
+  devicePixelRatio, attaches listeners, opens a rAF loop and paints. There is
+  no return value to assert and no seam that is not the DOM, so a vitest test
+  of one would be a test of a jsdom canvas stub — green whether or not the real
+  thing draws. They are covered by the only thing that can cover them:
+  `e2e/canvas.spec.ts` proves each field is sized by the engine rather than
+  left at the 300×150 HTML default, and `e2e/reduced-motion.spec.ts` samples a
+  canvas twice a second apart to prove it moves, and stops when asked.
+
+  Deliberately narrow. The pure drawing functions beside them —
+  `lib/pixel/sources.ts`, `stages.ts`, `neural.ts` — stay in scope. They are
+  undertested and the fix for that is tests, not a wider exclusion.
+
 ### Changed
 
 - 2026-08-23 — `www.akaushik.org` now redirects to the apex from the site's own

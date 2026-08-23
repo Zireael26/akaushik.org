@@ -21,7 +21,7 @@ const NAV: ReadonlyArray<{ label: string; href: string }> = [
   { label: 'Profile', href: '/#profile' },
   { label: 'Method', href: '/#method' },
   { label: 'Work', href: '/#work' },
-  { label: 'Writing', href: '/writing/' },
+  { label: 'Writing', href: '/writing' },
   { label: 'Services', href: '/#services' },
   { label: 'Contact', href: '/#contact' },
 ];

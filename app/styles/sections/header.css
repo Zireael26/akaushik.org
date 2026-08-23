@@ -49,13 +49,20 @@
 
 /* design.md § Layout: hit targets >= 44px on touch. Desktop is unchanged.
    The theme switch's own appearance belongs to components/pixel/ThemeSwitch;
-   only its hit target in this row is the header's business. */
+   only its hit target in this row is the header's business.
+
+   The padding is 14px, not the 12px this was ported with, because 12 does not
+   reach the number the rule above states: a 13px link renders ~16.3px tall, so
+   12 either side lands at 40.3px and misses by four. Measured on an iPhone SE
+   against production, not derived — `line-height: normal` means the text box is
+   whatever the font's metrics make it, and no arithmetic from font-size alone
+   would have got there. */
 @media (pointer: coarse) {
   .px-nav a {
-    padding-block: 12px;
+    padding-block: 14px;
   }
 
   .px-theme-switch {
-    padding-block: 9px;
+    padding-block: 11px;
   }
 }

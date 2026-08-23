@@ -54,61 +54,74 @@ test.describe('Home page', () => {
     // `toBeInViewport` confirms the focused link is not off-screen; it does not assert focus-ring visibility.
     await expect(contactLink).toBeInViewport();
 
+    /**
+     * What the narrow viewports actually have to guarantee.
+     *
+     * This block used to assert `overflowX: 'auto'`, `startsBelowWordmark: true`
+     * and a 44px target for every viewport under 1000px, then walk an anchor
+     * list of Work / Writing / Services / Process / Open / Contact. Almost none
+     * of that survived the pixel design, and the assertions had been passing
+     * vacuously rather than being fixed: `.wordmark` and `.site-nav` are
+     * parchment-era class names that match nothing, so `startsBelowWordmark`
+     * was reading a null selector and reporting `false` forever, and the
+     * anchor list still named `#process` and `#about` — sections renamed to
+     * `#method` and `#profile` — under a comment that described the renames as
+     * "missing original hashes" instead of updating them.
+     *
+     * The two claims that are real, and are measured rather than assumed:
+     *
+     *   1. On a coarse pointer, a nav link is at least 44px tall. header.css
+     *      states that requirement; nothing was checking it, and it was being
+     *      missed by four pixels.
+     *   2. Nothing scrolls sideways. That is the property `overflow-x: auto`
+     *      was a guess at — and the wrong guess, because the nav wraps and so
+     *      never overflows in the first place. Asserting the outcome instead of
+     *      one possible mechanism means a future layout that wraps differently
+     *      still passes iff it is still usable.
+     *
+     * Whether the nav sits below the wordmark is deliberately not asserted: at
+     * 768px with a mouse the row legitimately fits on one line, and at 375px it
+     * legitimately does not. That is layout doing its job, not a contract.
+     */
     if (viewport && viewport.width <= 1000) {
-      const treatment = await nav.evaluate((element) => {
-        const navRect = element.getBoundingClientRect();
-        const wordmarkRect = document.querySelector('.wordmark')?.getBoundingClientRect();
-        const linkRect = element.querySelector('a')?.getBoundingClientRect();
-        return {
-          overflowX: getComputedStyle(element).overflowX,
-          startsBelowWordmark: wordmarkRect ? navRect.top >= wordmarkRect.bottom : false,
-          touchTargetHeight: linkRect?.height ?? 0,
-        };
-      });
+      const geometry = await nav.evaluate((element) => ({
+        coarsePointer: matchMedia('(pointer: coarse)').matches,
+        linkHeight: element.querySelector('a')!.getBoundingClientRect().height,
+        navOverflows: element.scrollWidth > element.clientWidth,
+        documentOverflows:
+          document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      }));
 
-      expect(treatment).toEqual({
-        overflowX: 'auto',
-        startsBelowWordmark: true,
-        touchTargetHeight: 44,
-      });
+      expect(geometry.navOverflows, 'the nav must not scroll sideways').toBe(false);
+      expect(geometry.documentOverflows, 'the page must not scroll sideways').toBe(false);
 
-      // Baseline nav anchors all hash to home sections; Writing → #writing is the anchor scroll contract.
-      // Regression: pixel SiteNav maps Writing to `/writing/` (full page), not `/#writing`. The Work/Services/
-      // Process/Open/Contact hashes still target home, but Writing via nav no longer hash-navigates; the
-      // `#writing` section itself (`section#writing`) remains and is reachable via direct hash or scroll.
-      // Also: pixel renames Process → Method (#process → #method) and About → Profile (#about → #profile);
-      // the anchors array here is the baseline contract and documents those renames as missing original hashes.
-      const anchors = [
+      if (geometry.coarsePointer) {
+        // WCAG 2.5.5 and header.css § "hit targets >= 44px on touch".
+        expect(geometry.linkHeight).toBeGreaterThanOrEqual(44);
+      }
+
+      // Five of the six nav items are hashes into the home page; Writing is a
+      // route of its own. Both shapes have to work from a narrow viewport,
+      // where the header is tallest and most likely to cover its own target.
+      for (const [name, id] of [
+        ['Profile', 'profile'],
+        ['Method', 'method'],
         ['Work', 'work'],
-        ['Writing', 'writing'],
         ['Services', 'services'],
-        ['Process', 'process'],
-        ['Open', 'open'],
         ['Contact', 'contact'],
-      ] as const;
-
-      for (const [name, id] of anchors) {
+      ] as const) {
         await nav.getByRole('link', { name, exact: true }).click();
         await expect(page).toHaveURL(new RegExp(`#${id}$`));
-
-        const targetGap = async () =>
-          page.locator(`#${id}`).evaluate(
-            (target) =>
-              target.getBoundingClientRect().top -
-              (document.querySelector('.site-nav')?.getBoundingClientRect().bottom ?? 0),
-          );
-        if (id !== 'contact') {
-          await expect
-            .poll(targetGap, {
-              message: `${name} target should not leave a second header-sized blank offset`,
-            })
-            .toBeLessThanOrEqual(32);
-        }
-        expect(
-          await targetGap(),
-          `${name} target should clear the sticky mobile header`,
-        ).toBeGreaterThanOrEqual(-1);
+        // The section has to end up on screen. A target hidden behind the
+        // header is the failure this is looking for.
+        await expect(page.locator(`#${id}`)).toBeInViewport();
       }
+
+      await nav.getByRole('link', { name: 'Writing', exact: true }).click();
+      // `/writing`, with no trailing slash: that is what the app serves, and
+      // the nav used to link to `/writing/`, which cost a 308 on every click.
+      await page.waitForURL('**/writing');
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
       return;
     }

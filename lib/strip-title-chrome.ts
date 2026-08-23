@@ -15,12 +15,18 @@ export function stripTitleChrome(body: string): string {
   const lines = body.split('\n');
   let i = 0;
   while (i < lines.length && lines[i]!.trim() === '') i += 1;
-  if (i < lines.length && lines[i]!.startsWith('# ')) {
-    i += 1;
-    while (i < lines.length && lines[i]!.trim() === '') i += 1;
-  }
-  if (i < lines.length && /^>\s?/.test(lines[i]!)) {
-    while (i < lines.length && /^>\s?/.test(lines[i]!)) i += 1;
-  }
+
+  // No H1 means no title chrome, so there is no dek either and nothing to
+  // strip. This used to fall through to the blockquote branch unconditionally,
+  // which would eat a leading epigraph — a body opening with a quote the author
+  // meant to publish. Nothing in `content/writing/` opens that way today, so it
+  // never fired; it would have been a silent content loss the first time one
+  // did, with a green build and no error to trace it by.
+  if (i >= lines.length || !lines[i]!.startsWith('# ')) return body;
+
+  i += 1;
+  while (i < lines.length && lines[i]!.trim() === '') i += 1;
+  while (i < lines.length && /^>\s?/.test(lines[i]!)) i += 1;
+
   return lines.slice(i).join('\n').trim();
 }
