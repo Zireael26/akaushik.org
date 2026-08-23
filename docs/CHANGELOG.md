@@ -6,6 +6,20 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Added
 
+- 2026-08-23 — Shipped "Ship It" end to end, replacing the arcade section in
+  place. `lib/shipit/audio.ts` ports the oscillator kit to a new storage key
+  with six original cues (pellet tick, energizer push, eat-bug, death, win,
+  loss) — square and triangle voices only, no samples. `lib/scenes/shipit.ts`
+  mounts the engine on one canvas: one rAF, one AbortController, theme and
+  both motion vetoes subscribed, DPR capped at 2, allocation-free draw. The
+  player is a blinking block caret whose leading edge splits into two prongs
+  and rejoins as it eats; the four bugs are geometrically distinct pixel masks
+  (beetle, arrow, cross, notch), pellets are semicolon glyph pairs, and
+  energizers are pulsing commit nodes. `ShipItGame.tsx` and `ShipIt.tsx` wire
+  the accessible island and `#shipit` section; `shipit.css` imports before
+  `_mobile.css`. Every arcade section module is deleted and its callers
+  migrated — no alias remains for this game's old name.
+
 - 2026-08-23 — Began "Ship It", the maze-chase rebuild that replaces the
   arcade field. `lib/shipit/` adds the pure rule core: `layout.ts` for the
   28x31 board under the original's structural grammar but with our own wall

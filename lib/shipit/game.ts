@@ -712,7 +712,8 @@ export function stepGame(game: ShipItGame, deltaMsRaw: number): boolean {
   while (left > 1e-6) {
     const slice = Math.min(left, MAX_FRAME_MS);
     changed = stepLive(game, slice) || changed;
-    if (game.phase === 'won' || game.phase === 'lost') break;
+    const phase = game.phase as GamePhase;
+    if (phase === 'won' || phase === 'lost') break;
     left -= slice;
   }
   return changed;
@@ -727,4 +728,24 @@ export function stepDiscrete(game: ShipItGame): boolean {
   if (!game.discretePending) return false;
   game.discretePending = false;
   return stepGame(game, 120);
+}
+
+/** Arrow keys and WASD map to directions; everything else is ignored. */
+export function directionFromKey(key: string): Direction | null {
+  switch (key.toLowerCase()) {
+    case 'arrowup':
+    case 'w':
+      return UP;
+    case 'arrowdown':
+    case 's':
+      return DOWN;
+    case 'arrowleft':
+    case 'a':
+      return LEFT;
+    case 'arrowright':
+    case 'd':
+      return RIGHT;
+    default:
+      return null;
+  }
 }
