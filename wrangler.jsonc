@@ -47,11 +47,23 @@
     // `www` is bound here too, and the Worker 308s it to the apex — Vercel was
     // doing that redirect at the platform level, which is invisible in this
     // repo and did not survive the move. See `wwwRedirect` in lib/agent-proxy.ts.
+    //
+    // Zone routes, not custom domains, and the difference is the whole cutover
+    // story. A custom domain makes Cloudflare own the DNS record, so binding
+    // one demands the existing record be deleted first — the apex pointed at
+    // Vercel, so that is a window with no record at all, and a rollback means
+    // recreating DNS under pressure. A route sits in front of a record that is
+    // already proxied and simply answers before the origin does: no DNS change
+    // to cut over, and rollback is deleting the route, after which the same
+    // record serves Vercel again on the next request.
+    //
+    // `/*` and not `/` — a route pattern is a path prefix match, and a bare
+    // hostname would intercept the home page and nothing else.
     "production": {
       "name": "akaushik-org",
       "routes": [
-        { "pattern": "akaushik.org", "custom_domain": true },
-        { "pattern": "www.akaushik.org", "custom_domain": true }
+        { "pattern": "akaushik.org/*", "zone_name": "akaushik.org" },
+        { "pattern": "www.akaushik.org/*", "zone_name": "akaushik.org" }
       ],
       "assets": {
         "directory": ".open-next/assets",
