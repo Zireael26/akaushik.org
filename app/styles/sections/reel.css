@@ -1,0 +1,19 @@
+/* ---------- reels (ADR-0020) ---------- */
+/* A reel is the case study's own product source mounted as a pixel field
+   (components/work/ReelField.tsx). The engine sizes the canvas from this
+   box and repaints it from theme tokens, so there is no separate video or
+   SVG floor to position any more. */
+
+.px-reel {
+  display: block;
+  overflow: hidden;
+  margin: clamp(24px, 4vh, 36px) 0 0;
+  border: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.px-reel .px-reel-field {
+  display: block;
+  width: 100%;
+  height: clamp(220px, 38vh, 420px);
+}

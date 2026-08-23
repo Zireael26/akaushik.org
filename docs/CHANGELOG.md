@@ -105,6 +105,14 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   Not a bug in the chart itself, which I first misread: it is 53 columns of 15
   cells each with most transparent, so the sparse left-hand side is real data
   (the early weeks genuinely are near-zero), not a rendering fault.
+### Changed
+
+- 2026-08-23 — U3 — method pipeline art is taller and denser; cursor-near progress drives reversible tiles; fine-pointer cursor now eases at 0.2 onto the nearest step with reset and reduced-motion/coarse gating.
+- 2026-08-23 — U4 — writing art validation now rejects unknown topic keys, warns only on absent art, and topic-source tests reuse the shared pixel stub.
+- 2026-08-23 — U4 — human visual correction: topic route fields now use sparse ruled outlines over texture, with fills limited to small packet/node/receipt accents and style-density tests at route sizes.
+- 2026-08-23 — U1 — human visual correction: product fields keep their approved compositions but now trace semantic boxes/rows as restrained strokes, reserving fills for small packets/nodes/citations, with density/style tests across presets.
+- 2026-08-23 — U1 — human visual correction (follow-up): dense repeated rows, not stroke width, caused the slabs; repeat pitch is now ≥4 cells, redundant bars removed, and a real-grid raster oracle caps every 8×8 window at 35% across hero/card/mobile profiles.
+- 2026-08-23 — U2 — after a five-vote deletion proof, removed all 18 MP4/poster assets under `public/video/work` (four card pairs, four hero pairs, and `inline/neev`); removed the dead `work-inline` branch from `components/media/hyperframes-loop.tsx` (`NeevInlineFloor`, `WorkInlineLoopSlug`, `LoopSlug` union, `assetPath` `work-inline` case, `kind: 'work-inline'`) and the `app/styles/sections/work-detail.css` `work-inline`/`reel` video rules; writing videos/components remain (`public/video/writing` — four loops / 8 assets — and `HyperframesLoop` writing branch); `scripts/hyperframes` retained by hard stop even though its eight work compositions now regenerate unconsumed assets under `public/video/work`.
 
 ### Added
 
@@ -270,6 +278,9 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   This is the last code change the Vercel → Cloudflare cutover needed
   (ADR-0018); the Vercel project stays paused-not-deleted for 14 days so a
   rollback is a DNS change rather than a rebuild.
+- 2026-08-23 — Writing frontmatter now carries a closed `art` vocabulary; `RouteField` selects topic/product sources with slug-seeded texture, and the content-bundling build visibly warns on trellis fallback.
+- 2026-08-23 — Case-study reels now use live theme-responsive pixel fields; HyperFrames video references/tests are being retired, and ADR-0020 records the decision.
+- 2026-08-23 — Reel field mapping preserves the original `Reel` default and maps `hero` to the engine's `hero` preset while cards use `tile`.
 
 - 2026-08-23 — Playwright's Firefox cannot launch on this machine, and the site
   is not the reason. Two attempts at a full five-project run against the
@@ -690,6 +701,7 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 - 2026-08-23 — Rebuilt the home, work, and writing Open Graph images as deterministic 1200×630 pixel cards using Satori-safe inline SVG grids and real route frontmatter.
 - 2026-08-23 — Replaced the article-only field with one slug-seeded `RouteField` shared by every writing and case-study detail route, using the restrained strip preset without inventing a topic taxonomy.
 - 2026-08-23 — Wired the work detail, writing detail, API docs, and status section styles into the root layout so each route ships its pixel presentation.
+- 2026-08-23 — Five bespoke, animated, theme-responsive product workflow fields now cover VeriCite, Neev, Bluehost Agents, curat.money, and ClusterBid, with deterministic cross-preset tests.
 - 2026-08-22 — Generalised the hero heatfield into a reusable pixel field, and
   made it the engine behind every piece of live art on the site. `lib/pixel/field.ts`
   takes a list of sources — silhouettes drawn into an offscreen buffer at cell
