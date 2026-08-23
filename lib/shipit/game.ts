@@ -163,7 +163,7 @@ function centerOf(index: number): { x: number; y: number } {
   return { x: indexX(index) * TILE + HALF_TILE, y: indexY(index) * TILE + HALF_TILE };
 }
 
-function tileOf(actor: Actor): number {
+export function tileOf(actor: Actor): number {
   return toIndex(Math.floor(actor.x / TILE), Math.floor(actor.y / TILE));
 }
 
@@ -233,7 +233,7 @@ export function restartGame(game: ShipItGame): void {
 export function queueDirection(game: ShipItGame, direction: Direction): boolean {
   if (game.phase !== 'running') return false;
   game.player.desired = direction;
-  if (game.discretePending) game.discretePending = true;
+  game.discretePending = true;
   return true;
 }
 
@@ -301,7 +301,7 @@ function chaseTargetFor(game: ShipItGame, ghost: Ghost): number {
   }
 }
 
-function targetFor(game: ShipItGame, ghost: Ghost): number {
+export function targetFor(game: ShipItGame, ghost: Ghost): number {
   if (ghost.state === 'eyes') return BUG_HOUSE_SEATS.direct;
   if (ghost.state === 'frightened') return -1;
   if (ghost.kind === 'direct' && elroyLevel(game) > 0) return chaseTargetFor(game, ghost);
@@ -341,7 +341,7 @@ function decideGhost(game: ShipItGame, ghost: Ghost): Direction | null {
   return choice?.direction ?? null;
 }
 
-function elroyLevel(game: ShipItGame): number {
+export function elroyLevel(game: ShipItGame): number {
   if (game.pelletsRemaining <= ELROY_DOTS_2) return 2;
   if (game.pelletsRemaining <= ELROY_DOTS_1) return 1;
   return 0;

@@ -16,10 +16,9 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   only the player gets, scatter/chase timing with forced reversal on mode
   change, fright, and ghost-house release. Rules are implemented from the
   documented mechanics, which are not copyrightable; no original maze drawing,
-  character art or audio is reproduced. **Not yet green**: 44 of 46 tests pass,
-  with the Cruise Elroy speed-up and the discrete reduced-motion step still
-  failing. Committed as a checkpoint, not as a done claim; no rendering layer
-  or section wiring exists yet.
+  character art or audio is reproduced. The rule-core suite is green: 58
+  focused tests across layout, targeting and game, including Cruise Elroy and
+  the discrete reduced-motion step. No rendering layer or section wiring yet.
 
 - 2026-08-23 — Began the original arcade field: a fixed asymmetric 25×17 board
   and deterministic maze-chase state machine with buffered keyboard movement,

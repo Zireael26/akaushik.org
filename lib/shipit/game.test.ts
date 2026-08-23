@@ -12,18 +12,19 @@ import {
   UP,
   createShipItGame,
   drainGameEvents,
+  elroyLevel,
   queueDirection,
   restartGame,
   snapshotGame,
   startGame,
   stepDiscrete,
   stepGame,
+  targetFor,
+  tileOf,
   type ShipItGame,
 } from './game';
 import {
-  BOARD_HEIGHT,
   BOARD_WIDTH,
-  DIRECT_SPAWN,
   PLAYER_SPAWN,
   TUNNEL_Y,
   indexX,
@@ -352,21 +353,22 @@ describe('shipit game — R16 Cruise Elroy', () => {
     expect(ELROY_DOTS_2).toBe(10);
     const game = runningGame();
     game.mode = 'scatter';
-    game.pelletsRemaining = 25;
-    const direct = game.ghosts[0];
-    direct.state = 'active';
-    // Below 25 but above 20: scatter holds.
-    expect(game.mode === 'scatter' && elroyChases(game) === false).toBe(true);
-    game.pelletsRemaining = 20;
-    expect(elroyChases(game)).toBe(true);
-    game.pelletsRemaining = 10;
-    expect(elroyChases(game)).toBe(true);
-  });
 
-  function elroyChases(game: ShipItGame): boolean {
-    void game;
-    return true;
-  }
+    game.pelletsRemaining = 25;
+    expect(elroyLevel(game)).toBe(0);
+
+    game.pelletsRemaining = ELROY_DOTS_1;
+    expect(elroyLevel(game)).toBe(1);
+    // Elroy ignores scatter: targetFor keeps chasing via the direct rule.
+    const direct = game.ghosts[0]!;
+    Object.assign(direct, tileCenter(20, 8));
+    direct.facing = LEFT;
+    expect(targetFor(game, direct)).toBe(tileOf(game.player));
+
+    game.pelletsRemaining = ELROY_DOTS_2;
+    expect(elroyLevel(game)).toBe(2);
+    expect(elroyLevel(game) === 2 && game.mode === 'scatter').toBe(true);
+  });
 });
 
 describe('shipit game — R19 phases and restart', () => {
@@ -414,5 +416,3 @@ describe('shipit game — determinism', () => {
   });
 });
 
-void toIndex;
-void BOARD_HEIGHT;
