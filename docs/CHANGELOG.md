@@ -6,6 +6,38 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Fixed
 
+- 2026-08-23 — Three author-facing placeholders were live on the Neev case
+  study, which is the hero case (`index: "01"`). Two `*(Abhishek to fill: …)*`
+  notes and one `*(Placeholder — fill after v1 stabilizes …)*`, served in the
+  HTML and in the `/work/neev.md` route that agents read.
+
+  Two are deleted outright: the paragraphs beside them already stated the true
+  thing, and "Honest scope" keeps its blockquote, which was always the real
+  content of that section. The third became prose from the candidates already
+  noted inside it.
+
+### Changed
+
+- 2026-08-23 — Started a voice pass over the case studies, which never had one.
+
+  Measured with the writing skill's `check-writing.sh` against
+  `references/ai-tells.md`: **32 offenses across the five case studies and zero
+  across all fourteen writing posts.** The posts went through the 2026-05-11
+  voice pass; the case studies did not, and the split is that clean.
+
+  Neev was the worst at 11, and the reason is the doctrine's own point —
+  clustering is the signal. Em-dashes plus a run of four `- **Term.**
+  explanation` bullets in one file is a fingerprint no one accumulates by
+  accident. The bullets are four paragraphs now, and the em-dashes are commas,
+  colons and periods per `voice.md` § 4.
+
+  Neev is 11 → 1. The remaining one is the NSSO appositive
+  (`63 million MSMEs — 6.34 crore, per …`), which `voice.md` explicitly allows;
+  frontmatter dashes in `year:` and `role:` are data fields rendered as labels,
+  not prose, and are left alone.
+
+### Fixed
+
 - 2026-08-23 — The mobile header. It was not a mobile header; it was a desktop
   header that had run out of room.
 
