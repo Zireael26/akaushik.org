@@ -102,3 +102,52 @@ with the reasoning next to them.
 preview proves the Workers path end to end, but pointing the apex at it is the
 cutover, and ADR-0018 puts a 14-day paused-not-deleted window on the Vercel
 project after that. That is a decision to take awake.
+
+---
+
+## 2026-08-23 · the cutover, awake (L3 — operator confirmed each fork)
+
+### D11 · Cut over with a zone route, not a custom domain
+The obvious way to bind `akaushik.org` to a Worker is a custom domain, and it
+failed on the first attempt: *"Hostname 'akaushik.org' already has externally
+managed DNS records (A, CNAME, etc). Delete them first."* A custom domain makes
+Cloudflare own the record, so binding one to the apex means first deleting the
+record that points at Vercel — a window with no record at all, and a rollback
+that means recreating DNS while the site is down.
+
+A zone route needs none of that. The apex was already proxied through
+Cloudflare, so a route sits in front of the existing record and answers before
+the origin is reached. Nothing about DNS changed to cut over. Rollback is
+deleting the route, after which the same record serves Vercel again on the next
+request — a strictly better rollback than the DNS one ADR-0018 assumed.
+
+Vercel is untouched and still deployed underneath, per the 14-day
+paused-not-deleted window.
+
+### D12 · The `www` redirect had to be written before the cutover, not after
+`www.akaushik.org` 308'd to the apex — from Vercel's platform config, which is
+a setting in someone else's dashboard and appears nowhere in this repo. Routing
+`www` at the Worker without replacing it would have served every page on two
+hosts.
+
+It went into `lib/agent-proxy.ts` with the rest of the contract rather than into
+either adapter, so both runtimes get it and one test covers it. Mutation-checked:
+disabling the redirect fails exactly the two positive cases. `www` deliberately
+stays in `CANONICAL_HOSTS` — `X-Robots-Tag: noindex` on a redirect tells a
+crawler not to follow it, which is the opposite of consolidating two hosts.
+
+### D13 · Wrangler authenticates by OAuth here; the shell token is a decoy
+`wrangler deploy` failed with `Authentication error [code: 10000]`. Both API
+tokens on this machine — the one exported into the shell and the one in
+`local.env` — verify as active and neither can see account `ca127da6…`. The
+working credential is the stored OAuth token, which the env var was shadowing.
+Every deploy in this session ran under `env -u CLOUDFLARE_API_TOKEN
+-u CLOUDFLARE_ACCOUNT_ID`.
+
+Worth fixing properly rather than remembering: two stale tokens that pass
+`/user/tokens/verify` and fail on every real call are exactly the shape of
+credential problem that wastes an hour later.
+
+### D14 · Case-study art depicts the product, not the logo
+Operator's call, taken awake. No logo rasterisation — which also settles the
+Bluehost question, since its mark is third-party trademarked art.
