@@ -55,6 +55,9 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   Not a bug in the chart itself, which I first misread: it is 53 columns of 15
   cells each with most transparent, so the sparse left-hand side is real data
   (the early weeks genuinely are near-zero), not a rendering fault.
+### Changed
+
+- 2026-08-23 — U3 — method pipeline art is taller and denser; cursor-near progress drives reversible tiles; fine-pointer cursor now eases at 0.2 onto the nearest step with reset and reduced-motion/coarse gating.
 
 ### Added
 
