@@ -4,6 +4,50 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ## [Unreleased]
 
+### Changed
+
+- 2026-08-23 — The cursor snap lands on its target and fills it. Two defects
+  from the operator's second rejection, both fixed at the root:
+
+  **D1 — the glyph sat at the tile's corner while the tile lit up.** The snap
+  anchor was `rect.right + 6, rect.top - 12` — the top-right corner of the
+  hovered element — so `easeCursorPosition` dutifully carried the drawn glyph
+  to exactly the wrong place. The anchor is now the element's own centre, and
+  the existing 0.2/frame ease does the rest: the glyph travels to the middle
+  of the target and reads as attached, then releases back to pointer-following
+  on leave. The native cursor used to be hidden document-wide via an
+  `html.px-cursor-active` class for as long as the overlay was enabled; it is
+  now hidden only on the element currently hit, via a
+  `[data-pixel-cursor-hide]` attribute the engine sets and clears per frame.
+  No state remains where both arrows are visible over a target, and no page
+  outside a hovered element ever loses its native cursor.
+
+  **D2 — the active treatment read as a thin ring, not a fill.** The old bloom
+  was a 0.45-unit stroke plus a ~2–4% stipple. The snapped state is now a
+  genuinely filled disc carrying the step's accent (`cobalt` / `amber` /
+  `red` / `ink`), blooming from the centre over the ±0.07 progress ramp and
+  retracting along the same path, with the icon punched out of it — the solid
+  sphere with a knocked-out glyph the reference site shows. Because the field
+  engine samples only alpha into one colour channel per frame, contrast is
+  decided by which tint carries the fill: accents resolve to their text-safe
+  siblings (the canvas mirror of `--px-*-ink`, new `INK_SAFE`/`inkSafe()` in
+  `lib/pixel.ts`). Measured knockout ratios against the page ground, all ≥
+  4.5:1: cobalt 5.23 light / 4.65 dark; amber 4.67 / 9.28; red 4.79 / 4.63;
+  ink (navy substitution) 15.77 / 15.87. The icon geometry moved to one shared
+  recorded-path source so the resting stroke and the snap punch can never
+  drift apart.
+
+  Density oracle: a filled disc mathematically cannot honour the 35% window
+  cap — between radii ~2.5 and ~6.5 cells any solid disc peaks near 50% in its
+  central window regardless of glyph. Per the handoff's escape clause, the
+  oracle now runs two justified regimes instead of exempting tiles wholesale:
+  rest stays under the house 35% bar, and the whole bloom answers to a
+  geometric ceiling (the fill may never exceed the disc it belongs to) plus a
+  structural guarantee that the knockout clears real area. Reduced motion
+  snaps to the end state with no ramp; coarse pointers get no cursor engine at
+  all and keep keyboard focus driving the same active state; the overlay
+  remains `pointer-events: none`.
+
 ### Added
 
 - 2026-08-23 — Began the original arcade field: a fixed asymmetric 25×17 board

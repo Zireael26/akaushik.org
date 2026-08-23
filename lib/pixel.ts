@@ -21,6 +21,26 @@ export const PALETTE = {
   navy: '#1B2331',
 } as const;
 
+/**
+ * The palette, tuned for use against a page ground — the canvas mirror of the
+ * `--px-*-ink` text tokens in app/styles/tokens.css. The five colours above
+ * are built for cells sitting beside each other on a canvas; three of them are
+ * unusable behind glyphs in light mode (amber measures 2.02:1 on white, lime
+ * 1.30:1). Each accent gets a text-safe sibling at the same hue and saturation,
+ * walked in lightness until it clears 4.5:1. Change one, change both.
+ */
+export const INK_SAFE = {
+  cobalt: { light: '#3B5BF6', dark: '#5873F7' },
+  amber: { light: '#A16806', dark: '#F6A61C' },
+  red: { light: '#D53716', dark: '#E8401C' },
+  lime: { light: '#677E07', dark: '#C8F218' },
+} as const;
+
+/** The text-safe sibling of an accent for the current theme. */
+export function inkSafe(color: keyof typeof INK_SAFE, dark: boolean): string {
+  return INK_SAFE[color][dark ? 'dark' : 'light'];
+}
+
 /** Dark-mode substitutions the canvas code applies; nothing else changes. */
 export function navy(dark: boolean): string {
   return dark ? '#E9ECF4' : '#1B2331';
