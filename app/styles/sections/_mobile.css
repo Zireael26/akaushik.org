@@ -87,3 +87,22 @@
     font-size: 12px;
   }
 }
+
+/* The portrait fills the column it is in.
+   
+   `.px-portrait` is `flex: 0 1 300px` — grow 0. On a wide screen it sits beside
+   the prose and 300px is the intended size. On a phone the row wraps to a
+   single column, and grow 0 means the portrait keeps its 300px basis instead of
+   filling: measured at 375px it spans 20..320, so a 20px gutter on the left and
+   55px on the right. Off-centre by 35px, which reads as a mistake rather than
+   as a margin, because it is one.
+   
+   Growing it is the fix rather than centring it. Centring would even the
+   gutters and still waste the width; the picture is the point of the section
+   and it should be as large as the column allows. */
+@media (max-width: 640px) {
+  .px-portrait {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+}
