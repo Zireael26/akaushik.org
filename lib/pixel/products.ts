@@ -44,7 +44,7 @@ function lerp(from: number, to: number, progress: number): number {
 }
 
 function strokeWidth(rows: number, scale = 0.024): number {
-  return Math.max(1, rows * scale);
+  return Math.max(0.75, Math.min(1, rows * scale));
 }
 
 function segment(
@@ -149,7 +149,13 @@ export const vericite: FieldSource = (o, { cols, rows, t, seed }) => {
     o.strokeRect(storeX + storeGap * 2, y + storeRowH * 0.39, barW, Math.max(1, storeRowH * 0.15));
     if (row === match) {
       const scanW = (storeW - storeGap * 4) * (0.2 + retrieve * 0.8);
-      o.fillRect(storeX + storeGap * 2, y + storeRowH * 0.16, scanW, Math.max(1, storeRowH * 0.2));
+      o.strokeRect(storeX + storeGap * 2, y + storeRowH * 0.16, scanW, Math.max(1, storeRowH * 0.2));
+      const mark = Math.max(1, Math.min(storeRowH * 0.24, storeW * 0.04));
+      const markY = y + storeRowH * 0.16;
+      o.fillRect(storeX + storeGap * 2, markY, mark, mark);
+      if (retrieve > 0.5) {
+        o.fillRect(storeX + storeGap * 2 + Math.max(0, scanW - mark), markY, mark, mark);
+      }
     }
   }
 
@@ -211,6 +217,7 @@ export const neev: FieldSource = (o, { cols, rows, t, seed }) => {
   const parserY = rows * 0.37;
   const parserW = cols * 0.082;
   const parserH = rows * 0.3;
+  const parserMark = Math.max(1, Math.min(parserW * 0.18, rows * 0.04));
   const ledgerX = cols * 0.55;
   const ledgerY = rows * 0.17;
   const ledgerW = cols * 0.405;
@@ -233,6 +240,7 @@ export const neev: FieldSource = (o, { cols, rows, t, seed }) => {
   segment(o, parserX + parserW * 0.5, parserY + parserH * 0.5, parserX + parserW * 0.24, parserY + parserH * 0.72, line);
   segment(o, parserX + parserW * 0.76, parserY + parserH * 0.28, parserX + parserW * 0.5, parserY + parserH * 0.5, line);
   segment(o, parserX + parserW * 0.5, parserY + parserH * 0.5, parserX + parserW * 0.76, parserY + parserH * 0.72, line);
+  o.fillRect(parserX + parserW * 0.5 - parserMark * 0.5, parserY + parserH * 0.5 - parserMark * 0.5, parserMark, parserMark);
 
   // Ledger frame, header, rules, and empty cells are the resting structure.
   o.strokeRect(ledgerX, ledgerY, ledgerW, ledgerH);
@@ -281,7 +289,7 @@ export const neev: FieldSource = (o, { cols, rows, t, seed }) => {
       o.fillRect(packetX, packetY - rows * 0.025, Math.max(1, rows * 0.045), Math.max(1, rows * 0.05));
     }
     if (cycle >= arrivalEnd && cycle < parseEnd) {
-      o.fillRect(parserX + parserW * 0.35, parserY + parserH * 0.38, parserW * 0.3, parserH * 0.24);
+      o.strokeRect(parserX + parserW * 0.35, parserY + parserH * 0.38, parserW * 0.3, parserH * 0.24);
     }
 
     // A parsed message reveals exactly its corresponding ruled row, left to right.

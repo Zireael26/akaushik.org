@@ -52,6 +52,98 @@ function totalFillArea(stub: StubContext): number {
     return sum;
   }, 0);
 }
+type EstimatedInk = {
+  fillArea: number;
+  strokeInk: number;
+};
+
+function estimatedInk(stub: StubContext): EstimatedInk {
+  let fillArea = 0;
+  let strokeInk = 0;
+  let lineWidth = 1;
+  let pathLength = 0;
+  let cursor: [number, number] | null = null;
+
+  for (const { fn, args } of stub.calls) {
+    if (fn === 'set:lineWidth') {
+      const value = args[0];
+      if (typeof value === 'number' && Number.isFinite(value)) lineWidth = value;
+      continue;
+    }
+    if (fn === 'fillRect') {
+      const width = args[2];
+      const height = args[3];
+      if (typeof width === 'number' && typeof height === 'number') {
+        fillArea += Math.abs(width * height);
+      }
+      continue;
+    }
+    if (fn === 'arc') {
+      const radius = args[2];
+      if (typeof radius === 'number') fillArea += Math.PI * radius * radius;
+      continue;
+    }
+    if (fn === 'strokeRect') {
+      const width = args[2];
+      const height = args[3];
+      if (typeof width === 'number' && typeof height === 'number') {
+        strokeInk += 2 * (Math.abs(width) + Math.abs(height)) * lineWidth;
+      }
+      continue;
+    }
+    if (fn === 'beginPath') {
+      pathLength = 0;
+      cursor = null;
+      continue;
+    }
+    if (fn === 'moveTo' || fn === 'lineTo') {
+      const x = args[0];
+      const y = args[1];
+      if (typeof x !== 'number' || typeof y !== 'number') continue;
+      if (fn === 'lineTo' && cursor !== null) pathLength += Math.hypot(x - cursor[0], y - cursor[1]);
+      cursor = [x, y];
+      continue;
+    }
+    if (fn === 'stroke') {
+      strokeInk += pathLength * lineWidth;
+      pathLength = 0;
+      cursor = null;
+    }
+  }
+
+  return { fillArea, strokeInk };
+}
+
+function assertOneCellLineWidth(stub: StubContext): void {
+  const widths = stub.calls
+    .filter(({ fn, args }) => fn === 'set:lineWidth' && typeof args[0] === 'number')
+    .map(({ args }) => args[0] as number);
+  expect(widths.length, 'source should declare semantic outline width').toBeGreaterThan(0);
+  for (const width of widths) {
+    expect(width, 'semantic outline strokes should be at least three quarters of one cell').toBeGreaterThanOrEqual(0.75);
+    expect(width, 'semantic outline strokes should stay within one-cell tolerance').toBeLessThanOrEqual(1.25);
+  }
+}
+
+function assertAccentDensity(stub: StubContext, cols: number, rows: number): void {
+  const frameArea = cols * rows;
+  for (const { fn, args } of stub.calls) {
+    if (fn !== 'fillRect') continue;
+    const width = args[2];
+    const height = args[3];
+    if (typeof width !== 'number' || typeof height !== 'number' || width <= 0 || height <= 0) continue;
+    expect(width, 'filled accents must stay packet-sized').toBeLessThanOrEqual(cols * 0.08);
+    expect(height, 'filled accents must stay packet-sized').toBeLessThanOrEqual(rows * 0.14);
+    expect(width * height, 'large semantic fills must be replaced by thin rules').toBeLessThanOrEqual(frameArea * 0.005);
+  }
+  const { fillArea, strokeInk } = estimatedInk(stub);
+
+  expect(
+    fillArea,
+    'accent and fill coverage should stay below one fifth of estimated drawn ink',
+  ).toBeLessThanOrEqual((fillArea + strokeInk) * 0.2 + 1e-6);
+}
+
 function fillCount(stub: StubContext): number {
   return stub.calls.filter(({ fn }) => fn === 'fillRect' || fn === 'fill').length;
 }
@@ -206,7 +298,7 @@ function vericitePackets(stub: StubContext, cols: number, rows: number): StubCon
 
 function vericiteEncodes(stub: StubContext, cols: number, rows: number): StubContext['calls'] {
   const embedX = cols * 0.235;
-  const line = Math.max(1, rows * 0.022);
+  const line = Math.max(0.75, Math.min(1, rows * 0.022));
   const h = Math.max(1, rows * 0.024);
   return stub.calls.filter(({ fn, args }) => {
     if (fn !== 'strokeRect') return false;
@@ -347,6 +439,19 @@ describe('product stroke accents', () => {
         frames.some((stub) => fillCount(stub) > 0),
         `${slug} should retain a small node, packet, or lit accent`,
       ).toBe(true);
+    }
+  });
+});
+
+describe('product density guardrails', () => {
+  it.each(PROFILES)('keeps one-cell rules and sparse accents at $label size', ({ cols, rows }) => {
+    for (const [slug, source] of PRODUCTS) {
+      const seed = seedFrom(slug);
+      for (const t of [0, 0.2, 0.6, 1.35, 3.17, 4.5]) {
+        const stub = render(source, cols, rows, seed, t);
+        assertOneCellLineWidth(stub);
+        assertAccentDensity(stub, cols, rows);
+      }
     }
   });
 });

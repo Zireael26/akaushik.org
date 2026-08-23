@@ -61,6 +61,7 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 - 2026-08-23 — U4 — writing art validation now rejects unknown topic keys, warns only on absent art, and topic-source tests reuse the shared pixel stub.
 - 2026-08-23 — U4 — human visual correction: topic route fields now use sparse ruled outlines over texture, with fills limited to small packet/node/receipt accents and style-density tests at route sizes.
 - 2026-08-23 — U1 — human visual correction: product fields keep their approved compositions but now trace semantic boxes/rows as restrained strokes, reserving fills for small packets/nodes/citations, with density/style tests across presets.
+- 2026-08-23 — U1 — human visual correction (follow-up): beta review found thick outlines still read as slabs; all product-field semantic strokes now capped near one grid cell, stores/CI blocks are thin ruled frames, and accent/fill ink is guarded below 20%.
 
 ### Added
 
