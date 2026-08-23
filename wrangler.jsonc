@@ -14,6 +14,23 @@
   "compatibility_flags": ["nodejs_compat"],
   "account_id": "ca127da6bde0b3d48082bdd84132dc09",
 
+  // Daily GitHub-stats refresh, 04:17 UTC — the same slot the GitHub Actions
+  // schedule (`.github/workflows/stats.yml`, retained until the Worker path
+  // has proven itself in production) used to own. The handler is `scheduled`
+  // on the default export of worker/index.ts; it fetches the contribution
+  // snapshot from the GitHub GraphQL API with GH_STATS_TOKEN and writes it to
+  // STATS_KV. The top-level block exists so `wrangler deploy` without --env
+  // still gets a working config; preview and production carry their own.
+  //
+  // One-time namespace create (a human action; ids are account-scoped):
+  //   wrangler kv namespace create STATS_KV --env preview
+  //   wrangler kv namespace create STATS_KV --env production
+  // then paste each command's printed id into that env's kv_namespaces entry.
+  // Until an id is pasted the placeholder keeps deploys from silently binding
+  // the wrong namespace.
+  "triggers": { "crons": ["17 4 * * *"] },
+  "kv_namespaces": [{ "binding": "STATS_KV", "id": "<STATS_KV_NAMESPACE_ID>" }],
+
   // Everything Next prerendered — including all 20 satori OG cards, which are
   // generated at build time in Node and never rendered inside the Worker.
   "assets": {
@@ -32,6 +49,8 @@
     "preview": {
       "name": "akaushik-org-preview",
       "routes": [{ "pattern": "beta.akaushik.org", "custom_domain": true }],
+      "triggers": { "crons": ["17 4 * * *"] },
+      "kv_namespaces": [{ "binding": "STATS_KV", "id": "<STATS_KV_PREVIEW_NAMESPACE_ID>" }],
       "assets": {
         "directory": ".open-next/assets",
         "binding": "ASSETS"
@@ -65,6 +84,8 @@
         { "pattern": "akaushik.org/*", "zone_name": "akaushik.org" },
         { "pattern": "www.akaushik.org/*", "zone_name": "akaushik.org" }
       ],
+      "triggers": { "crons": ["17 4 * * *"] },
+      "kv_namespaces": [{ "binding": "STATS_KV", "id": "<STATS_KV_PRODUCTION_NAMESPACE_ID>" }],
       "assets": {
         "directory": ".open-next/assets",
         "binding": "ASSETS"

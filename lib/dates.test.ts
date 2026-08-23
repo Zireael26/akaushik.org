@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatMonthYear } from './dates';
+import { formatMonthYear, formatRelativeAge } from './dates';
 
 describe('formatMonthYear', () => {
   it('formats an ISO date as MMM YYYY', () => {
@@ -33,5 +33,33 @@ describe('formatMonthYear', () => {
   it('returns the input unchanged when the date cannot be parsed', () => {
     expect(formatMonthYear('not-a-date')).toBe('not-a-date');
     expect(formatMonthYear('')).toBe('');
+  });
+});
+
+describe('formatRelativeAge', () => {
+  const NOW = Date.parse('2026-08-23T12:00:00.000Z');
+
+  it('renders today, yesterday, then day counts', () => {
+    expect(formatRelativeAge('2026-08-23T06:00:00Z', NOW)).toBe('today');
+    expect(formatRelativeAge('2026-08-22T12:30:00Z', NOW)).toBe('yesterday');
+    expect(formatRelativeAge('2026-08-13T05:50:08Z', NOW)).toBe('10 days ago');
+  });
+
+  it('rounds half-days up', () => {
+    // 2.5 days old → "3 days ago"; the provenance line rounds, it does not floor.
+    expect(formatRelativeAge('2026-08-21T00:00:00Z', NOW)).toBe('3 days ago');
+  });
+
+  it('clamps a future timestamp to today instead of going negative', () => {
+    expect(formatRelativeAge('2026-08-23T13:00:00Z', NOW)).toBe('today');
+  });
+
+  it('says unknown for an unparseable timestamp rather than inventing an age', () => {
+    expect(formatRelativeAge('garbage', NOW)).toBe('unknown time ago');
+  });
+
+  it('defaults the clock so call sites do not each thread Date.now()', () => {
+    const recent = new Date(Date.now() - 30 * 1000).toISOString();
+    expect(formatRelativeAge(recent)).toBe('today');
   });
 });
