@@ -4,6 +4,40 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ## [Unreleased]
 
+### Added
+
+- 2026-08-23 — Began the original arcade field: a fixed asymmetric 25×17 board
+  and deterministic maze-chase state machine with buffered keyboard movement,
+  three distinct routing strategies, score, lives, collision/respawn, win/loss
+  and a discrete reduced-motion turn mode. The engine uses the site's shared
+  hash and preallocated typed pathfinding buffers; it adds no framework, sprite,
+  media asset or dependency. Twenty focused tests cover topology, reachability,
+  routing, timing, collision precedence and exact restart.
+
+- 2026-08-23 — Added the field's opt-in WebAudio instrument. Four original cues
+  are scheduled at runtime from square and triangle oscillators with short gain
+  envelopes; there is no sample, audio buffer, fetch, media asset or background
+  loop. Sound defaults off, remembers intent under the site's storage namespace
+  and still creates no `AudioContext` until a fresh gesture. Mute, restart and
+  unmount stop active voices and disconnect both oscillator and gain nodes.
+  Fifteen focused tests cover cue parameters, autoplay gating, persistence,
+  suspended/closed contexts and teardown; separate 48kHz WAV receipts are
+  rendered from the production scheduler for human acceptance.
+
+- 2026-08-23 — Finished the playable home-page field after “In the open.” The
+  canvas uses the authored board, a single owned animation loop and the shared
+  pixel palette; keyboard, visible direction buttons and axis-qualified swipes
+  feed the same run. A ruled DOM register exposes score, lives, readings and
+  phase, while the legend, fallback text and polite announcements preserve the
+  objective and state outside the canvas. Theme changes redraw in place, either
+  motion veto switches play to one-input discrete turns, and unmount aborts
+  listeners, observers, animation and audio ownership.
+  A focused lifecycle harness proves one pending frame survives input without
+  duplication and is cancelled across dispose/remount. Browser contracts now
+  exercise keyboard, buttons, swipe, contact/loss/restart, theme and sound
+  persistence, both motion vetoes, 375px geometry and zero landing-page axe
+  violations on Chromium desktop and WebKit mobile.
+
 ### Fixed
 
 - 2026-08-23 — The CI accessibility gate stopped failing on a page that is

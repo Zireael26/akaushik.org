@@ -6,6 +6,7 @@ import { Work } from '@/components/sections/Work';
 import { Services } from '@/components/sections/Services';
 import Writing from '@/components/sections/Writing';
 import OpenSource from '@/components/sections/OpenSource';
+import { Arcade } from '@/components/sections/Arcade';
 
 /**
  * Home — the single-page scroll, in the pixel design.
@@ -25,6 +26,7 @@ export default function Home() {
       <Services />
       <Writing />
       <OpenSource />
+      <Arcade />
     </main>
   );
 }
