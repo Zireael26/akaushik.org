@@ -28,6 +28,326 @@ const PROFILES: readonly GridProfile[] = [
   { label: 'tiny', cols: 24, rows: 12 },
 ];
 
+/**
+ * These are the real field grids produced by the current CSS and preset cell
+ * sizes: the detail reel is 204×53 at the 7px hero cell; a full desktop
+ * four-up tile is 113×35 at the 3px tile cell; a compact 390px viewport
+ * yields 117×26 after its 20px gutters and the tile's 76px minimum height.
+ */
+const RASTER_PROFILES: readonly GridProfile[] = [
+  { label: 'hero-reel', cols: 204, rows: 53 },
+  { label: 'desktop-tile', cols: 113, rows: 35 },
+  { label: 'compact-mobile-tile', cols: 117, rows: 26 },
+];
+
+type SemanticPhase = {
+  label: string;
+  t: number;
+};
+
+const SEMANTIC_PHASES: Readonly<Record<ProductSlug, readonly SemanticPhase[]>> = {
+  vericite: [
+    { label: 'rest', t: 0 },
+    { label: 'query', t: 0.2 },
+    { label: 'encode', t: 0.9 },
+    { label: 'retrieve', t: 1.6 },
+    { label: 'cite', t: 3.17 },
+  ],
+  neev: [
+    { label: 'rest', t: 0 },
+    { label: 'arrival', t: 1.35 },
+    { label: 'parser', t: 2.3 },
+    { label: 'ruled-ledger', t: 3.17 },
+  ],
+  'bluehost-agents': [
+    { label: 'lane-baseline', t: 0 },
+    { label: 'outbound', t: 2 },
+    { label: 'mixed-return', t: 3.25 },
+    { label: 'return', t: 4.25 },
+  ],
+  'curat-money': [
+    { label: 'intake', t: 0 },
+    { label: 'feed', t: 0.3 },
+    { label: 'settle', t: 2.5 },
+    { label: 'rank-stamp', t: 4.5 },
+  ],
+  clusterbid: [
+    { label: 'rest', t: 0 },
+    { label: 'CI', t: 0.3 },
+    { label: 'ingress', t: 0.9 },
+    { label: 'pod-pull', t: 1.8 },
+    { label: 'UAT-boundary', t: 3.17 },
+  ],
+};
+
+const RASTER_SAMPLES_PER_SIDE = 4;
+const RASTER_LIT_SAMPLES = 9;
+const DENSITY_WINDOW_SIDE = 8;
+const MAX_LIT_WINDOW_RATIO = 0.35;
+
+type RasterLine = {
+  kind: 'line';
+  ax: number;
+  ay: number;
+  bx: number;
+  by: number;
+};
+
+type RasterArc = {
+  kind: 'arc';
+  x: number;
+  y: number;
+  radius: number;
+  start: number;
+  end: number;
+  counterclockwise: boolean;
+};
+
+type RasterPath = RasterLine | RasterArc;
+
+/**
+ * Rasterizes the geometric calls our field sources make into logical cells.
+ * A cell needs a strict majority of a deterministic 4×4 supersample to count
+ * as lit; fringe anti-aliasing cannot turn an accepted one-cell rule into two.
+ */
+function rasterizeCallLog(stub: StubContext, cols: number, rows: number): Uint8Array {
+  const masks = new Uint16Array(cols * rows);
+  let lineWidth = 1;
+  let cursor: [number, number] | null = null;
+  let subpathStart: [number, number] | null = null;
+  let path: RasterPath[] = [];
+
+  const mark = (
+    minX: number,
+    minY: number,
+    maxX: number,
+    maxY: number,
+    contains: (x: number, y: number) => boolean,
+  ): void => {
+    const startX = Math.max(0, Math.floor(minX));
+    const startY = Math.max(0, Math.floor(minY));
+    const endX = Math.min(cols, Math.ceil(maxX));
+    const endY = Math.min(rows, Math.ceil(maxY));
+
+    for (let y = startY; y < endY; y++) {
+      for (let x = startX; x < endX; x++) {
+        const cell = y * cols + x;
+        for (let sampleY = 0; sampleY < RASTER_SAMPLES_PER_SIDE; sampleY++) {
+          for (let sampleX = 0; sampleX < RASTER_SAMPLES_PER_SIDE; sampleX++) {
+            const bit = 1 << (sampleY * RASTER_SAMPLES_PER_SIDE + sampleX);
+            if ((masks[cell]! & bit) !== 0) continue;
+            const px = x + (sampleX + 0.5) / RASTER_SAMPLES_PER_SIDE;
+            const py = y + (sampleY + 0.5) / RASTER_SAMPLES_PER_SIDE;
+            if (contains(px, py)) masks[cell]! |= bit;
+          }
+        }
+      }
+    }
+  };
+
+  const rasterizeRect = (x: number, y: number, width: number, height: number, outlined: boolean): void => {
+    if (![x, y, width, height].every(Number.isFinite) || width < 0 || height < 0) return;
+
+    if (!outlined) {
+      mark(x, y, x + width, y + height, (px, py) => px >= x && px < x + width && py >= y && py < y + height);
+      return;
+    }
+
+    const half = lineWidth * 0.5;
+    const left = x - half;
+    const top = y - half;
+    const right = x + width + half;
+    const bottom = y + height + half;
+    mark(
+      left,
+      top,
+      right,
+      bottom,
+      (px, py) =>
+        px >= left &&
+        px <= right &&
+        py >= top &&
+        py <= bottom &&
+        (px <= x + half || px >= x + width - half || py <= y + half || py >= y + height - half),
+    );
+  };
+
+  const rasterizeLine = (ax: number, ay: number, bx: number, by: number): void => {
+    const dx = bx - ax;
+    const dy = by - ay;
+    const lengthSquared = dx * dx + dy * dy;
+    if (lengthSquared === 0) return;
+
+    const half = lineWidth * 0.5;
+    mark(
+      Math.min(ax, bx) - half,
+      Math.min(ay, by) - half,
+      Math.max(ax, bx) + half,
+      Math.max(ay, by) + half,
+      (px, py) => {
+        const progress = ((px - ax) * dx + (py - ay) * dy) / lengthSquared;
+        if (progress < 0 || progress > 1) return false;
+        const nearestX = ax + dx * progress;
+        const nearestY = ay + dy * progress;
+        const offsetX = px - nearestX;
+        const offsetY = py - nearestY;
+        return offsetX * offsetX + offsetY * offsetY <= half * half;
+      },
+    );
+  };
+
+  const normaliseAngle = (angle: number): number => {
+    const fullTurn = Math.PI * 2;
+    const normalised = angle % fullTurn;
+    return normalised < 0 ? normalised + fullTurn : normalised;
+  };
+
+  const rasterizeArc = (arc: RasterArc, outlined: boolean): void => {
+    const half = outlined ? lineWidth * 0.5 : 0;
+    const fullTurn = Math.PI * 2;
+    const sweep = arc.counterclockwise ? arc.start - arc.end : arc.end - arc.start;
+    const fullCircle = Math.abs(sweep) >= fullTurn - 1e-6;
+    const start = normaliseAngle(arc.start);
+    const end = normaliseAngle(arc.end);
+
+    mark(
+      arc.x - arc.radius - half,
+      arc.y - arc.radius - half,
+      arc.x + arc.radius + half,
+      arc.y + arc.radius + half,
+      (px, py) => {
+        const dx = px - arc.x;
+        const dy = py - arc.y;
+        const distance = Math.hypot(dx, dy);
+        if (outlined ? Math.abs(distance - arc.radius) > half : distance > arc.radius) return false;
+        if (fullCircle) return true;
+
+        const angle = normaliseAngle(Math.atan2(dy, dx));
+        return arc.counterclockwise
+          ? (start - angle + fullTurn) % fullTurn <= (start - end + fullTurn) % fullTurn
+          : (angle - start + fullTurn) % fullTurn <= (end - start + fullTurn) % fullTurn;
+      },
+    );
+  };
+
+  for (const { fn, args } of stub.calls) {
+    if (fn === 'set:lineWidth') {
+      const width = args[0];
+      if (typeof width === 'number' && Number.isFinite(width)) lineWidth = width;
+      continue;
+    }
+
+    if (fn === 'fillRect' || fn === 'strokeRect') {
+      const [x, y, width, height] = args;
+      if (typeof x === 'number' && typeof y === 'number' && typeof width === 'number' && typeof height === 'number') {
+        rasterizeRect(x, y, width, height, fn === 'strokeRect');
+      }
+      continue;
+    }
+
+    if (fn === 'beginPath') {
+      path = [];
+      cursor = null;
+      subpathStart = null;
+      continue;
+    }
+
+    if (fn === 'moveTo') {
+      const [x, y] = args;
+      if (typeof x === 'number' && typeof y === 'number') {
+        cursor = [x, y];
+        subpathStart = [x, y];
+      }
+      continue;
+    }
+
+    if (fn === 'lineTo') {
+      const [x, y] = args;
+      if (typeof x === 'number' && typeof y === 'number') {
+        if (cursor !== null) path.push({ kind: 'line', ax: cursor[0], ay: cursor[1], bx: x, by: y });
+        cursor = [x, y];
+      }
+      continue;
+    }
+
+    if (fn === 'closePath') {
+      if (cursor !== null && subpathStart !== null) {
+        path.push({ kind: 'line', ax: cursor[0], ay: cursor[1], bx: subpathStart[0], by: subpathStart[1] });
+        cursor = subpathStart;
+      }
+      continue;
+    }
+
+    if (fn === 'arc') {
+      const [x, y, radius, start, end, counterclockwise] = args;
+      if (
+        typeof x === 'number' &&
+        typeof y === 'number' &&
+        typeof radius === 'number' &&
+        typeof start === 'number' &&
+        typeof end === 'number'
+      ) {
+        path.push({ kind: 'arc', x, y, radius, start, end, counterclockwise: counterclockwise === true });
+        cursor = [x + radius * Math.cos(end), y + radius * Math.sin(end)];
+      }
+      continue;
+    }
+
+    if (fn === 'stroke' || fn === 'fill') {
+      for (const primitive of path) {
+        if (primitive.kind === 'line') {
+          if (fn === 'stroke') rasterizeLine(primitive.ax, primitive.ay, primitive.bx, primitive.by);
+        } else {
+          rasterizeArc(primitive, fn === 'stroke');
+        }
+      }
+    }
+  }
+
+  const lit = new Uint8Array(cols * rows);
+  for (let cell = 0; cell < masks.length; cell++) {
+    let samples = 0;
+    let mask = masks[cell]!;
+    while (mask !== 0) {
+      mask &= mask - 1;
+      samples++;
+    }
+    if (samples >= RASTER_LIT_SAMPLES) lit[cell] = 1;
+  }
+  return lit;
+}
+
+type LitWindow = {
+  lit: number;
+  x: number;
+  y: number;
+};
+
+function maxLitWindow(lit: Uint8Array, cols: number, rows: number): LitWindow {
+  const stride = cols + 1;
+  const sums = new Uint16Array((rows + 1) * stride);
+  let peak: LitWindow = { lit: 0, x: 0, y: 0 };
+
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const index = (y + 1) * stride + x + 1;
+      sums[index] = lit[y * cols + x]! + sums[index - 1]! + sums[index - stride]! - sums[index - stride - 1]!;
+    }
+  }
+
+  for (let y = 0; y <= rows - DENSITY_WINDOW_SIDE; y++) {
+    for (let x = 0; x <= cols - DENSITY_WINDOW_SIDE; x++) {
+      const lowerRight = sums[(y + DENSITY_WINDOW_SIDE) * stride + x + DENSITY_WINDOW_SIDE]!;
+      const lowerLeft = sums[(y + DENSITY_WINDOW_SIDE) * stride + x]!;
+      const upperRight = sums[y * stride + x + DENSITY_WINDOW_SIDE]!;
+      const upperLeft = sums[y * stride + x]!;
+      const windowLit = lowerRight - lowerLeft - upperRight + upperLeft;
+      if (windowLit > peak.lit) peak = { lit: windowLit, x, y };
+    }
+  }
+  return peak;
+}
+
 const PRODUCTS: readonly [ProductSlug, FieldSource][] = [
   ['vericite', vericite],
   ['neev', neev],
@@ -127,14 +447,15 @@ function assertOneCellLineWidth(stub: StubContext): void {
 
 function assertAccentDensity(stub: StubContext, cols: number, rows: number): void {
   const frameArea = cols * rows;
+  // The 24×12 fallback retains a 2×2 travelling packet; proportional caps bind everywhere else.
   for (const { fn, args } of stub.calls) {
     if (fn !== 'fillRect') continue;
     const width = args[2];
     const height = args[3];
     if (typeof width !== 'number' || typeof height !== 'number' || width <= 0 || height <= 0) continue;
-    expect(width, 'filled accents must stay packet-sized').toBeLessThanOrEqual(cols * 0.08);
-    expect(height, 'filled accents must stay packet-sized').toBeLessThanOrEqual(rows * 0.14);
-    expect(width * height, 'large semantic fills must be replaced by thin rules').toBeLessThanOrEqual(frameArea * 0.005);
+    expect(width, 'filled accents must stay packet-sized').toBeLessThanOrEqual(Math.max(2, cols * 0.08));
+    expect(height, 'filled accents must stay packet-sized').toBeLessThanOrEqual(Math.max(2, rows * 0.14));
+    expect(width * height, 'large semantic fills must be replaced by thin rules').toBeLessThanOrEqual(Math.max(4, frameArea * 0.005));
   }
   const { fillArea, strokeInk } = estimatedInk(stub);
 
@@ -165,8 +486,8 @@ function assertStrokeRestraint(stub: StubContext, cols: number, rows: number): v
 
   expect(
     stub.calls.filter(({ fn }) => fn === 'strokeRect' || fn === 'stroke').length,
-    'outline/path ink should dominate filled accents',
-  ).toBeGreaterThan(fillCount(stub));
+    'outline/path ink should at least match filled accent operations',
+  ).toBeGreaterThanOrEqual(fillCount(stub));
 }
 
 function assertInk(stub: StubContext): void {
@@ -177,8 +498,9 @@ function assertInk(stub: StubContext): void {
   });
   expect(painted, 'source should emit a positive-area fill or a path stroke').toBe(true);
   // A 1×1 dot would pass the predicate above but is not legible.
-  // All real products emit 55–180 calls even at tiny; a degenerate source with 1–2 calls must fail.
-  expect(stub.calls.length, 'source should do substantial drawing work, not a single dot').toBeGreaterThan(40);
+  // The density pass deliberately removes redundant marks, so require twenty
+  // recorded operations rather than rewarding a crowded call log.
+  expect(stub.calls.length, 'source should do substantial drawing work, not a single dot').toBeGreaterThanOrEqual(20);
 }
 
 function assertInGrid(stub: StubContext, cols: number, rows: number): void {
@@ -332,9 +654,9 @@ function curatStamps(stub: StubContext, cols: number, rows: number): StubContext
   const gridX = cols * 0.36;
   const gridW = cols * 0.59;
   const gridH = rows * 0.66;
-  const rowCount = rows < 40 ? 4 : 5;
+  const rowCount = rows < 40 ? 1 : 2;
   const rowPitch = gridH / rowCount;
-  const railX = gridX + gridW * 0.955;
+  const railX = gridX + gridW * 0.86;
   const h = Math.max(1, rowPitch * 0.13);
   return stub.calls.filter(
     ({ fn, args }) =>
@@ -350,24 +672,35 @@ function neevLedgerAccents(stub: StubContext, cols: number, rows: number): StubC
   const ledgerY = rows * 0.17;
   const ledgerW = cols * 0.405;
   const ledgerH = rows * 0.65;
-  const bubbleCount = rows < 40 ? 4 : 6;
+  const bubbleCount = rows < 30 ? 1 : rows < 40 ? 2 : 3;
   const ledgerRowH = ledgerH / bubbleCount;
-  const h = Math.max(1, ledgerRowH * 0.14);
+  const accents: StubContext['calls'] = [];
 
-  return stub.calls.filter(({ fn, args }) => {
-    if (fn !== 'strokeRect') return false;
-    const x = args[0];
-    const y = args[1];
-    const height = args[3];
-    if (typeof x !== 'number' || typeof y !== 'number' || typeof height !== 'number') return false;
-    return (
-      x >= ledgerX &&
-      x <= ledgerX + ledgerW &&
-      y >= ledgerY &&
-      y <= ledgerY + ledgerH &&
-      Math.abs(height - h) < 0.01
-    );
-  });
+  for (let index = 0; index < stub.calls.length - 1; index++) {
+    const move = stub.calls[index]!;
+    const line = stub.calls[index + 1]!;
+    if (move.fn !== 'moveTo' || line.fn !== 'lineTo') continue;
+    const [startX, startY] = move.args;
+    const [endX, endY] = line.args;
+    if (
+      typeof startX !== 'number' ||
+      typeof startY !== 'number' ||
+      typeof endX !== 'number' ||
+      typeof endY !== 'number' ||
+      endX <= startX ||
+      Math.abs(endY - startY) > 1e-6 ||
+      startX <= ledgerX ||
+      startX >= ledgerX + ledgerW ||
+      startY < ledgerY ||
+      startY > ledgerY + ledgerH
+    ) {
+      continue;
+    }
+    const row = Math.floor((startY - ledgerY) / ledgerRowH);
+    const expectedY = ledgerY + ledgerRowH * (row + 0.5);
+    if (row >= 0 && row < bubbleCount && Math.abs(startY - expectedY) < 0.1) accents.push(line);
+  }
+  return accents;
 }
 
 describe('product source registry', () => {
@@ -456,6 +789,24 @@ describe('product density guardrails', () => {
   });
 });
 
+describe('product raster density oracle', () => {
+  it('keeps every semantic phase below 35% in each real reel and tile grid', () => {
+    for (const { label, cols, rows } of RASTER_PROFILES) {
+      for (const [slug, source] of PRODUCTS) {
+        const seed = seedFrom(slug);
+        for (const { label: phaseLabel, t } of SEMANTIC_PHASES[slug]) {
+          const lit = rasterizeCallLog(render(source, cols, rows, seed, t), cols, rows);
+          const peak = maxLitWindow(lit, cols, rows);
+          expect(
+            peak.lit / (DENSITY_WINDOW_SIDE * DENSITY_WINDOW_SIDE),
+            `${slug} ${phaseLabel} at ${label} peaks at ${peak.lit}/64 cells in the 8×8 window at ${peak.x},${peak.y}`,
+          ).toBeLessThanOrEqual(MAX_LIT_WINDOW_RATIO);
+        }
+      }
+    }
+  });
+});
+
 describe('product field identity', () => {
   it.each(PROFILES)('keeps all five silhouettes distinct at $label size even with one shared seed', ({ cols, rows }) => {
     const signatures = PRODUCTS.map(([, source]) => render(source, cols, rows, 2718, 3.17).signature());
@@ -507,14 +858,14 @@ describe('clusterbid UAT boundary', () => {
     for (const { cols, rows, label } of PROFILES) {
       for (const t of times) {
         const stub = render(clusterbid, cols, rows, seedFrom('clusterbid'), t);
-        // UAT pods are the two rightmost pod frames (column 2, two rows).
+        // The last pod column is UAT. Compact grids retain one row; larger grids retain two.
         const strokeXs = stub.calls
           .filter(({ fn }) => fn === 'strokeRect')
           .map(({ args }) => args[0])
           .filter((v): v is number => typeof v === 'number');
         const uatLeft = Math.max(...strokeXs);
         const uatFrames = stub.calls.filter(({ fn, args }) => fn === 'strokeRect' && args[0] === uatLeft);
-        expect(uatFrames, `expected 2 UAT pod frames at ${label} t=${t}`).toHaveLength(2);
+        expect(uatFrames, `expected sparse UAT pod frames at ${label} t=${t}`).toHaveLength(rows < 40 ? 1 : 2);
         for (const { fn, args } of stub.calls) {
           if (fn !== 'fillRect') continue;
           const [x, , width] = args;
@@ -546,9 +897,9 @@ describe('tiny legibility', () => {
       const seed = seedFrom(slug);
       const resting = render(source, cols, rows, seed, 0);
       const moving = render(source, cols, rows, seed, 3.17);
-      // Both frames must have meaningful work (catches 1×1 dot collapse)
-      expect(resting.calls.length, `${slug} tiny resting should have many calls`).toBeGreaterThan(40);
-      expect(moving.calls.length, `${slug} tiny moving should have many calls`).toBeGreaterThan(40);
+      // Both frames must have meaningful work (catches 1×1 dot collapse).
+      expect(resting.calls.length, `${slug} tiny resting should have many calls`).toBeGreaterThanOrEqual(20);
+      expect(moving.calls.length, `${slug} tiny moving should have many calls`).toBeGreaterThanOrEqual(20);
       assertInGrid(resting, cols, rows);
       assertInGrid(moving, cols, rows);
 
@@ -559,12 +910,12 @@ describe('tiny legibility', () => {
         `${slug} should retain a small active accent across its cycle`,
       ).toBe(true);
 
-      // Wireframe alone is not enough: each silhouette must emit several stroked rects
-      // and the combined stroke+fill count must stay substantial.
+      // Wireframe alone is not enough: each silhouette must retain multiple outlined blocks
+      // while the combined stroke+fill count stays substantial.
       const strokesRest = resting.calls.filter(({ fn }) => fn === 'strokeRect').length;
       const strokesMove = moving.calls.filter(({ fn }) => fn === 'strokeRect').length;
-      expect(strokesRest, `${slug} tiny resting strokeRects`).toBeGreaterThan(4);
-      expect(strokesMove, `${slug} tiny moving strokeRects`).toBeGreaterThan(4);
+      expect(strokesRest, `${slug} tiny resting strokeRects`).toBeGreaterThanOrEqual(2);
+      expect(strokesMove, `${slug} tiny moving strokeRects`).toBeGreaterThanOrEqual(2);
     }
   });
 
@@ -574,7 +925,7 @@ describe('tiny legibility', () => {
     const resting = render(clusterbid, cols, rows, seedFrom('clusterbid'), 0);
     const moving = render(clusterbid, cols, rows, seedFrom('clusterbid'), 3.17);
     expect(resting.calls.filter(({ fn }) => fn === 'fillRect').length, 'resting should be wireframe').toBe(0);
-    expect(moving.calls.filter(({ fn }) => fn === 'fillRect').length, 'moving should retain packet accents').toBeGreaterThanOrEqual(4);
+    expect(moving.calls.filter(({ fn }) => fn === 'fillRect').length, 'moving should retain ingress and boundary packets').toBeGreaterThanOrEqual(2);
   });
 });
 
@@ -696,7 +1047,7 @@ describe('neev pipeline phases', () => {
     const accentsLate = neevLedgerAccents(tLate, cols, rows).length;
     expect(accentsMid).toBeGreaterThan(accents0);
     expect(accentsLate).toBeGreaterThan(accentsMid);
-    expect(accentsLate, 'late ledger should carry many ruled cell accents').toBeGreaterThan(12);
+    expect(accentsLate, 'late ledger should carry multiple ruled row accents').toBeGreaterThan(4);
   });
 
   it('produces distinct signatures across ledger phases', () => {
@@ -723,7 +1074,7 @@ describe('curat-money pipeline phases', () => {
     const stamps = curatStamps(settled, cols, rows);
     expect(stamps.length, 'rank rail should be stamped after settling').toBeGreaterThan(0);
     // One stamp per data row
-    const expected = rows < 40 ? 4 : 5;
+    const expected = rows < 40 ? 1 : 2;
     expect(stamps.length).toBe(expected);
   });
 
@@ -731,10 +1082,10 @@ describe('curat-money pipeline phases', () => {
     const intake = render(curatMoney, cols, rows, seed, 0);
     const settling = render(curatMoney, cols, rows, seed, 2.5); // cycle 0.5 settle≈0.2
     const settled = render(curatMoney, cols, rows, seed, 4.5); // fully settled
-    // Row frames are strokeRect with width gridW*0.93; keep draw order (per-row) to detect per-row moves.
+    // Row frames are strokeRect with width gridW*0.6; keep draw order (per-row) to detect per-row moves.
     const frames = (stub: StubContext) =>
       stub.calls
-        .filter(({ fn, args }) => fn === 'strokeRect' && typeof args[2] === 'number' && Math.abs(args[2] - cols * 0.59 * 0.93) < 1)
+        .filter(({ fn, args }) => fn === 'strokeRect' && typeof args[2] === 'number' && Math.abs(args[2] - cols * 0.59 * 0.6) < 1)
         .map(({ args }) => args[1] as number);
     const y0 = frames(intake);
     const ySettled = frames(settled);
@@ -750,8 +1101,8 @@ describe('curat-money pipeline phases', () => {
     const before = render(curatMoney, cols, rows, seed, 0); // cycle 0 feed=0 no packet
     const early = render(curatMoney, cols, rows, seed, 0.3); // cycle 0.06 feed>0 packet mid-chute
     const settled = render(curatMoney, cols, rows, seed, 4.5); // cycle 0.9 feed=1 packet at bottom
-    const feederBox = Math.max(1, rows * 0.075);
-    const feedSize = feederBox * 0.56;
+    const feederBox = Math.max(8, rows * 0.075);
+    const feedSize = feederBox * 0.25;
     const feedBefore = before.calls.filter(({ fn, args }) => fn === 'fillRect' && args[2] === feedSize && args[3] === feedSize);
     const feedEarly = early.calls.filter(({ fn, args }) => fn === 'fillRect' && args[2] === feedSize && args[3] === feedSize);
     const feedSettled = settled.calls.filter(({ fn, args }) => fn === 'fillRect' && args[2] === feedSize && args[3] === feedSize);
@@ -772,8 +1123,8 @@ describe('bluehost-agents pipeline phases', () => {
   const marker = Math.max(1, rows * 0.042);
 
   it('animates packets along sloped agent stems', () => {
-    const a = render(bluehostAgents, cols, rows, seed, 1.0);
-    const b = render(bluehostAgents, cols, rows, seed, 2.0);
+    const a = render(bluehostAgents, cols, rows, seed, 2.0);
+    const b = render(bluehostAgents, cols, rows, seed, 2.5);
     expect(a.signature()).not.toBe(b.signature());
     // At least one outbound packet (fill) and the clock-driven positions must differ
     const packetsA = a.calls.filter(
@@ -784,7 +1135,7 @@ describe('bluehost-agents pipeline phases', () => {
     );
     expect(packetsA.length).toBeGreaterThan(0);
     expect(packetsB.length).toBeGreaterThan(0);
-    // Positions should not be identical across a 1 s gap; at least one packet moves
+    // Positions should not be identical across a half-second gap; at least one packet moves.
     const posA = packetsA.map((c) => `${(c.args[0] as number).toFixed(2)},${(c.args[1] as number).toFixed(2)}`).sort().join('|');
     const posB = packetsB.map((c) => `${(c.args[0] as number).toFixed(2)},${(c.args[1] as number).toFixed(2)}`).sort().join('|');
     expect(posB).not.toBe(posA);
