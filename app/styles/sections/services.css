@@ -8,8 +8,15 @@
    three stacked blocks, and the changes that follow from a matter row that is
    not a link. */
 
-.px-services .px-split-intro {
-  max-width: var(--prose-max);
+/* Tried 80ch on intro/lede only: text 675px, rules 1328px — the gap stayed.
+   Tried 70ch on the whole block: rules met the copy at 652px. A shared `ch`
+   track still split (intro 675, doors 745) because `ch` follows each
+   element's type size. Settled on one rem track so intro, ledes and rules
+   end together, modestly wider than 70ch without doubling it. */
+.px-services .px-split-intro,
+.px-service,
+.px-service-proof {
+  max-width: 45rem;
 }
 
 .px-service {
@@ -50,7 +57,7 @@
 
 .px-service-lede {
   margin: 0 0 16px;
-  max-width: var(--prose-max);
+  max-width: none;
   font-size: 14.5px;
   line-height: 1.75;
   color: var(--ink70);
@@ -66,7 +73,6 @@
 
 .px-service-proof {
   margin: clamp(28px, 4vh, 40px) 0 0;
-  max-width: var(--prose-max);
   font-size: 14.5px;
   line-height: 1.75;
   color: var(--ink70);

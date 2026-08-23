@@ -14,7 +14,10 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   this repo and in the Trellis instance. Rows are Entry / First moves / You
   hold / Fit. `lib/services.ts` is still the single copy source for the
   page and the agent corpus. The hire-me skill no longer promises a
-  duration field.
+  duration field. Intro, doors and rules share one 45rem track so the
+  hairlines end with the copy (80ch-on-text-only left rules at 1328px
+  against 675px of type; a 70ch shared track closed the gap at 652px).
+
 
 ### Added
 
