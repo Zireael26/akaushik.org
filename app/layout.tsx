@@ -100,6 +100,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="describedby" type="text/markdown" href="/llms.txt" />
         <link rel="describedby" type="text/markdown" href="/llms-full.txt" />
         <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+        {/* Feed autodiscovery. `rel="alternate"` with a feed MIME type is what
+            readers, aggregators and crawlers look for; a feed nothing links to
+            is a feed nobody finds. Declared here rather than only on /writing
+            so it is discoverable from any page. */}
+        <link
+          rel="alternate"
+          type="application/atom+xml"
+          title="akaushik.org — writing"
+          href="/feed.xml"
+        />
         {/* Schema.org JSON-LD — Person + Organization + WebSite emitted as
             one @graph so the Article/Case-study graphs on detail pages can
             point back at stable @id URIs (https://akaushik.org/#person,

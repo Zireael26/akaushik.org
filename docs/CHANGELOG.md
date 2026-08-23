@@ -4,6 +4,54 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ## [Unreleased]
 
+### Added
+
+- 2026-08-23 — An Atom feed at `/feed.xml`, with autodiscovery in `<head>`.
+
+  The AEO baseline flagged its absence: fourteen dated posts and no way to
+  subscribe. A sitemap says a URL exists; a feed says something was published
+  and when, which is why aggregators and agent crawlers want both. Atom rather
+  than RSS 2.0 — it requires the fields that make a feed useful (a stable `id`
+  per entry, an explicit `updated`, a declared content type) where RSS leaves
+  them optional. Drafts and `unlisted` posts are excluded, because `unlisted`
+  means reachable by URL and not announced, and a feed is an announcement.
+
+  The feed's own `updated` is the newest entry's date, not the current time. A
+  feed that restamps itself on every request tells every reader it has new
+  content on every poll, which is how a feed earns a rate limit.
+
+  Thirteen tests, and two of them exist because the first version was
+  vacuous: a corpus-wide "no raw ampersand" check passed with the escaper
+  deleted, since no post is currently titled with one. One unescaped `&` makes
+  the document not well-formed and every reader drops every entry, so the
+  escaping is now tested against a title containing `& < > " '` directly.
+  Mutation-checked: removing the escaper fails, and so does removing the
+  date filter.
+
+### Changed
+
+- 2026-08-23 — Playwright's `firefox-desktop` project is skipped on macOS.
+
+  It fails by hanging rather than erroring — `sandbox_extension_issue_file_to_
+  process … Operation not permitted`, then `RenderCompositorSWGL failed mapping
+  default framebuffer`. Request-only specs pass because they never open a page;
+  the first `page.goto` hangs to timeout, so a full local run cost minutes per
+  spec and produced nothing.
+
+  Not the harness sandbox: verified by launching with sandboxing disabled,
+  which changed nothing. The distinguishing factor is the OS — macOS 27.0,
+  build 26A5416b, a beta.
+
+  Skipped rather than deleted, because Firefox is not broken everywhere: it
+  runs all 61 specs on CI's Linux runners. Keyed on `process.platform` alone
+  and deliberately not on `!CI`, because running against a deployed URL
+  requires `CI=1` — that is what disables the local `webServer` — so a `!CI`
+  guard would hand Firefox back to the one macOS run most likely to want the
+  full matrix. `PLAYWRIGHT_FORCE_FIREFOX=1` overrides it for re-testing after
+  a Playwright or OS update.
+
+  The full local matrix now completes: 164 passed, 0 failed, 1.7 minutes.
+
 ### Fixed
 
 - 2026-08-23 — Nav links on a touch device were 40.3px tall. `header.css` has
