@@ -5,7 +5,13 @@ import {
   getAllPosts,
   getPost,
 } from '@/lib/content';
-import { SERVICES } from '@/lib/services';
+import {
+  SERVICES,
+  SERVICES_AUTONOMY,
+  SERVICES_HEADING,
+  SERVICES_INTRO,
+  SERVICES_PROOF,
+} from '@/lib/services';
 
 // Served at /llms-full.txt per AGENT_READINESS §4.3: the entire portfolio
 // corpus as a single Markdown document so an agent can grab it in one
@@ -40,7 +46,7 @@ function renderAbout(): string {
 function renderServices(): string {
   const cards = SERVICES.map((s) => {
     const lines = [
-      `### ${s.num} · ${s.title} — ${s.duration}`,
+      `### ${s.num} · ${s.title}`,
       '',
       s.lede,
       '',
@@ -51,11 +57,17 @@ function renderServices(): string {
   return [
     '<services>',
     '',
-    '## Services',
+    `## ${SERVICES_HEADING}`,
     '',
-    'Three engagement shapes. In / Out / Fit called out explicitly so you can tell whether a conversation is worth starting.',
+    SERVICES_INTRO,
     '',
     ...cards.map((c) => c + '\n'),
+    `### ${SERVICES_AUTONOMY.title}`,
+    '',
+    SERVICES_AUTONOMY.body,
+    '',
+    `${SERVICES_PROOF.lead} ${SERVICES_PROOF.rest} [ADRs](${SERVICES_PROOF.adrHref}), [changelog](${SERVICES_PROOF.changelogHref}), [${SERVICES_PROOF.corpusHref}](${SERVICES_PROOF.corpusHref}).`,
+    '',
     '</services>',
   ].join('\n');
 }

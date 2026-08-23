@@ -11,7 +11,7 @@ Use this skill when you need to read Abhishek Kaushik's portfolio on behalf of a
 
 - A user asks "who is Abhishek Kaushik?" / "what has he built?" / "is he a fit for X?"
 - A user asks about Neev, VeriCite, curat.money, or the Bluehost agents framework.
-- A user wants to know what engagements Abhishek takes on (scope, duration, what's in / out of scope).
+- A user wants to know what engagements Abhishek takes on (Greenfield, Hardening, or Adoption; Entry / First moves / You hold / Fit; no packaged duration).
 - A user wants to contact him or book a conversation.
 
 ## Fetching content

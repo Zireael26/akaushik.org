@@ -4,7 +4,7 @@
    rather than ported. It reuses the ported vocabulary instead of inventing a
    second one: .px-section for rhythm, .px-head--block for the head,
    .px-split-intro for the one-line intro, .px-matter for each service head, and
-   .px-row for the In / Out / Fit lines. What is here is the spacing between
+   .px-row for the Entry / First moves / You hold / Fit lines. What is here is the spacing between
    three stacked blocks, and the changes that follow from a matter row that is
    not a link. */
 
@@ -56,11 +56,26 @@
   color: var(--ink70);
 }
 
-/* "In" / "Out" / "Fit" are labels rather than the dates the tag column was
-   sized for, so they get the section-label letter-spacing and a narrower
-   column. */
+/* "Entry" / "First moves" / "You hold" / "Fit" are labels rather than the
+   dates the tag column was sized for. "First moves" is the widest. */
 .px-service .px-row-tag {
-  flex-basis: 44px;
+  flex-basis: 7.25rem;
   text-transform: uppercase;
   letter-spacing: 0.18em;
+}
+
+.px-service-proof {
+  margin: clamp(28px, 4vh, 40px) 0 0;
+  max-width: var(--prose-max);
+  font-size: 14.5px;
+  line-height: 1.75;
+  color: var(--ink70);
+}
+
+.px-service-proof a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--px-cobalt);
 }

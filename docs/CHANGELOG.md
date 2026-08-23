@@ -4,6 +4,18 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ## [Unreleased]
 
+
+### Changed
+
+- 2026-08-23 — Services is no longer three timed packages. The section is
+  three doors into one system — Greenfield, Hardening, Adoption — with a
+  shared autonomy row and a closing pointer at the public ADRs, changelog,
+  and `/llms-full.txt`. The week ranges are gone: they were unsourced in
+  this repo and in the Trellis instance. Rows are Entry / First moves / You
+  hold / Fit. `lib/services.ts` is still the single copy source for the
+  page and the agent corpus. The hire-me skill no longer promises a
+  duration field.
+
 ### Added
 
 - 2026-08-23 — Began the original arcade field: a fixed asymmetric 25×17 board
