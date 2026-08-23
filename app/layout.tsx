@@ -1,41 +1,37 @@
 import type { Metadata, Viewport } from 'next';
-import { Newsreader, Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
 import { headers } from 'next/headers';
 import Script from 'next/script';
 import SiteNav from '@/components/site/SiteNav';
 import SiteFooter from '@/components/site/SiteFooter';
-import { Wanderer } from '@/components/scene/Wanderer';
-import { TweakBridge } from '@/components/dev/TweakBridge';
+import { Cursor } from '@/components/pixel/Cursor';
 import { CANONICAL_ORIGIN } from '@/lib/canonical';
 import { JsonLdScript } from '@/components/seo/JsonLdScript';
 import { siteGraph, jsonLdString } from '@/lib/structured-data';
 import './globals.css';
+// Section styles, one file per section. Order matters: _shared defines the
+// primitives the rest build on. Imported here rather than @import-chained from
+// globals.css, which silently dropped everything past the first few files.
+import './styles/sections/_shared.css';
+import './styles/sections/header.css';
+import './styles/sections/profile.css';
+import './styles/sections/method.css';
+import './styles/sections/experience.css';
+import './styles/sections/work.css';
+import './styles/sections/services.css';
+import './styles/sections/writing.css';
+import './styles/sections/work-detail.css';
+import './styles/sections/writing-detail.css';
+import './styles/sections/docs.css';
+import './styles/sections/status.css';
+import './styles/sections/open.css';
+import './styles/sections/footer.css';
+import './styles/sections/cursor.css';
 
 // Cloudflare Web Analytics beacon — cookieless, no consent banner needed
 // (per memory: Cloudflare analytics, not @vercel/analytics). Token read
 // from NEXT_PUBLIC_CF_BEACON_TOKEN so it ships nowhere the codebase can
 // see. When unset (dev / preview) the script is a no-op.
 const CF_BEACON_TOKEN = process.env.NEXT_PUBLIC_CF_BEACON_TOKEN;
-
-const newsreader = Newsreader({
-  subsets: ['latin'],
-  variable: '--font-newsreader',
-  display: 'swap',
-  style: ['normal', 'italic'],
-  weight: ['300', '400', '500', '600', '700'],
-});
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  variable: '--font-jakarta',
-  display: 'swap',
-  weight: ['400', '500', '600', '700'],
-});
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  variable: '--font-jetbrains',
-  display: 'swap',
-  weight: ['400', '500'],
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(CANONICAL_ORIGIN),
@@ -75,8 +71,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   colorScheme: 'light dark',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#F5F1E8' },
-    { media: '(prefers-color-scheme: dark)', color: '#121417' },
+    { media: '(prefers-color-scheme: light)', color: '#FFFFFF' },
+    { media: '(prefers-color-scheme: dark)', color: '#0F1218' },
   ],
 };
 
@@ -87,12 +83,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html
       lang="en"
       data-mode="light"
-      data-accent="forest"
-      data-density="airy"
       data-motion="on"
-      data-tagline="a"
       data-scroll-behavior="smooth"
-      className={`${newsreader.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
     >
       <head>
@@ -100,7 +92,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             stored choice or system preference and sets html[data-mode] before
             first paint. The sync load is deliberate: an async/deferred script
             would paint first, then flip theme, causing FOUC for dark-preference
-            users. Matches components/site/ThemeToggle.tsx (storage key + fallback). */}
+            users. Matches components/pixel/ThemeSwitch.tsx (storage key + fallback). */}
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script nonce={nonce} src="/init-theme.js" />
         {/* RFC 8288 Link header duplicates — for crawlers that skip HTTP
@@ -108,6 +100,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="describedby" type="text/markdown" href="/llms.txt" />
         <link rel="describedby" type="text/markdown" href="/llms-full.txt" />
         <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+        {/* Feed autodiscovery. `rel="alternate"` with a feed MIME type is what
+            readers, aggregators and crawlers look for; a feed nothing links to
+            is a feed nobody finds. Declared here rather than only on /writing
+            so it is discoverable from any page. */}
+        <link
+          rel="alternate"
+          type="application/atom+xml"
+          title="akaushik.org — writing"
+          href="/feed.xml"
+        />
         {/* Schema.org JSON-LD — Person + Organization + WebSite emitted as
             one @graph so the Article/Case-study graphs on detail pages can
             point back at stable @id URIs (https://akaushik.org/#person,
@@ -117,11 +119,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <JsonLdScript id="ld-json-site" json={jsonLdString(siteGraph())} nonce={nonce} />
       </head>
       <body>
-        <Wanderer />
         <SiteNav />
         {children}
         <SiteFooter />
-        <TweakBridge />
+        {/* Decorative overlay, mounted last. It gates itself to (pointer: fine),
+            disables under prefers-reduced-motion, and is pointer-events: none —
+            it can never eat a click or suppress a focus ring. */}
+        <Cursor />
         {CF_BEACON_TOKEN ? (
           <Script
             nonce={nonce}

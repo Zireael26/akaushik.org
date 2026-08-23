@@ -97,6 +97,32 @@ async function rest(path) {
   return res.json();
 }
 
+/**
+ * Is this repository visible to someone who is not signed in?
+ *
+ * The token this script runs with carries `repo` scope, so the commit counts
+ * come back for private repositories too — which is the point, they are the
+ * work. But the URL built from the same name is a 404 for every visitor, and a
+ * portfolio that links four 404s is worse than one that links none. Asked here,
+ * unauthenticated, because that is exactly the request a reader's browser
+ * makes.
+ */
+async function repoIsPublic(repo) {
+  try {
+    const res = await fetch(`https://api.github.com/repos/${repo}`, {
+      headers: { accept: 'application/vnd.github+json' },
+    });
+    if (res.status === 200) return true;
+    if (res.status === 404) return false;
+    // Rate-limited or otherwise unclear. Say so rather than guessing public:
+    // the consumer treats anything but an explicit true as "do not link".
+    console.warn(`repoIsPublic: ${repo} returned ${res.status} — treating as not linkable`);
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 async function repoStats(repo) {
   const since = from.toISOString();
   const url = `/repos/${repo}/commits?author=${USERNAME}&since=${since}&per_page=1`;
@@ -139,10 +165,12 @@ async function main() {
   const repos = [];
   for (const r of REPOS) {
     const stats = await repoStats(r.repo);
+    const isPublic = await repoIsPublic(r.repo);
     repos.push({
       name: r.name,
       label: r.label,
       url: `https://github.com/${r.repo}`,
+      public: isPublic,
       commits12mo: stats.commits12mo,
       lastCommit: stats.lastCommit,
     });

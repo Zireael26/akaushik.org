@@ -1,0 +1,77 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "akaushik-org",
+  // Our entry, not OpenNext's. worker/index.ts wraps .open-next/worker.js with
+  // the agent-readiness contract that proxy.ts carries locally — see
+  // lib/agent-proxy.ts for why there are two adapters.
+  "main": "worker/index.ts",
+
+  // 2026-08-15 is the date already proven on this account by the gaurijha-com
+  // Worker. nodejs_compat is implied from 2026-08-04 onward and is kept
+  // explicit only because @opennextjs/cloudflare documents it as required;
+  // Wrangler ignores the redundant flag.
+  "compatibility_date": "2026-08-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "account_id": "ca127da6bde0b3d48082bdd84132dc09",
+
+  // Everything Next prerendered — including all 20 satori OG cards, which are
+  // generated at build time in Node and never rendered inside the Worker.
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+
+  "observability": {
+    "enabled": true
+  },
+
+  "env": {
+    // The unfinished-work host. proxy.ts and app/robots.txt/route.ts derive
+    // "this is a preview" from the request Host, so nothing here has to carry
+    // a flag that someone could forget to set on the next preview.
+    "preview": {
+      "name": "akaushik-org-preview",
+      "routes": [{ "pattern": "beta.akaushik.org", "custom_domain": true }],
+      "assets": {
+        "directory": ".open-next/assets",
+        "binding": "ASSETS"
+      },
+      "observability": {
+        "enabled": true
+      }
+    },
+
+    // The apex. The Vercel project stays paused-not-deleted for 14 days after
+    // the cutover (ADR-0018) so a rollback is a DNS change and not a rebuild.
+    //
+    // `www` is bound here too, and the Worker 308s it to the apex — Vercel was
+    // doing that redirect at the platform level, which is invisible in this
+    // repo and did not survive the move. See `wwwRedirect` in lib/agent-proxy.ts.
+    //
+    // Zone routes, not custom domains, and the difference is the whole cutover
+    // story. A custom domain makes Cloudflare own the DNS record, so binding
+    // one demands the existing record be deleted first — the apex pointed at
+    // Vercel, so that is a window with no record at all, and a rollback means
+    // recreating DNS under pressure. A route sits in front of a record that is
+    // already proxied and simply answers before the origin does: no DNS change
+    // to cut over, and rollback is deleting the route, after which the same
+    // record serves Vercel again on the next request.
+    //
+    // `/*` and not `/` — a route pattern is a path prefix match, and a bare
+    // hostname would intercept the home page and nothing else.
+    "production": {
+      "name": "akaushik-org",
+      "routes": [
+        { "pattern": "akaushik.org/*", "zone_name": "akaushik.org" },
+        { "pattern": "www.akaushik.org/*", "zone_name": "akaushik.org" }
+      ],
+      "assets": {
+        "directory": ".open-next/assets",
+        "binding": "ASSETS"
+      },
+      "observability": {
+        "enabled": true
+      }
+    }
+  }
+}

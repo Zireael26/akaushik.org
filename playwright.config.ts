@@ -13,6 +13,34 @@ import { defineConfig, devices } from '@playwright/test';
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3100';
 const IS_CI = !!process.env.CI;
 
+/**
+ * Playwright's bundled Firefox cannot launch on macOS here, and it fails by
+ * hanging rather than erroring.
+ *
+ * The symptom is `sandbox_extension_issue_file_to_process … Operation not
+ * permitted` followed by `RenderCompositorSWGL failed mapping default
+ * framebuffer`. Request-only specs pass because they never open a page; the
+ * first `page.goto` hangs until the timeout, so with retries a full local run
+ * costs minutes per spec and produces nothing. Chromium and WebKit are
+ * unaffected on the same machine.
+ *
+ * It is not the harness sandbox — verified by launching with sandboxing
+ * disabled, which changed nothing. The distinguishing factor is the OS: this
+ * is macOS 27.0 (build 26A5416b), a beta.
+ *
+ * Skipped on macOS rather than deleted, because Firefox is not broken
+ * everywhere: it runs all 61 specs on CI's Linux runners, so the coverage is
+ * real and only this platform is affected. Set `PLAYWRIGHT_FORCE_FIREFOX=1` to
+ * override and re-test after a Playwright or OS update.
+ *
+ * Keyed on the platform alone, deliberately not on `!IS_CI`. Running against a
+ * deployed URL requires `CI=1` — it is what disables the local `webServer` —
+ * so a `!IS_CI` guard would hand Firefox back to the one macOS run most likely
+ * to want the full matrix. CI is Linux, so the platform test already excludes
+ * it.
+ */
+const SKIP_FIREFOX = process.platform === 'darwin' && !process.env.PLAYWRIGHT_FORCE_FIREFOX;
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -33,10 +61,14 @@ export default defineConfig({
       name: 'chromium-desktop',
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
     },
-    {
-      name: 'firefox-desktop',
-      use: { ...devices['Desktop Firefox'], viewport: { width: 1440, height: 900 } },
-    },
+    ...(SKIP_FIREFOX
+      ? []
+      : [
+          {
+            name: 'firefox-desktop',
+            use: { ...devices['Desktop Firefox'], viewport: { width: 1440, height: 900 } },
+          },
+        ]),
     {
       name: 'webkit-desktop',
       use: { ...devices['Desktop Safari'], viewport: { width: 1440, height: 900 } },

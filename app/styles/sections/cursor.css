@@ -1,0 +1,27 @@
+/* cursor — fixed decorative canvas. Imported by the apex when the wrapper mounts. */
+
+.px-cursor {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+}
+
+/* A descendant may otherwise override the inherited cursor with pointer/text. */
+html.px-cursor-active,
+html.px-cursor-active * {
+  cursor: none !important;
+}
+
+html[data-motion='off'] .px-cursor {
+  display: none;
+}
+
+@media (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .px-cursor {
+    display: none;
+  }
+}

@@ -4,8 +4,666 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ## [Unreleased]
 
+### Added
+
+- 2026-08-23 — Unit tests for the pixel engine's pure drawing functions: 155
+  new tests taking `lib/pixel` from **1.37% to 85%** and the project from a
+  failing coverage gate to 89.23% lines / 78.33% branches / 94.95% functions.
+
+  The engine shipped with none. `sources.ts` — the file that decides what every
+  canvas on the site draws — was at 2.25%.
+
+  A `FieldSource` returns nothing; its entire output is the sequence of calls it
+  makes on the context it was handed. So `lib/pixel/stub-context.ts` records
+  that sequence and the tests assert on it. Not a jsdom canvas: jsdom's 2D
+  context is a no-op without the native `canvas` package, so a test written
+  against it passes whether or not the source draws anything — which is the
+  exact failure this was meant to catch.
+
+  What is asserted is deliberately not the pixels. There is no correct
+  coordinate, and a test pinning them would fail on every intentional tweak to
+  the art, which is how a suite gets deleted. The properties are the ones the
+  engine relies on and a human would not notice breaking: that a source draws at
+  all, that it is deterministic, that it responds to the inputs it claims to
+  (`t`, `angle`, `seed`), and that it puts marks on the grid at every preset
+  size — including a phone-width one, because art positioned in absolute units
+  lands off-grid at one breakpoint and nowhere else.
+
+  One assertion is there for the live complaint about this codebase: every
+  source must draw a *distinct* picture. Every article header and every case
+  study currently renders the same `trellis`, and nothing would have told us.
+
+  The grid check asserts overlap, not containment — the obvious version was
+  wrong, because `trellis` deliberately overdraws and then `clip()`s.
+
+  Mutation-checked, four ways, all caught: disabling the site motion switch
+  (2 failures), inverting the ink ramp so canvases go invisible (1), making
+  every stage draw the same glyph (2, with a message naming the clash), and
+  removing the feed's date filter.
+
+- 2026-08-23 — `lib/pixel.ts` and `lib/pixel-theme.ts` tested under jsdom,
+  0% to covered. `prefersReducedMotion` gets explicit cases for each of its two
+  veto sources and for the site switch alone, because that is the case that was
+  historically broken: the switch stopped the videos and left every canvas
+  drifting, and nothing failed.
+
+### Added
+
+- 2026-08-23 — An Atom feed at `/feed.xml`, with autodiscovery in `<head>`.
+
+  The AEO baseline flagged its absence: fourteen dated posts and no way to
+  subscribe. A sitemap says a URL exists; a feed says something was published
+  and when, which is why aggregators and agent crawlers want both. Atom rather
+  than RSS 2.0 — it requires the fields that make a feed useful (a stable `id`
+  per entry, an explicit `updated`, a declared content type) where RSS leaves
+  them optional. Drafts and `unlisted` posts are excluded, because `unlisted`
+  means reachable by URL and not announced, and a feed is an announcement.
+
+  The feed's own `updated` is the newest entry's date, not the current time. A
+  feed that restamps itself on every request tells every reader it has new
+  content on every poll, which is how a feed earns a rate limit.
+
+  Thirteen tests, and two of them exist because the first version was
+  vacuous: a corpus-wide "no raw ampersand" check passed with the escaper
+  deleted, since no post is currently titled with one. One unescaped `&` makes
+  the document not well-formed and every reader drops every entry, so the
+  escaping is now tested against a title containing `& < > " '` directly.
+  Mutation-checked: removing the escaper fails, and so does removing the
+  date filter.
+
 ### Changed
 
+- 2026-08-23 — Playwright's `firefox-desktop` project is skipped on macOS.
+
+  It fails by hanging rather than erroring — `sandbox_extension_issue_file_to_
+  process … Operation not permitted`, then `RenderCompositorSWGL failed mapping
+  default framebuffer`. Request-only specs pass because they never open a page;
+  the first `page.goto` hangs to timeout, so a full local run cost minutes per
+  spec and produced nothing.
+
+  Not the harness sandbox: verified by launching with sandboxing disabled,
+  which changed nothing. The distinguishing factor is the OS — macOS 27.0,
+  build 26A5416b, a beta.
+
+  Skipped rather than deleted, because Firefox is not broken everywhere: it
+  runs all 61 specs on CI's Linux runners. Keyed on `process.platform` alone
+  and deliberately not on `!CI`, because running against a deployed URL
+  requires `CI=1` — that is what disables the local `webServer` — so a `!CI`
+  guard would hand Firefox back to the one macOS run most likely to want the
+  full matrix. `PLAYWRIGHT_FORCE_FIREFOX=1` overrides it for re-testing after
+  a Playwright or OS update.
+
+  The full local matrix now completes: 164 passed, 0 failed, 1.7 minutes.
+
+### Fixed
+
+- 2026-08-23 — Nav links on a touch device were 40.3px tall. `header.css` has
+  said `hit targets >= 44px on touch` since the port and nothing was checking
+  it; the `@media (pointer: coarse)` rule fired correctly, its padding was
+  simply four pixels short. A 13px link renders ~16.3px tall and 12px either
+  side lands at 40.3 — measured on an iPhone SE against production, because
+  `line-height: normal` makes the text box a property of the font's metrics and
+  no arithmetic from `font-size` would have found it.
+
+  Fixed with `min-height: 44px`, not more padding. Two padding values were
+  tried and both fell short — 12px measured 40.3, 14px measured 43.3 — because
+  both were arithmetic against the height of the text box, and `line-height:
+  normal` makes that height a property of the font's metrics rather than a
+  constant. Padding can only approach the requirement from below and has to be
+  re-derived every time the type changes; a minimum states it once. Measures
+  exactly 44.0 on an iPhone SE, and desktop is untouched at 16.
+
+  Found by CI, on the `chromium-tablet` and `webkit-mobile` Playwright
+  projects. Locally only `chromium-desktop` and `webkit-desktop` had been run,
+  and neither can see this.
+
+- 2026-08-23 — The Writing nav item linked to `/writing/`, which the app serves
+  as a 308 to `/writing`. Every click on it paid a redirect.
+
+- 2026-08-23 — `stripTitleChrome` would eat a leading blockquote in a body that
+  had no H1 above it — an epigraph the author meant to publish, deleted at
+  build time with a green build and no error to trace it by. The strip is now
+  gated on actually finding the H1 whose dek it exists to remove. Latent, not
+  live: all fourteen writing bodies open with an H1, so the rendered output is
+  byte-identical. Found by writing the function's first test.
+
+### Changed
+
+- 2026-08-23 — Coverage thresholds now exclude the canvas *mount* engines
+  (`lib/scenes/**`, `lib/pixel/field.ts`) and the generated MDX modules.
+
+  A mount engine is `mount(canvas) => dispose`: it reads element geometry and
+  devicePixelRatio, attaches listeners, opens a rAF loop and paints. There is
+  no return value to assert and no seam that is not the DOM, so a vitest test
+  of one would be a test of a jsdom canvas stub — green whether or not the real
+  thing draws. They are covered by the only thing that can cover them:
+  `e2e/canvas.spec.ts` proves each field is sized by the engine rather than
+  left at the 300×150 HTML default, and `e2e/reduced-motion.spec.ts` samples a
+  canvas twice a second apart to prove it moves, and stops when asked.
+
+  Deliberately narrow. The pure drawing functions beside them —
+  `lib/pixel/sources.ts`, `stages.ts`, `neural.ts` — stay in scope. They are
+  undertested and the fix for that is tests, not a wider exclusion.
+
+### Changed
+
+- 2026-08-23 — `www.akaushik.org` now redirects to the apex from the site's own
+  code rather than from the hosting platform, and the production Worker is
+  routed at both hosts.
+
+  Vercel was doing the `www` redirect with a platform-level 308. That is a
+  setting in someone else's dashboard, invisible in this repo, and it does not
+  move with the site — so binding `www` to the Worker as it stood would have
+  served every page on two hosts, with `rel=canonical` as the only thing
+  telling a search engine which one counted. The redirect now lives in
+  `lib/agent-proxy.ts` with the rest of the contract, which means both adapters
+  get it and `lib/agent-proxy.test.ts` covers it; a rule that exists in only one
+  runtime is a bug by construction (ADR-0018).
+
+  308 rather than 301 because it is the permanent redirect that cannot rewrite
+  a POST into a GET. `www` also stays inside `CANONICAL_HOSTS` deliberately —
+  attaching `X-Robots-Tag: noindex` to a redirect tells a crawler not to follow
+  it, which is the opposite of consolidating the two hosts.
+
+  This is the last code change the Vercel → Cloudflare cutover needed
+  (ADR-0018); the Vercel project stays paused-not-deleted for 14 days so a
+  rollback is a DNS change rather than a rebuild.
+
+- 2026-08-23 — Playwright's Firefox cannot launch on this machine, and the site
+  is not the reason. Two attempts at a full five-project run against the
+  preview stalled, and the cause is the bundled Firefox Nightly failing the
+  macOS sandbox — `sandbox_extension_issue_file_to_process … Operation not
+  permitted`, then `RenderCompositorSWGL failed mapping default framebuffer`.
+  The `request`-based specs pass because they never open a page; the first spec
+  that calls `page.goto` hangs until timeout, and with retries that is minutes
+  per spec. Worth fixing, because it makes any local five-project run useless,
+  but it is a Playwright/macOS permissions problem rather than a code one.
+
+  Coverage as it stands: `chromium-desktop` 60 passed / 1 fixme / 0 failed, and
+  `webkit-desktop` 22 passed / 39 skipped / 0 failed against the live preview.
+  The WebKit skips are the specs' own `browserName !== 'chromium'` guards.
+
+- 2026-08-23 — The home page no longer scrolls sideways on a phone. Measured
+  496px of document width against a 375px viewport, and 500px against a 320px
+  one — a real defect nobody had looked for, because nothing had opened the
+  site at a phone width since the transplant began.
+
+  The cause is the contribution chart. Fifty-three weekly columns of square
+  cells with a 7px minimum give the grid a hard floor around 480px, and its
+  column is a flex item, which defaults to `min-width: auto` — "never narrower
+  than my content". So the column refused to shrink and took the document with
+  it. Two changes: the chart scrolls inside its own container, and the column
+  is allowed to narrow. An `overflow-x` on the chart alone does nothing while
+  an ancestor is the thing that will not shrink.
+
+  Shrinking the cells was the other option and it was the wrong one. This chart
+  replaced a sparkline precisely to be bigger and interrogable; cells small
+  enough to fit a 320px screen would be neither.
+
+  Verified at 320, 375 and 768 across the home, article and case-study routes:
+  no horizontal overflow anywhere.
+- 2026-08-23 — Tightened nine phase 1–3 interface strings against `docs/voice.md`: first person where the site speaks as Abhishek, fewer ornamental em dashes, and no changes to sourced facts, links, markup, metadata, or MDX.
+- 2026-08-23 — Added a policy test that parses both theme token blocks and rejects any `--ink*` or `--px-*-ink` colour below WCAG AA’s 4.5:1 contrast floor against that theme’s page background.
+- 2026-08-23 — The site meets WCAG 2 AA now, and the e2e suite is green again.
+  Both were found the same way: by running the specs against the deployed
+  preview, which is the first time anything had.
+
+  **Contrast.** axe-core reported 64 violating nodes on the home page in light
+  mode and 48 in dark, all `color-contrast`, all serious. Two causes. The muted
+  ink scale was too light — `--ink40` measured 2.58:1 and `--ink45` 3.00:1
+  against the page, and those tokens carry the mono labels, chip keys and small
+  print on every route. And three of the five palette colours are unusable as
+  small type on white: amber measures 2.02:1 and lime 1.30:1.
+
+  The ink alphas are raised to the lowest values that clear 4.5:1 while keeping
+  their order, so the hierarchy reads as it did and muted text is simply less
+  muted; every step now carries its measured ratio in a comment. The palette
+  keeps its role as the design's grammar and gains text-safe siblings —
+  `--px-amber-ink`, `--px-red-ink`, `--px-lime-ink`, `--px-cobalt-ink` — at the
+  same hue and saturation, walked in lightness until they clear. Use the plain
+  token for cells, rules and underlines, where the contrast question is against
+  a neighbouring cell rather than against the page. The in-prose contact link
+  was distinguished by colour alone at 2.68:1 against the surrounding text; it
+  has an underline now.
+
+  Seven routes, both themes: **zero violations**.
+
+  **The motion switch only reached half the motion.** `MotionVideo` watches
+  `html[data-motion]`, so turning motion off stopped the videos — and every
+  canvas on the page kept drifting, because `prefersReducedMotion()` consulted
+  only the OS preference. A switch that silently does half the job is worse
+  than none, since it tells the user they have handled it. The helper reads
+  both sources now, and every engine in `lib/scenes/*` and `lib/pixel/field.ts`
+  goes through it.
+
+  **Primary navigation is a list.** Six loose anchors in a `<nav>` announce
+  nothing about how many there are; a list announces "6 items" and supports
+  list navigation. Markers and spacing are stripped, so nothing changes
+  visually.
+
+  **The e2e suite.** Sixteen of sixty-one specs failed against the preview.
+  `canvas.spec.ts` and most of `reduced-motion.spec.ts` were still testing the
+  Three.js Wanderer and the CSS marquee — both deleted with the parchment
+  design — and had been left in place with headers explaining that they would
+  fail. A permanently-red suite tests nothing, so they were rewritten against
+  what exists: a field that is sized by the engine rather than merely present,
+  decorative canvases hidden from screen readers and the meaningful one named,
+  the portrait toggle, and a field that is provably still under reduced motion
+  and provably moving without it. The technology-marquee spec asserted the page
+  still names Three.js, which the site removed; it now asserts the opposite —
+  that no removed dependency is named anywhere. Selector-only drift in
+  `work.spec.ts`, `status.spec.ts` and `home.spec.ts` was migrated with the
+  assertions intact, and the `robots.txt` spec is host-aware, because on a
+  preview host the correct answer is the refusal.
+
+  60 passed, 1 documented `fixme` (the error boundary has no deterministic
+  trigger in source), 0 failed.
+
+- 2026-08-23 — Measured the preview rather than assuming it. Core Web Vitals
+  from the deployed Worker: TTFB 147–679 ms — the 679 is a cold isolate on the
+  home route, warm routes sit at 147–246 ms — LCP 448–1180 ms, CLS 0.000–0.002,
+  101–285 KB over 25–27 requests. Some of that is the platform move paying for
+  itself: no filesystem read, no MDX compile and no syntax highlighting happen
+  per request any more, because none of them can.
+
+  This is **not** a Lighthouse run. Lighthouse is CI-only here and is not
+  installed locally, so `lighthouserc.yml` and `lighthouserc.mobile.yml` remain
+  unchecked; direct vitals are a weaker signal than the budgets they encode.
+
+- 2026-08-23 — Private repositories are named, not linked. A link-integrity
+  sweep of the preview deployment found four dead links on the home page:
+  `msme-neev/neev`, `vericite-ai/vericite`, `curat-money/curat` and
+  `ClusterBid/console` all 404 for anyone not signed in. The commit counts
+  beside them are real — `scripts/fetch-github-stats.mjs` runs with a
+  `repo`-scoped token, which is the point, that work is most of the twelve
+  months — but the GitHub URL built from the same name is a 404 for every
+  reader of the site, and four dead links on a portfolio are worse than none.
+
+  The script now asks GitHub unauthenticated whether each repository is
+  visible, which is exactly the request a reader's browser makes, and records
+  it. `OpenSource` links only what comes back public. The flag is optional and
+  absent means *do not link*, so the `stats.json` already committed — which
+  predates the field — stops emitting the four dead links immediately rather
+  than waiting for the next scheduled refresh. A rate-limited or ambiguous
+  response is treated as not-linkable for the same reason.
+
+  Four tests, and they fail if the requirement is inverted: linking all
+  repositories unconditionally breaks two of them.
+
+- 2026-08-23 — Amended ADR-0018 with what the preview spike actually found.
+  Two of its claims were wrong: the deploy was never blocked on an
+  operator-minted API token (Wrangler was already OAuth-authenticated; the
+  zone-scoped `CLOUDFLARE_API_TOKEN` in the shell just shadows it), and edge
+  middleware does not survive the move to Next 16 — which was the assumption
+  the whole retrofit-over-rewrite decision rested on. The decision still holds,
+  and the addendum says why, but it also says that the cost was underestimated
+  because provider feature tables were read rather than probed.
+
+- 2026-08-23 — The portrait reads as a person again. It was a lime slab with a
+  hole in the middle, and the cause was the photograph rather than the engine:
+  a face lit at a restaurant window, a lamp to the left, a lit street to the
+  right, and a black polo occupying the bottom third of the frame. Ramped
+  whole, the shirt is the largest single-tone region in the picture, so
+  `invert` handed it the loudest end of the palette while the face landed
+  mid-ramp and disappeared.
+
+  `fromImage` takes a `crop` now — a rectangle in 0..1 of the source, applied
+  before anything else. That matters more than any of the tone controls,
+  because the auto-contrast stretch is computed over whatever is in frame: a
+  face that occupies a third of a photograph is competing with the room and
+  loses. Cropped to head-and-shoulders at the canvas's own 3:4, the stretch runs
+  over skin and hair, `invert` is no longer needed, and the features resolve —
+  glasses, nose, beard, the line of the shoulder. Cell size drops to 2.1 for the
+  resolution a face needs, and the floor sits at 0.2, high enough to drop the
+  restaurant out and low enough to keep gradation inside the face.
+
+  The option is on the shared image source, not on the portrait, so every
+  image the pixel system converts gets it. The portrait's effect depends on the
+  crop's four numbers rather than on the object, because an inline literal is a
+  new identity every render and would rebuild the grid sixty times a second.
+- 2026-08-23 — Updated Playwright locators for the pixel routes without weakening retained contracts, kept agent-readiness checks mechanism-neutral, and added real 404 coverage plus an explicit blocked error-boundary case.
+- 2026-08-23 — Recorded ADR-0019: Cloudflare Workers runtime code cannot depend on filesystem reads, runtime template compilation, dynamic code generation, or byte-instantiated WASM; those operations belong in build steps.
+- 2026-08-23 — Corrected stale current-code comments to name the live pixel `ThemeSwitch` and footer contact surface; runtime code remains free of `next-mdx-remote`, though its type/test references still prevent dependency removal.
+- 2026-08-23 — The site runs on Cloudflare Workers. Three things had to change
+  for that, and each was a runtime incompatibility rather than a preference.
+
+  **The proxy is now two adapters over one policy.** Next 16 renamed
+  `middleware.ts` to `proxy.ts` and, in the same move, removed the edge runtime
+  for it: `runtime: 'edge'` is rejected with "Proxy does not support Edge
+  runtime". `@opennextjs/cloudflare` supports edge middleware only, and aborts
+  with "Node.js middleware is not currently supported" when it finds a proxy.
+  There is no version of either that satisfies the other. So the agent-readiness
+  contract — the RFC 8288 discovery `Link` headers, both Markdown negotiation
+  patterns, the ADR-0014 nonce CSP, and the preview robots refusal — moved into
+  `lib/agent-proxy.ts` as pure functions, with `proxy.ts` (local `next dev`) and
+  `worker/index.ts` (Cloudflare) as thin adapters that decide nothing. That
+  policy had no unit tests before, only Playwright; it has 57 now.
+  `scripts/cf-build.mjs` parks `proxy.ts` for the duration of the Cloudflare
+  build, restoring it in a `finally`.
+
+  **Content is compiled into the bundle instead of read from disk.**
+  `lib/content.ts` used `readFileSync` at request time. On Workers `node:fs` is
+  an empty per-request scratch space, so every `/work/<slug>` and
+  `/writing/<slug>` returned 404 while the prerendered index pages looked
+  perfectly healthy. `scripts/build-content-bundle.ts` inlines the nineteen MDX
+  files into a module instead. Prerendering the content pages around the problem
+  was not available: `app/layout.tsx` reads `headers()` for the CSP nonce, which
+  makes the whole route tree dynamic.
+
+  **MDX compiles at build time.** With the content reachable, the same pages
+  turned 500. `next-mdx-remote` compiles MDX per request and evaluates it with
+  `new Function`; Workers refuse that outright, and Shiki's oniguruma grammar
+  engine is a second refusal for the same reason — a Worker runs only code that
+  existed at deploy time. `scripts/build-mdx-modules.ts` compiles the nineteen
+  bodies to plain ESM during the build, where both are ordinary, and the pages
+  import them from a generated registry. Highlighting and MDX parsing now cost
+  nothing per request. `stripTitleChrome` moved to `lib/strip-title-chrome.ts`
+  so the generator and the article template cannot disagree about it.
+
+  Verified against `workerd` rather than reasoned about: twenty-one routes
+  answer correctly, code fences carry their `--shiki-light` / `--shiki-dark`
+  tokens, the nonce reaches every script tag, both Markdown patterns negotiate,
+  and a preview host is refused by both the header and `robots.txt`.
+
+- 2026-08-23 — Changed `/writing` and `/writing/[slug]` to complete the pixel-language Blog / SEO transplant without changing an authored MDX file (spec 004 T26, SC4/SC8). The index reads `getAllPostsWithReadingTime('writing')`, sorts newest-first, and renders the 12 listed posts: `_test-draft.mdx` is excluded by the content helper and `detection-is-not-continuity` remains direct-link-only because its authored frontmatter is `unlisted: true`. The index now uses the shared `SectionHead` for its page-level statement and mono label, keeps the decorative `PixelBand`, and reuses the established writing-row treatment rather than adding another list primitive. Topic-like colour still rotates on the sourced reading-time tag because `WritingFrontmatter` has no topic field and inventing a taxonomy would be a content change.
+
+  The article template retains the existing route, per-post metadata and OpenGraph/Twitter fields, canonical URL, `robots` rule for unlisted work, nonce-bearing JSON-LD scripts, four `HyperframesLoop` branches, MDX compiler options, and generated static params for all 13 non-draft posts. Its presentation now follows the reference pattern in one article landmark: decorative `ArticleField`, mono `Writing` breadcrumb, frontmatter H1 and authored dek, then the sourced `Abhishek Kaushik · AI Engineer · date · reading time` byline. `stripTitleChrome` removes only the duplicate leading authored H1 and blockquote dek before `MDXRemote` runs; every H2 and everything below it remains in the MDX body. The exact “The short answer” block now renders through shared `RuledRow` instances, including a top rule on every row and a closing rule on the last, while “Common questions” keeps its explicit ruled Q/A rows. `Read next` continues to use `MatterRow`.
+
+  `ARTICLE_COPY` covers the same 13 non-draft slugs and no others. Every short-answer and FAQ row was checked against its corresponding MDX, line by line. Two over-tightened summaries were corrected back to the authored record: Trellis’s ten audits run on mixed daily, weekly, and monthly cadences rather than all weekly, and the 1.0-rc rollout had five projects off clean main, four on feature branches, one dirty main, and three with uncommitted changes rather than five projects satisfying all three conditions. No employer, date, title, metric, or claim was added from outside the repository. If a future post has no grounded copy entry, the template still omits both generated sections and emits a plain Article graph rather than fabricating a FAQ.
+
+  The read-next chronology now loads published posts with `{ includeUnlisted: true }` so an unlisted current article can be located, then removes unlisted candidates before selecting the next two. That gives `detection-is-not-continuity` outgoing links to `trellis-loop-era` and `trellis-1-0-rc` while ensuring neither `gptx-in-trellis` nor any other listed article recommends the unlisted post. The focused page test fixes that contract in place. The same test renders `ai-for-msme` and proves that its Article and FAQPage occupy one JSON-LD `@graph`, with stable `#article`, `#faq`, and `#faq-N` identifiers and no second FAQ graph; the existing `breadcrumbGraph` remains its own nonce-bearing BreadcrumbList island, and `lib/structured-data.ts` remains untouched.
+
+  `app/styles/sections/writing-detail.css` supplies the index and article shells using only tokens from `app/styles/tokens.css`. Article prose is capped by `var(--prose-max)` at 70ch, headings retain the authored hierarchy, breadcrumb, byline, time, and kickers use `var(--ink60)`, and short-answer, FAQ, code, table, image, loop, and read-next treatments all derive colour from `var(--ink*)`, `var(--line)`, and `var(--px-*)`. Keyboard focus is explicit on article and read-next links. Reduced motion removes link and row transitions, cancels the read-next indent, and hides the loop video while the shared field engine handles reduced-motion canvas drift. `pnpm exec vitest run 'app/writing/[slug]/page.test.ts'` passes 7 tests in 1 file, the 13/12 published/listed inventory check reports no missing or extra `ARTICLE_COPY` keys and no draft, and targeted ESLint over the four owned TypeScript files exits cleanly. No dependency, dev server, build, route handler, fenced file, root layout import, or phase-1 changelog fragment was touched.
+
+- 2026-08-23 — Rebuilt the rendered `/api/docs` HTML page in the pixel language (spec 004 R2, SC3/SC4) and created its owned stylesheet. `app/api/docs/page.tsx` was the one route that still wore the deleted editorial template — `div.api-docs` with `api-docs-path` / `api-docs-op` blocks over the warm palette — while every other shipped section had moved to the pixel system. The page is the human face of the agent surface (OpenAPI, MCP, llms.txt), so it is the most on-brand page on the site; it now reads as the same design rather than as leftover parchment.
+
+  The contract was presentation only, and that is what landed. No `route.ts`, OpenAPI source, MCP core, proxy, or agent contract was touched: `lib/openapi-spec.ts`, `lib/mcp.ts`, `app/api/openapi.json/route.ts`, `proxy.ts`, `app/llms.txt/route.ts`, `public/.well-known/mcp.json`, and `lib/mcp-http.ts` were read and never edited. Every documented href, method, endpoint, request/response fact, and metadata field is preserved because the page keeps rendering from the same single sources it always did — `OPENAPI_SPEC` for `info.title` / `summary` / `description` / `version` / `servers[0].url` / `contact.email` / `paths` / `components.schemas`, and `MCP_ENDPOINT` / `MCP_PROTOCOL_VERSION` / `MCP_SUPPORTED_PROTOCOL_VERSIONS` / `MCP_FALLBACK_PROTOCOL_VERSION` / `MCP_MAX_BATCH_SIZE` / `MCP_TOOLS` for the MCP block. The page copy was compared against those surfaces read-only before editing: `OPENAPI_SPEC.info.description` lists the five agent surfaces `(1) /llms-full.txt (2) /work/<slug>.md and /writing/<slug>.md (3) /api/writing and /api/case-studies (4) content negotiation via Accept: text/markdown (5) /api/mcp`, which matches `app/llms.txt/route.ts` `BODY` (endpoint `https://akaushik.org/api/mcp`, protocol `2025-11-25` with bounded `2025-06-18` / `2025-03-26` compatibility, tools `lookup_case_study` / `get_availability`, discovery `/.well-known/mcp.json`) and `public/.well-known/mcp.json` (`endpoint`, `protocolVersion 2025-11-25`, `supportedProtocolVersions`, `maxBatchSize 32`, `stateless true`, `sessionIdIssued false`, tool input/output schemas). No disagreement was found between the page and the spec surfaces, so nothing was edited on either side to reconcile — the page simply continues to project the constants. If a future spec edit introduces a delta, the page will track it without a second edit because it imports the constants rather than copying their strings.
+
+  The rendered structure keeps every anchor the old page offered and adds the pixel grammar around it. The header is a `SectionHead` (`info.title` as the statement heading, `OpenAPI 3.1` as the mono label per `design.md` § Type — statement over mono, never a rule under the heading) with the summary and the five-surface description as `px-docs-summary` / `px-docs-description` prose (`ink70`, justified with `hyphens:auto` like `ArticleField`), and a `px-docs-meta` stack of four `RuledRow`s — `Version` / `Server` / `Contact` (mailto `hello@akaushik.org`, the only contact sourced in this repo; no employer, title, or metric was invented) / `Spec` (`/api/openapi.json`) — the last row carrying the bottom rule per `_shared.css`. A `PixelField` with `preset="strip"` and source `prompt` seeded via `seedFrom('api-docs')` sits above the head as the `px-docs-field` texture (`clamp(84px,12vh,136px)`, `strip` tuned as `cell 5 / gain 1.15 / shapeNoise 0.3 / scatter 0.6` in `lib/pixel/field.ts` — small enough to sit as a header, large enough the chevron and block caret survive the cell threshold). The field is decorative — no `label`, so `PixelField` renders `aria-hidden="true"` and never takes focus — and its ambient drift is already gated by `prefersReducedMotion()` in `lib/pixel/field.ts`, so reduced-motion users see a static texture without a second gate.
+
+  The table of contents preserves `Paths` / `Schemas` / `MCP` and every `href` the old page emitted: `href="#path-${path.replace(/[^a-z0-9]+/gi,'-')}"` for each path, `href="#schema-${name}"` for each schema, and `href="#mcp-tools"` for the tool contracts, plus the machine-readable `href="/api/openapi.json"` and `mailto:` contact. A single `MatterRow` (`/api/openapi.json` · `Machine-readable` · `cobalt`, `href="/api/openapi.json"`) is included in the TOC to exercise the `MatterRow` grammar while keeping the link factual and single-source. `McpToolsBlock` reproduces the three MCP paragraphs verbatim — `MCP_ENDPOINT` is `https://akaushik.org/api/mcp`, current revision `2025-11-25`, supported `2025-11-25, 2025-06-18, 2025-03-26`, missing-header fallback `2025-03-26` capped at `32`, `Content-Type: application/json` plus `Accept: application/json, text/event-stream`, body capped at 1 MiB, JSON responses, no-id `202`, no `MCP-Session-Id`, `405` for `GET, HEAD, PUT, PATCH, DELETE` and `204` for `OPTIONS`, errors `-32700` / `-32600` / `-32601` / `-32602` / `-32603`, integer IDs, and the `/.well-known/mcp.json` site/scanner note — and then renders each entry in `MCP_TOOLS` (`lookup_case_study` with `slug: string` patterned `^[a-z0-9_-]+$` required, outputs `slug,title,dek,role,year,stack,url,markdown`; `get_availability` with no arguments, outputs `status:open, capacity:one project this quarter, contactUrl:uri, email:email`) as a `px-docs-tool` article whose `Input` / `Structured output` rows are `RuledRow`s (`tag` is the property name, body is `required · type` or `type`, last row carries the bottom rule) and whose annotations line stays `read-only, idempotent, non-destructive, closed-world`.
+
+  `PathBlock` keeps the same `id="path-…"` sections and `h3><code>path</code>` heads and the `METHOD · summary` line (`method.toUpperCase() · summary`) for each entry in `paths`, plus the description and the three fact blocks that made the original page load-bearing: `Parameters` (`name · in · type`, `required`, `description` — `tag` is `in` (`query`/`path`/`header`) so the tag column stays `56–72px` per `_shared.css`, body holds the `code` name and `renderType` plus the flags), `Request body` (`Required`/`Optional · contentTypes`), and `Responses` (`code · description (contentTypes)` — `tag` is the numeric code, body the description). `SchemaBlock` keeps `id="schema-…"` and `h3><code>name</code>` and renders `components.schemas` (`WritingPost`, `WritingList`, `CaseStudy`, `CaseStudyList`, `McpJsonRpcRequest`, `McpJsonRpcResponse`, `McpToolResult`, etc) as a `Properties` kicker followed by `RuledRow`s (`tag` is the property key, body `required · type · format`). No property, response code, header name, or content type string was retyped — `renderType` still unwraps `$ref` and `type`, and every `join(', ')` still comes from `Object.keys(content)` — so a spec edit surfaces here without a content fork.
+
+  `app/styles/sections/docs.css` is new and is owned here but is not imported from `app/layout.tsx` — the foreman owns the final root import per the fan-out brief, so the file lands without adding a second import chain that Turbopack could silently drop (the same 12-deep `@import` that once served 7.5 KB of 20 KB). The sheet holds only the `px-docs` shell (`max-width: var(--wrap-max)`, `var(--wrap-pad)` gutters, `clamp(56px,9vh,118px)` top rhythm like `_shared.css`), the `px-docs-field` rect, the mono `px-docs-back` (`ink60` → accessible `ink` on hover; cobalt remains limited to non-text decoration and `focus-visible: 2px solid var(--px-cobalt)`), the head/prose/meta/TOC/kicker/path/tool/schema/footer rhythms, and the reduced-motion override. Every colour is `var(--bg)` / `var(--ink*)` / `var(--line)` / `var(--px-cobalt)` / `var(--px-amber)` / `var(--px-red)` / `var(--px-lime)` from `app/styles/tokens.css`; every canvas colour comes from `lib/pixel.ts` `PALETTE` and `canvasBg`/`navy` helpers — no hex in either file, per spec 004's constraint. Keyboard focus stays visible everywhere the old page had it (`a:focus-visible`, `.px-matter:focus-visible`, `.px-docs-back:focus-visible` all `2px solid var(--px-cobalt)`), and `prefers-reduced-motion: reduce` disables the `px-matter` hover indent (`padding-left:0`) and keeps the field static via the engine's own gate, so decorative motion never harms typing latency or a11y.
+
+  Verified by `pnpm typecheck` (no emit) and `pnpm lint` (no errors); `pnpm test` runs 175 passing with 4 failures confined to `r4-og-verify.test.tsx` (the concurrent R4 pixel OG cards, which still render the deleted template's 1200×630 guard and have not yet landed their SVG-rect hash grid — those failures are not in this unit's ownership and do not touch `app/api/docs`). No dev server, `pnpm build`, or repository-wide gate was started per the fenced brief, no `lib/mcp*`, `proxy.ts`, `app/llms*`, or other unit's files were touched, and no new dependency was added.
+
+  Accepted review findings (2026-08-23) — three flagged defects fixed within ownership, correct work preserved:
+
+  1) Broken `aria-labelledby` on MCP / Paths / Schemas landmarks: the three sections carried `aria-labelledby="mcp-heading" / paths-heading / schemas-heading` but `SectionHead` was rendered without an `id`, so the IDREFs resolved to nothing. Fixed by passing the matching `id` to each `SectionHead` (`id="mcp-heading"`, `id="paths-heading"`, `id="schemas-heading"`) — `SectionHead` already forwards `id` to its heading element — so assistive technology now names each landmark from its visible statement heading. No other markup changed; every href, method, endpoint, and metadata fact remains from the single sources (`OPENAPI_SPEC`, `MCP_*`).
+
+  2) Contract identifiers mutated/hidden by CSS: `.px-docs-block .px-row-tag` applied `text-transform: uppercase`, so `contactUrl` rendered as `CONTACTURL` and similar keys lost case; `.px-docs-schema .px-row-tag` fixed the tag to 96px with `overflow:hidden` + `text-overflow:ellipsis`, truncating `structuredContent`. JSON/OpenAPI names are case-sensitive, so the presentation was unfaithful even though DOM text was intact. Fixed by rendering contract tags without text-transform and without ellipsis — both selectors now use `text-transform:none`, `letter-spacing:0.02em`, `white-space:normal`, `overflow-wrap:anywhere` / `word-break:break-word`, and a flexible tag column (`flex:0 1 160px; min-width:96px; max-width:220px; overflow:visible; text-overflow:clip`). The tag column now grows/wraps instead of uppercasing or clipping; no hard-coded hex added, colours stay through `tokens.css`.
+
+  3) Light-theme contrast on small API labels: 11px kicks (`Parameters`/`Responses`/`Input`/`Structured output`/`Properties`), TOC group labels, and MCP annotations used `--ink40` (≈2.59:1 on white), while POST badges used `--px-amber` (≈2.02:1) and DELETE/`required` used `--px-red` (≈4.05:1) — all below WCAG AA 4.5:1 for normal text. Fixed by moving small labels to accessible ink (`--ink60` at 4.88:1 light / 6.48:1 dark) for `.px-docs-kicker`, `.px-docs-toc-label`, and `.px-docs-annotations`, and by keeping amber/red only as decorative borders/underlines: `.px-docs-method.is-amber` / `.is-red` (and `.is-cobalt` for dark-theme safety) now use `color:var(--ink)` (≈16.6:1) with `border-color:var(--px-*)`; `.px-docs-required` now uses `color:var(--ink)` with a red underline (`text-decoration-color:var(--px-red)`) instead of red text; `.px-docs-toc .px-matter-tag.is-*` now uses `color:var(--ink60)` with the pixel accent kept as `text-decoration-color`. Cobalt badges already passed in light (5.23:1) but were also fixed for dark (3.58:1 → ink).
+
+  Re-verified by reading `app/api/docs/page.tsx` (three SectionHead ids present, three aria-labelledby refs resolve), inspecting `app/styles/sections/docs.css` (no `--ink40`, no `text-transform:uppercase` on contract tags, no `ellipsis`, no hard-coded hex, braces balanced), and recomputing contrasts (ink60 4.88/6.48, ink 16.6, amber/red retained only on border/underline). No `route.ts`, OpenAPI source, MCP core, proxy, or other unit's files touched; no new dependency.
+  
+  Follow-up accepted findings (2026-08-23; cheap/deepseek/flash voted 3-0):
+
+  4) The server-rendered page no longer passes the `prompt` drawing function through the RSC boundary. `ApiDocsField` is a tiny colocated client island that imports `PixelField`, `prompt`, and `seedFrom` internally; `ApiDocsPage` passes no props, while the deterministic strip remains `sources={[prompt]}`, `preset="strip"`, `seedFrom('api-docs')`, and `px-docs-field`.
+
+  5) Docs heading labels now override the shared `--ink40` with `.px-docs .px-head-label { color: var(--ink60) }`. All docs hover text stays on accessible `var(--ink)` in both themes; cobalt remains only for non-text decoration (borders, underlines, and focus outlines). No hard-coded colors were added, and API facts, links, anchors, metadata, and prior accessibility fixes remain unchanged.
+
+  No formatter, linter, build, server, or test command was run for this follow-up per the assignment.
+
+- 2026-08-23 — Added the custom 404 and error boundaries plus the status stylesheet, and the two restrained pixel sources the pages draw (spec 004 T24-adjacent, SC1/SC8). `app/not-found.tsx` is a server component and `app/error.tsx` is a client component that accepts `{ error, reset }` exactly as Next.js requires — the file opens with `'use client'` and the component signature is `function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void })` so the framework can call `reset()` to retry the segment. Copy on both pages is plain and short in the register of `docs/voice.md`: the 404 says "Page not found." with label "404" and "This page does not exist." plus a single "Go home" link; the error boundary says "Something failed." with label "Error" and "This page could not be rendered." plus "Try again" (wired to `reset`) and "Go home". No apology, no "Oops", no emoji, no invented employer, date, title, metric, or claim — the two messages are only what the repo already knows. The 404 offers home, the error offers both reset and home, and neither pads the matter with throat-clearing. Accepted review findings (recoil endpoints inside overdriven node; dark hover 3.58:1) have been fixed within ownership and verified below.
+
+  Art is the same network that already lives in `lib/pixel/sources.ts` `agentGraph` — a root, three intermediaries, two leaves each, and cross-edges between the middle tier — drawn at hero scale through `components/pixel/PixelField` (`preset: 'hero'`, the `clamp(340px, 64vh, 700px)` rect the home heatfield uses). `brokenGraph`, used by `not-found.tsx`, reuses the agent graph's geometry through a small internal helper `graphGeometry(cols, rows, angle)` rather than copying it. The helper computes `CX`, `ROOT`, the aspect-scaled `rot`, the three `mids` at `TIER1 = rows * 0.45`, and the six `leaves` at `TIER2 = rows * 0.74` by calling the same `rot(mx + cols * off, TIER2)` the original `agentGraph` used for its double-rotation, so the three sources stay in lockstep and no second definition of the network can drift. `brokenGraph` then renders the graph with one severed edge — `mids[2] → leaves[2][1]` drawn as two stroked segments with a centred `len * 0.18` gap — and one unreachable node — `leaves[0][0]`'s incident edge omitted so the node floats with no connection. The two alterations are the only differences; radii (`rows * 0.055` root, `0.04` mids, `0.028` leaves) and widths (`1.9` root→mid, `1.4` mid→leaf, `0.9` cross) stay exactly the hero's. The second restrained source, `errorGraph` (also exported as `overloadedGraph` for callers that prefer that name), reuses the same helper and draws the identical network with one node overdriven: the centre mid `mids[1]` at `rows * 0.062` instead of `0.04`, and every incident edge recoiling — `ROOT → mids[1]` recoiled at the mid end, `mids[1] → leaves[1][*]` recoiled at the mid start, and the two cross-edges `mids[0]—mids[1]` and `mids[1]—mids[2]` recoiled at whichever end touches `mids[1]`, each offset by `overInset = overR (rows * 0.062) + recoilGap (rows * 0.014)` along the edge direction — so every endpoint that touches the overdriven node stops outside its radius plus a restrained visible gap, while non-incident edges remain full-geometry and appear connected at their node circumferences. This fixes the accepted review finding where the prior `rows * 0.034` inset kept endpoints inside the `rows * 0.062` node. Both sources are deterministic: all jitter goes through `lib/pixel.ts` `h(x, y)` via the field's own `rnd` and `stk` grids, never `Math.random`, so the weather is identical on every load and across themes, with `lib/pixel.ts` `canvasBg(dark)` and `PALETTE` still the only colour authority and the stylesheet never carrying a hex.
+
+  `app/styles/sections/status.css` is the only new stylesheet and is owned here. It was written against `app/styles/tokens.css` and `lib/pixel.ts` alone — `var(--wrap-max)`, `var(--wrap-pad)`, `var(--bg)`, `var(--ink)`, `var(--ink70)` / `var(--line)` / `var(--panel)` / `var(--panelInk)` / `var(--px-cobalt)`, `var(--font-display)` / `var(--font-body)` / `var(--font-mono)`, and the `clamp` rhythms already used by `_shared.css`, `profile.css`, `footer.css`, and `article-field.css`. No hard-coded colour appears anywhere in the file; the canvas reserves `display: block; width: 100%; height: clamp(340px, 64vh, 700px)` and lets the engine paint the background, the body centres at `560px`/`auto`, the copy at `14.5px`/`1.75`/`ink70`, and the two actions share the pixel-notched `px-notch` clip-path defined in `app/globals.css` with `var(--panel)` resting and `var(--px-cobalt)` on hover — hover text is `var(--panelInk)` (white in light, 5.23:1 on cobalt) overridden in dark via `[data-mode='dark'] .px-status-link:hover, [data-mode='dark'] .px-status-button:hover { color: var(--panel); }` (`#eff1f6` on cobalt, 4.63:1) so the 14px/600 action labels meet 4.5:1 in both themes. This fixes the accepted dark-mode hover contrast finding where `var(--panelInk)` (`#0f1218` in dark, 3.58:1) failed on cobalt. `SectionHead` provides the headed message (`as="h1"` `level={1}` so the status pages start at `h1` while sections stay at `h2`), `PixelField` provides the field (no `label` prop, so `aria-hidden="true"` and `role` omitted — decorative by intent because the surrounding heading and copy already state the meaning, which is cheaper than a duplicate screen-reader announcement per `components/pixel/PixelField.tsx`'s own contract), and no second heading, row, or field primitive is authored. Keyboard focus stays visible everywhere it was: `globals.css` `:focus-visible { outline: 2px solid var(--px-cobalt); outline-offset: 3px }` plus explicit `focus-visible` rings on `.px-status-link` and `.px-status-button`, with no `outline: none` on interactive elements. Reduced motion is honoured the same way the existing islands are: `lib/pixel/field.ts` already no-ops its pointer heat and ambient drift (`prefersReducedMotion()` gate, `t += 0.006` only when allowed), and `status.css` adds a `prefers-reduced-motion: reduce` override that drops the button transition while keeping the colour change, matching the global `* { transition: none }` in `app/globals.css`.
+
+  The R3 status change touches only its fan-out ownership — `app/not-found.tsx`, `app/error.tsx`, `components/pixel/StatusField.tsx`, `app/styles/sections/status.css`, `lib/pixel/sources.ts`, and `docs/.changelog-fragments/r3-status.md` — and leaves the fenced app routes, package files, tests, and servers untouched. No new dependency or `Math.random` was introduced. The foreman owns the final `app/layout.tsx` root import for `status.css`; the stylesheet lands unimported until that pass. Verification for this follow-up is limited to source read-back per the assignment; no formatter, linter, build, server, or test was run.
+
+  Follow-up boundary fix: `app/not-found.tsx` remains server-rendered and now passes only the serializable `variant="not-found"` prop to the new client `components/pixel/StatusField.tsx`. The wrapper imports `PixelField`, `brokenGraph`, and `errorGraph` on the client side and selects the source by variant; `app/error.tsx` uses it with `variant="error"` while retaining its `'use client'` boundary, `{ error, reset }` contract, reset action, hero field class, and decorative canvas semantics. Both paths keep the explicit deterministic `seed={0}`. No drawing function crosses a Server/Client boundary.
+
+  Final integration imports `status.css` from the root layout. A final contrast pass also keeps `.px-status-copy a:hover` text on `var(--ink)` in both themes and uses cobalt only for the underline, removing the latent 3.58:1 dark-mode hover rule.
+
+- 2026-08-23 — Rebuilt all three Open Graph cards in the pixel language (spec 004, SC1-adjacent; `app/opengraph-image.tsx`, `app/work/[slug]/opengraph-image.tsx`, `app/writing/[slug]/opengraph-image.tsx`) and closed the half-converted state the work route was left in. Each card now carries the design's anatomy: an uppercase letter-spaced header row, a pixel band spanning the card's content gutters, a cobalt uppercase label, the title, and a ruled footer, all on `canvasBg(false)` with `inkAlpha` tones and `PALETTE` accents from `lib/pixel.ts`. No hex survives in any of the three files — every colour is `PALETTE.cobalt` / `PALETTE.amber` / `PALETTE.red` / `PALETTE.lime` / `PALETTE.navy` or a themed `inkAlpha` / `canvasBg` call. The parchment-era Georgia/Menlo chrome is gone from the home and writing cards; the work card's earlier partial conversion is brought to the same structure instead of left as the odd card out.
+
+  The pixel art is a deterministic band of sparse cells, one square per grid point with the site's 1px gutter, placed by the shared `h(x, y)` hash imported from `lib/pixel.ts` — never `Math.random`. The home card uses a fixed seed; the two slug routes seed off a small local string hash of the slug, so every case study and every post gets its own stable band and the same article renders the same art on every load. Satori constraints are honoured: the bands are inline SVG `<rect>` grids inside flex layout, no canvas and no `lib/pixel/field.ts` anywhere in the three routes. The work and writing cards read real frontmatter exactly as before — `index · tag`, `year`, `title`, `dek`, `role`, `stack` for case studies, `title`, `dek`, and `formatMonthYear(date)` for posts — and keep `generateStaticParams` on the same corpus (`getAllPosts('case-studies')`; `getAllPosts('writing', { includeUnlisted: true })`), `dynamicParams = false`, `notFound()` on a missing or draft-hidden post, and the 1200×630 / `image/png` / `nodejs` conventions. The writing card finally exports `runtime = 'nodejs'` that its header comment always claimed but never declared.
+
+  Home-card copy is grounded where the old card wasn't: the header reads "AI engineer · New Delhi" (llms.txt's role line and the hero note's "Six years shipping software · New Delhi"), the label is the hero's "Agent systems, retrieval, and operational AI", the headline is the site title verbatim with the cobalt `haven't` holding the parchment card's emphasis, and the footer keeps the five case studies from llms.txt and `hello@akaushik.org` from the contact block. Nothing about an employer, date, title, metric, or claim beyond those was introduced.
+
+  One constraint surfaced and is worth stating plainly: embedding a face for the cards was the plan, and the renderer refused. The satori build Next 16 bundles rejects woff2 outright — `Unsupported OpenType signature wOF2` — and every face this repo ships in `public/fonts/` is woff2, so no subset can be handed to it. The cards therefore embed no font bytes at all, and ImageResponse renders with its built-in default font — the no-`fonts` default this checkout's `@vercel/og` types document as Noto Sans Latin Regular (an earlier draft's claim that the fallback was Geist Regular was wrong: the types name Noto, and no site face is registered by name). That is the safer branch of the brief's "one subset/weight or no embedded font" and it keeps each card trivially under the 500 KB bundle ceiling; the header, label, and footer rows still get their uppercase, letter-spaced treatment, and the `fontFamily` stacks record the faces the design calls for even though Satori resolves them to its built-in default — the rows are label rows, not literal mono.
+
+  Verification was per-handler execution rather than a build: a focused vitest spec imports each route and pulls the `ImageResponse` body through `arrayBuffer()` to force the full satori raster, then asserts the PNG magic bytes and a 1200×630 IHDR. All five case studies and sample writing posts render; rendering the same slug twice yields byte-identical PNGs, which is the determinism contract; and the sample images were inspected visually for overlap or clipping. A review finding caught the band overflowing the card's right gutter — the 1200 px SVG sat inside 64 px padding on each side, so it was clipped at the canvas edge — and the fix sizes the band to the 1072 px between the gutters (cols derived from that band width), so the band, the label, the headline, and the ruled footer share the same symmetric gutters, with no hard-coded colour left to drift.
+
+- 2026-08-23 — Superseded the standalone `ArticleField` with the shared `RouteField` on every writing and case-study detail route, and removed the obsolete component and stylesheet. `RouteField` accepts only the actual route `slug` and renders one `strip`-preset `trellis` field seeded by `seedFrom(slug)`. The current frontmatter exposes no clean shared topic taxonomy, so one restrained source is used and no inert topic prop is retained; case-study reel selection remains separate and still depends only on available reel slugs.
+- 2026-08-23 — Preview hosts refuse crawlers. The design is going up on a
+  preview subdomain while it is unfinished, and an indexed preview is expensive
+  to undo: it is duplicate content, it competes with the real site for the same
+  queries, and de-indexing takes far longer than indexing did. So the guard is
+  derived from the request `Host` rather than from an environment variable —
+  anything that is not `akaushik.org` or `www.akaushik.org`, and is not
+  localhost, is a preview. An env var is a thing you can forget to set on a new
+  preview; a host is a thing you cannot.
+
+  `proxy.ts` adds `X-Robots-Tag: noindex, nofollow, noarchive` to every
+  matcher-covered response on a non-canonical host, threaded through
+  `buildResponseHeaders` so all four call sites carry it. `app/robots.txt` takes
+  the request and answers `Disallow: /` with no `Sitemap:` line on the same
+  hosts — a preview must not hand a crawler a map of itself — and sends
+  `Cache-Control: no-store` so a cached permissive body cannot outlive the
+  host. `lib/preview-guard.test.ts` pins the robots half with six tests; the
+  header half is middleware and is covered in e2e.
+
+  `scripts/visual-receipt.mjs` grows a `RECEIPT_URL` env override and a `page`
+  mode, so the same receipt harness can be pointed at a deployed preview
+  instead of only at localhost.
+
+- 2026-08-22 — Rebuilt `/work` and `/work/[slug]` in the pixel language (spec 004 T25, SC4) and closed the two accepted review findings against this unit. `app/work/page.tsx` reads the five case studies from `lib/content.ts` `getAllPosts('case-studies')` sorted by `frontmatter.index` (the strategic order the posts were written against, not filesystem order), so the visible copy is only what is in the MDX frontmatter (`title`, `dek`, `index`, `tag`, `year`, `role`, `stack`, `evidenceOf`). `SectionHead` provides the page head ("Selected work." / "2025 — present"), `MatterRow` renders each title/tag with the rotating `cobalt→amber→red→ink` tag tone from the home Work stack, and `RuledRow` renders the `Role` / `Stack` / `Evidence` spec under each entry — the same primitives the home sections use, no second header component. The index `dek` and spec rows keep the retrieval value the old `work-index-item-spec` provided, and every colour is `var(--bg)` / `var(--ink*)` / `var(--line)` / `var(--px-cobalt)` etc from `app/styles/tokens.css`; no hex, no `Math.random`, no invented fact.
+
+  `components/work/CaseStudyPage.tsx` drops the `work-detail` / `work-stub-*` parchment chrome. The header is `px-work-detail-meta` (mono `index · tag · year`) plus a ruled spec stack (`RuledRow` for `Role`, `Stack`, `Evidence` — last row adds the bottom rule), the media band keeps the `slug === 'neev'` → `HyperframesLoop kind="work-inline"` branch and the `Reel variant="card"` branch otherwise (ClusterBid still emits only its SVG, so no `/video/work/clusterbid` request), and the MDX body renders into `article.px-work-body`. That article is styled for the actual MDX output: `h1` (Cabinet 500, the MDX `#` title — the JSX header does not duplicate it), dek blockquote (`h1 + blockquote` as lede, `ink70`), `h2`/`h3`, paragraphs, lists, blockquotes, inline `code`, fenced `pre` (shiki `github-light`/`github-dark-dimmed` via `rehypePrettyCode` with `keepBackground:false`, so the `pre` background here is the only one), `hr`, `img` and tables, all at `max-width: var(--prose-max)` (70ch) with the `1.8` body leading from `design.md`. The five MDX files, their frontmatter, the `proxy.ts` rewrites, the `md` suffix routes, the `generateStaticParams`/`generateMetadata` shapes and the `/api/case-studies` + `llms-full.txt` corpus stay exactly as they were; only the presentation layer moved, and every URL keeps its path via `lib/content.ts`.
+
+  Review fix — reels were stacked and bypassed the motion gate: `components/work/reels.tsx` rendered a raw autoplaying `<video>` with an unconditional `<source>` after the SVG, and `app/styles/sections/work-detail.css` made both siblings `display:block` so VeriCite, Bluehost and curat.money showed two full media heights and `prefers-reduced-motion` / `data-motion="off"` still requested the MP4. The raw video is replaced with `MotionVideo` (`components/media/MotionVideo.tsx`) — `mp4`, `poster`, `width`/`height`, `slug` and `variant` are passed through, and the component's `useSyncExternalStore` subscription to `matchMedia('(prefers-reduced-motion: reduce)')` and the `html[data-motion]` MutationObserver gates the `<source>` so motion-disabled users never pay bytes. `work-detail.css` now makes both `.px-work-detail-reel` and `.px-work-inline-loop` `position: relative` with `overflow:hidden` and `border:1px solid var(--line)`; the SVG stays `display:block; width:100%; height:auto` to establish the aspect ratio, and the video is `position:absolute; inset:0; width:100%; height:100%; object-fit:cover`. That restores the SVG-floor + video-overlay contract for all four animated reels and for the Neev inline loop (which already used `MotionVideo` through `HyperframesLoop` but was also stacked).
+
+  Review fix — detail route retained the static parchment fallback: `app/work/[slug]/page.tsx` derived `CARD_SLUGS` from `CASE_STUDIES`, synthesized frontmatter from that static array, rendered `CaseStudyStub` (`work-stub-*` / `case-*`) and kept a dual `generateMetadata` branch. The fallback was dormant while all five MDX files existed, but a missing MDX file would have silently served stale static copy under the same URL. `getPost('case-studies', slug)` is now the sole content and metadata source — `generateStaticParams` returns only `getAllPosts('case-studies')` slugs, `generateMetadata` returns `{}` when no MDX is found, and the page component calls `notFound()` when `!mdx` or `isDraftHidden` and otherwise renders `CaseStudyPage` directly. The media branch uses a reel-slug guard exported from the same reels file (`isReelSlug` / `REEL_SLUGS`, a type-guard over `Object.keys(REELS)`, independent of `CASE_STUDIES`), so `CaseStudyPage` receives `slug` when the slug has a reel and `null` otherwise; MDX-only entries render without a reel rather than through a second template. `CASE_STUDIES` and `CaseStudyStub` imports, the synthetic frontmatter builder, and the stub render path are removed from this route — no `work-stub-*` / `case-*` / `placeholder-reel` class survives in owned runtime code.
+
+  `components/work/reels.tsx` also completes the palette cutover started in the first pass: the five SVG floors no longer reference `var(--accent*)` / `var(--ink-05)` from `_reference/portfolio/styles.css` (those variables have not existed since `app/styles/tokens.css` replaced the warm editorial tokens). Every fill/stroke is `var(--bg)`, `var(--line)`, `var(--ink40)` or `var(--px-cobalt)` (with `opacity` where the old `accent-40` called for a muted field) — all through `tokens.css`, no hex in the component. Class names are `px-reel-fallback` / `px-reel-video` and the video poster is set but the `preload="none"` and gated `<source>` keep the bytes off the wire until motion is allowed. `app/work/[slug]/opengraph-image.tsx` already follows the same palette (`background #FFFFFF` / `ink #111318`, `PALETTE.cobalt` from `lib/pixel.ts`, `JetBrains Mono` / `Cabinet Grotesk`) and its `generateStaticParams` already reads only `getAllPosts('case-studies')`; no change needed there beyond the shared token alignment.
+
+  `app/styles/sections/work-detail.css` is new and is owned here but is not imported from `app/layout.tsx` — the foreman owns the final root import per the fan-out brief, so the file lands without adding a second import chain that Turbopack could silently drop (the same 12-deep `@import` chain that once served 7.5 KB of 20 KB). The sheet holds only the index and detail shells, the mono back link (`px-work-back`, `ink40` → `cobalt` on hover, `focus-visible: 2px solid var(--px-cobalt)`), the `px-work-body` prose system, the overlaid reel/inline-loop containers, and the reduced-motion override. Every colour is `var(--bg)` / `var(--ink*)` / `var(--line)` / `var(--px-cobalt)` etc from `tokens.css`; keyboard focus stays visible everywhere it was, and `prefers-reduced-motion: reduce` disables the ambient hover indent without removing the hover colour change. No new dependency, no employer/date/title/metric invented, and `lib/mcp*`, `proxy.ts`, `app/llms*`, `app/api/**`, `app/sitemap.ts`, `app/robots.txt`, `public/.well-known/**`, `lib/content.ts`, `lib/structured-data.ts`, `lib/pixel/**` and the `md` route handlers are untouched as required.
+  Second review, three accepted findings, all within this unit and its shared primitives. (1) Heading hierarchy: the rebuilt `app/work/page.tsx` rendered `SectionHead` as its default `h2` and each `MatterRow` title as a `span.px-matter-title`, so the index started at `h2` and none of the five case studies was discoverable as a heading — a regression from the parchment template's `h1` + `h2` per study. `components/pixel/SectionHead.tsx` now takes `as` / `level` (`h1` | `h2`, default `h2` for section context) and renders a `HeadingTag` so callers choose the level without duplicating the `.px-head-title` styling; `components/pixel/RuledRow.tsx` `MatterRow` now takes `titleAs` / `level` (`span` | `h2` | `h3`, default `span`) and renders a `TitleTag` with `className="px-matter-title"` and `margin:0` when it is a heading, preserving the existing `.px-matter-title` size/weight/letter-spacing. `app/work/page.tsx` passes `as="h1"` to `SectionHead` ("Selected work.") and `titleAs="h2"` to each `MatterRow`, restoring `h1` → `h2` ×5 while keeping the `.px-head` / `.px-matter` visual treatment exactly as designed — screen-reader heading navigation matches the visual hierarchy again and the five titles remain linkable via the same `href`/`tagTone` path.
+
+  (2) Reduced-motion override targeted the wrong selectors: `app/styles/sections/work-detail.css` disabled `transition` on `.px-work-index-item` and `.px-work-index-title` and reset `.px-work-index-item:hover { padding-left:0 }`, but the hover indent and its `0.18s ease` live on `.px-matter` / `.px-matter-title` in `app/styles/sections/_shared.css` — the index item `li` itself has no transition, and `.px-work-index-title` is unused here. Users requesting `prefers-reduced-motion: reduce` still saw the 14px indent on hover. The media query now disables `transition` on `.px-work-index-item .px-matter` and `.px-work-index-item .px-matter-title` (plus `.px-work-body a`) and resets `.px-work-index-item .px-matter:hover { padding-left:0 }`, so the motion contract (spec 004 SC8) holds and the cobalt title colour on hover is unaffected.
+
+  (3) Live motion toggle did not stop an active reel: `components/media/MotionVideo.tsx` gated the `<source>` on `useSyncExternalStore` (`matchMedia('(prefers-reduced-motion: reduce)')` + `html[data-motion]` `MutationObserver`) so initial `data-motion="off"` never requested bytes, but once a reel was playing, removing the `<source>` child left `HTMLMediaElement.currentSrc` selected and playback looping — and the detail CSS had no visibility gate, so the video stayed composited over the SVG floor after the site toggle or an OS preference change. `MotionVideo` now retains a `useRef<HTMLVideoElement>` and a `useEffect` on `canLoadMotion`: when motion becomes disallowed it `pause()`s, `removeAttribute('src')` and `load()`s to reset the media resource, and when motion is re-enabled it `load()`s and `play()`s (muted autoplay, catch swallowed). `app/styles/sections/work-detail.css` also hides the owned videos immediately — `html[data-motion="off"] .px-work-detail-reel video, html[data-motion="off"] .px-work-inline-loop video { display:none }` and the same selectors inside `@media (prefers-reduced-motion: reduce)` — so the SVG floor is visible while teardown completes, without adding a CSS-only fallback that would re-introduce the stacked-height bug. No palette change, no `Math.random`, no new dependency; `ClusterBid` still emits only its SVG, `lib/pixel/**` and the `md` handlers remain untouched, and focus visibility is unchanged.
+
+  Final remediation supersedes the earlier colour-state wording in this fragment. `Reel` now returns the ClusterBid SVG fallback before it resolves an asset path or instantiates `MotionVideo`; ClusterBid has no files under `public/video/work`, so the rendered markup contains neither a `<video>` nor a `/video/work/clusterbid` URL, while the four case studies with real media keep the existing motion gate. `components/work/reels.test.tsx` renders that branch to static markup and guards all three parts of the contract: the SVG remains, the video is absent, and no ClusterBid asset path can reach the browser.
+
+  The same pass removes low-contrast pixel tones from work-page text without flattening the pixel language. The 11px back links, indices, years, meta, `SectionHead` labels and `RuledRow` tags now use `var(--ink60)`; the index dek also moves from `ink55` to `ink60`, and list markers follow it. Against the light and dark token backgrounds, `ink60` computes to 4.85:1 and 6.47:1 respectively. Matter-row titles and tags stay `var(--ink)` even on hover, with the cobalt, amber, red and ink rotation carried by a 2px underline instead of the glyph colour. Detail indices use the same ink-plus-cobalt-underline treatment. MDX links and the back-link hover state also keep their text on `var(--ink)`: cobalt is the underline or focus ring, not the text. Focus remains visible, and the existing reduced-motion rule still removes the hover-indent and link transition rather than removing an interaction state.
+
+- 2026-08-22 — Added the per-article pixel header `components/pixel/ArticleField.tsx` and its standalone stylesheet `app/styles/sections/article-field.css`. The component is the thin strip that sits above the article chrome on every writing post: a `strip`-preset field (`lib/pixel/field.ts` `mountField` with `preset: 'strip'` — cell 5, gain 1.15, shapeNoise 0.3, scatter 0.6) whose seed comes from `lib/pixel/sources.ts` `seedFrom(slug)`, so the same slug produces the same texture forever and no per-post art has to be authored. That determinism is the whole point — the field's weather is hash-driven through `h(x, y)` and the per-instance `seed`, never `Math.random`, so the art is identical on every load and across themes, with the engine's `canvasBg(dark)` handling the light/dark swap.
+
+  Topic handling is deliberate: the brief asks for an existing source picked by topic only if frontmatter topics map cleanly, otherwise one restrained source varied only by the per-slug seed. `lib/content.ts` `WritingFrontmatter` carries no topic field at all and none of the files under `content/writing/*.mdx` set one, so a per-topic map would be invented data. The restrained answer is a single lattice — `trellis` — which reads as texture at strip height, survives the 5px cell without losing its structure, and leaves the hero exhibits (`agentGraph`, `prompt`, `wordmark('AK.')`) where they belong. If topics are added later, the branch is one line where `trellis` is passed to `mountField`.
+
+  The React surface is only a ref, an effect, and a disposer, matching `components/pixel/PixelField.tsx` and every other island in `components/pixel/`: the field owns its animation frame, its resize listener, and its theme subscription via `lib/pixel-theme.ts` and hands back a teardown, so `React.StrictMode`'s double-mount in dev leaves one loop and no leaked listeners. The canvas is decorative and never focusable — `aria-hidden="true"`, no `tabIndex`, no role — with accessible semantics left to the surrounding heading and byline, and the engine already no-ops its ambient drift under `prefers-reduced-motion`. No hard-coded colours: the stylesheet only reserves the rect the engine measures (`display: block; width: 100%; height: clamp(84px, 12vh, 136px)`) and every colour the canvas draws comes from `app/styles/tokens.css` or `lib/pixel.ts`. `app/writing/**` and `app/layout.tsx` are untouched — U2 integrates `<ArticleField slug={slug} topic={...} />` into the writing detail template and the foreman imports `article-field.css` from the layout alongside the other section styles.
+
+- 2026-08-22 — Dead-code sweep for the pixel transplant (spec 004 T30, SC9). Deleted the parchment-era components the re-skin orphaned: `components/sections/Contact.tsx` (contact now lives in the footer, and the `#contact` anchor moved with it), the Wanderer companion (`components/scene/Wanderer.tsx`, `WandererCrane.tsx`, `WandererCraneClient.tsx`, `Wanderer.module.css`, and `WandererCrane.test.ts`), the hero `AgentGraph` pair (`AgentGraph.tsx` and `AgentGraphClient.tsx`), `StaticSVGScene`, `components/dev/TweakBridge.tsx`, and the old `components/site/ThemeToggle.tsx`, superseded by `components/pixel/ThemeSwitch.tsx`. Removed `three` and `@types/three` from `package.json`: the three.js runtime was the last measurable piece of the ~141 KB scene chunk `docs/BUNDLE_BUDGET.md` attributed to `three` plus AgentGraph plus Wanderer, and nothing in the new design imports it. Each target was grepped for its exported symbol, its import path, and its string literals before deletion; the only surviving mentions are comments and two inert hooks nothing consumes any more, the `data-companion-pose="about"` attribute on the profile section and the defensive `dl-tweaks-v1` read in `public/init-theme.js`, which now finds no writer and falls through to the same defaults. The unit suite drops from 178 to 172 tests, because the six pose-arbitration and motion-preference tests shipped with their component, and stays green; `pnpm typecheck` and `pnpm lint` are clean. The Playwright specs that asserted on `#companion` and `.scene-frame` are rewritten against the new markup in the same branch.
+
+- 2026-08-22 — Recorded ADR-0018 (`docs/adr/0018-retrofit-nextjs-on-cloudflare.md`), deciding to retrofit Next.js 16 and deploy via `@opennextjs/cloudflare` to Cloudflare Workers rather than rewriting the site in Astro, superseding only the framework half of ADR-0001 (`docs/adr/0001-nextjs-over-sveltekit.md`). The pixel design was authored as Astro with vanilla-TS canvas islands, so an Astro rewrite was the obvious first instinct and was investigated before any presentation code was ported; the spec also moves hosting from Vercel to Workers alongside `evals.akaushik.org` on the same account, which couples the framework and hosting decisions. The load-bearing fact is that `proxy.ts` is Next 16 edge middleware carrying the whole agent-readiness contract — RFC 8288 `Link` headers on every matcher-covered response, both Markdown content-negotiation patterns (suffix and `Accept: text/markdown`), and the ADR-0014 per-request nonce CSP with `strict-dynamic` — and OpenNext supports edge middleware, including the Turbopack builds, ISR, and image optimization, with Next 16.2's stable Adapter API built with Cloudflare. Under Astro, `proxy.ts` would have to be rebuilt as Worker logic and the nonce CSP would need an `HTMLRewriter` pass over every HTML response or a move to hash-based CSP, which ADR-0014 already rejected for the `self.__next_f.push(...)` streaming scripts. The design layer costs the same on either path — the heatfield, marquee, skyline, and method-band engines are `lib/scenes/*` mounts behind thin React wrappers and the art is one drawing function per exhibit — so the difference is entirely in what is put at risk; retrofitting keeps roughly 2,000 lines of machinery and 3,950 lines of tests exactly where they are, which is what keeps the thesis provable. Deployment is not claimed complete — the P1 preview-Worker spike that verifies `next/og` image routes, the nonce CSP, and both negotiation patterns through the adapter (tasks T04–T08) remains blocked pending an operator-minted Workers-scoped API token, and the Vercel project stays paused not deleted for 14 days after the eventual cutover.
+
+- 2026-08-22 — Added the pixel favicon as `app/icon.tsx`, a 16×16 SVG route that serves the hero's shell-prompt exhibit reduced to the cell grid, in place of the parchment-era mark (spec 004 T23, SC2). The route is the Next 16 metadata-file convention: the framework reads the `size` and `contentType` exports, emits `<link rel="icon" type="image/svg+xml" sizes="16x16">` with a content hash, and serves the route's response as the icon, so pages carry the new mark without any hand-written link tag. That is why it is a route rather than a rewrite of `public/favicon.svg`: nothing in the repo references that file (there is no `icons` metadata anywhere) and a file in `public/` is never auto-linked, so editing it would change nothing a browser loads. The legacy `public/favicon.ico` is untouched; it still answers direct `/favicon.ico` fetches and the production smoke monitor's "legacy favicon" contract, which is not this change's to break.
+
+  The geometry is the `prompt` exhibit from `lib/pixel/sources.ts`, not a new drawing: the chevron's square-cap stroke and the caret's fill rect, re-rasterised into 16 cells by 8× supersampling at a 0.5 coverage threshold, one `<rect>` per cell with `shape-rendering="crispEdges"`, the same representation the design source used for its gavel favicon. The hero frame pads its exhibits generously, and that padding swallows a mark at 16px, so the geometry is scaled 1.5× and centred before supersampling; the result is a two-cell-thick chevron with a solid block caret beside it. No randomness anywhere: the cells are a closed set, byte-identical on every load, which is the spec's determinism constraint applied to the tab bar.
+
+  Colours come from the palette constants in `lib/pixel.ts`: chevron `PALETTE.cobalt`, caret `PALETTE.amber`, both present in the hero field's streak palette (`lib/pixel/field.ts`). A favicon cannot follow `html[data-mode]`, so it is static by necessity, and both colours read on light and dark chrome. The route returns a plain SVG `Response` rather than `next/og`'s `ImageResponse`: at 16×16 the satori rasteriser is the wrong tool, and this keeps the new file off the OpenNext/`next/og` surface the plan flags as needing a spike before anything new depends on it.
+
+  Verified by rendering the SVG in Chrome at native size and at 8× pixelated against white, dark and parchment chrome — the chevron keeps its point and the caret stays solid on all three — and by checking the route's output byte-for-byte against the supersampled geometry it claims to serve; the file lints clean and the surrounding machinery (`proxy.ts`, the legacy `.ico` path, the agent surface) is untouched.
+- 2026-08-22 — The hero is a network training on repeat. Four phases an epoch —
+  forward pass, loss, backward pass, settle — and the backward pass is
+  deliberately a different picture rather than the forward sweep mirrored: it
+  travels the other way, it emphasises the edges where the forward pass
+  emphasises the nodes, and it leaves the weights visibly changed behind it.
+  Weights come from the shared hash keyed by epoch, so the network learns the
+  same way on every load, and their magnitudes converge as the epoch count rises
+  before wrapping — which is what makes it read as training rather than as noise
+  being reshuffled. Epoch ticks along the bottom say it is a loop.
+
+  This needed a new `animate` option on the field engine: sources previously
+  rebuilt only on a stage change, so nothing could animate its own geometry off
+  the clock. It rebuilds every Nth frame and is off by default, because a
+  rebuild is a full offscreen redraw plus a `getImageData` over the whole grid.
+  It refuses to run alongside the swing spring — both own the same buffer.
+
+  Two things that had to be tuned by looking rather than by reasoning. The
+  engine's 8-unit glow, which gives the chunky hero silhouettes their bleed, is
+  eight *cells* at this size and welded every edge into its neighbours until the
+  network was one blob; the source drops it to 1.5. And dropping weak edges to
+  thin the graph left nodes floating unattached, so every node now keeps its
+  strongest incoming edge regardless of threshold — a disconnected node is not a
+  picture of a network. Hero cell size drops from 6.5 to 5 for the extra
+  resolution the subject needs.
+- 2026-08-22 — Added the Cloudflare Wallet link to the footer. The handle is a
+  subdomain rather than a path: `cloudflare.pay/kau` and `cloudflare.pay/@kau`
+  both return 404, and `kau.cloudflare.pay` returns 200. Verified before
+  shipping, because a dead payment link on a professional site is worse than no
+  link at all.
+- 2026-08-22 — The footer marquee carries five slogans instead of one, and the
+  contribution chart became interrogable. The marquee rasterises every slogan
+  into a single ribbon separated by middots, so cycling is just the scroll
+  arriving at the next one — there is no swap, no cross-fade and no state
+  machine, because a hard swap mid-scroll jumps the glyphs sideways. Each slogan
+  records which raster columns belong to it and takes its own dominant accent, so
+  the colour follows the words rather than the viewport. Hovering slows the
+  ribbon to a crawl so a line can be read; clicking advances to the next
+  slogan's start. Both stop under `prefers-reduced-motion`.
+
+  The GitHub sparkline is replaced by a taller field where every week is a real
+  focusable column: hovering or arrowing through it dims the rest and reads out
+  that week's count. It is built from CSS grid cells rather than through the
+  canvas field engine, because a canvas cannot say which week the pointer is
+  over without hit-testing maths and cannot be reached by a keyboard at all —
+  and this is the one piece of art on the site that carries data. `stats.json`
+  holds **weekly** totals, not daily, so this is not and cannot be a
+  GitHub-style day calendar; each column is a week, scaled against the peak, and
+  any week with work in it keeps at least one cell rather than rounding away to
+  a claim that nothing happened.
+
+  Added the X profile to the footer, matching the `twitter:creator` handle
+  already declared in the root metadata.
+- 2026-08-22 — The About portrait is now a toggle: pixel field by default, the
+  photograph on click, cross-fading between them. Both layers stay mounted and
+  the field keeps running underneath, because tearing it down on each toggle
+  would re-run the grid build and the luminance stretch for something that
+  should feel instant. It is a real `<button>` with `aria-pressed` and a label
+  that states which view is showing, so the swap is available to keyboard and
+  screen-reader users rather than being a mouse-only trick; if the image fails
+  to load there is nothing to toggle to and it collapses to a plain labelled
+  canvas rather than a button that does nothing.
+
+  Restored the CTA hover effect from the reference design. Any element carrying
+  `data-btnfx` gets a band of noise pixels inside its padding while the pointer
+  is over it, re-hashing every 90ms on a 6px cell, with the middle left clear so
+  the label stays readable. It draws into the cursor overlay rather than into the
+  button — the overlay is already above everything at the right z-index, and
+  painting into the button would mean a second canvas per CTA. The footer's
+  "Get in touch" already carried the attribute from the port; only the engine
+  side was missing.
+- 2026-08-22 — Mounted the pixel cursor overlay in the root layout and wired
+  its stylesheet. The engine itself arrived on `feat/pixel-cursor`; this is the
+  integration. It is mounted last in `<body>` and is decorative in the strict
+  sense: gated to `(pointer: fine)`, disabled entirely under
+  `prefers-reduced-motion`, and `pointer-events: none`, so it can neither eat a
+  click nor suppress a focus ring. The engine was deliberately decoupled from
+  the method icons it was fused to in gaurijha.com's original — rather than
+  drawing icon art itself it dispatches `pixel:cursor-near` and
+  `pixel:cursor-leave` against `[data-pixel-hover]`, which is what let the
+  method section be redesigned as a process pipeline independently.
+- 2026-08-22 — Split the final canvas port at the ownership boundary the new
+  site needs: `lib/scenes/cursor.ts` keeps gaurijha.com's proximity ordering,
+  target-pointing lime arrow and two-layer velocity trail, while method art is
+  no longer drawn by the cursor pass. Elements carrying `data-pixel-hover`
+  instead receive bubbling `pixel:cursor-near` events with border distance and
+  a symmetric 0..1 dissolve ramp, followed by `pixel:cursor-leave` when that
+  ramp clears. The law-specific heart and gavel are replaced by a blinking
+  terminal block in the page gutters and an amber Return keycap that drops onto
+  its one-cell wall for 150 ms with four red spark cells. The client wrapper and
+  new cursor stylesheet keep the fixed canvas decorative and click-transparent;
+  fine-pointer, reduced-motion and site motion gates restore the native cursor,
+  and the React disposer cancels its frame, listeners and theme subscription.
+- 2026-08-23 — Rebuilt the writing index and all published article routes in the pixel language, with grounded short answers and FAQs, stable Article/FAQ structured data, and read-next recommendations that never expose unlisted posts.
+- 2026-08-23 — Rebuilt `/api/docs` as a ruled pixel reference while preserving the OpenAPI and MCP response contracts, including a deterministic client-island field and accessible, case-faithful contract labels.
+- 2026-08-23 — Added custom 404 and error routes with deterministic broken/overdriven graph fields, legal Server/Client boundaries, retry and home actions, and token-backed status styling.
+- 2026-08-23 — Rebuilt the home, work, and writing Open Graph images as deterministic 1200×630 pixel cards using Satori-safe inline SVG grids and real route frontmatter.
+- 2026-08-23 — Replaced the article-only field with one slug-seeded `RouteField` shared by every writing and case-study detail route, using the restrained strip preset without inventing a topic taxonomy.
+- 2026-08-23 — Wired the work detail, writing detail, API docs, and status section styles into the root layout so each route ships its pixel presentation.
+- 2026-08-22 — Generalised the hero heatfield into a reusable pixel field, and
+  made it the engine behind every piece of live art on the site. `lib/pixel/field.ts`
+  takes a list of sources — silhouettes drawn into an offscreen buffer at cell
+  resolution — and everything else it inherited from the original stays shared:
+  the streak fold, the ambient drift, the heat decay, the five-stop ramp, the
+  cell rule. Presets are expressed as a target cell size rather than a column
+  count, because a column count only makes sense at hero width: the same 150
+  columns across a 135px band leave thirteen rows, and a glyph with any internal
+  detail disintegrates. `gain`, `scatter` and `shapeNoise` scale with the preset
+  for the same reason — the ambient scatter that is the hero's whole atmosphere
+  is just noise on top of a 30-row glyph.
+
+  The method section is now a process pipeline rather than an abstract
+  four-colour band: four stage glyphs — a re-read record, a decision with one
+  branch taken and one left, modules landing, and a gate with a passing trace —
+  joined by a conduit with packets moving along it, and hovering a step swells
+  that stage in the band. The band and the tiles draw from one glyph library, so
+  there is no second set of art to keep in sync.
+
+  `fromImage` converts a photograph into a field: luminance becomes alpha, and
+  the site's ramp and drift apply from there. It stretches the image's own
+  luminance range across the ramp first, because a photograph with a narrow
+  range — most photographs — otherwise lands mid-ramp everywhere and renders as
+  a flat slab of one colour. The About portrait now uses it.
+
+  The hero's triple-click secret entrance is removed. It opened a hidden wing
+  this site does not have, so what shipped was a dead gesture that swallowed the
+  exhibit cycle and fired an event with nothing listening.
+- 2026-08-22 — Re-drew the law-specific pixel art for this site. The hero's
+  four exhibits are now an agent graph, a shell prompt, a trellis, and the "AK."
+  wordmark, replacing gaurijha.com's scales, section sign, gavel and "GJ."; the
+  graph keeps the scales' mechanic exactly, swinging on the same spring, and its
+  root node still occupies the pivot zone the pointerdown handler treats as the
+  secret entrance. The footer skyline is a server rack, a layered stack and a
+  trellis panel in place of the Supreme Court, India Gate and a pedimented
+  courthouse, and the marquee reads "it has to work on a tuesday" rather than
+  "see you in court". Only the drawing routines changed — the heatfield and
+  skyline engines, their constants, and the cell rule are untouched, which is
+  what made the art swappable in one function each. Section stylesheets are
+  imported from `app/layout.tsx` rather than chained through `@import` in
+  `globals.css`, because the chain silently dropped every file after the first:
+  20 KB of section CSS on disk served as 7.5 KB, with the nav and the method
+  grid among the rules lost.
+- 2026-08-22 — Ported the method band, marquee, Delhi legal skyline, pixel
+  band, and theme switch canvas engines from gaurijha.com's `public-site-v1`
+  tag into `lib/scenes/`, with their React wrappers in `components/pixel/`.
+  Each mount now owns its passed canvas and returns a teardown because React
+  remounts would otherwise leak animation-frame loops, listeners, and theme
+  subscriptions. Theme state now reads `html[data-mode]` through the shared
+  MutationObserver rather than the source site's setter because
+  `public/init-theme.js` and the existing theme toggle already write that
+  attribute; the canvas switch persists the same `abhishek.portfolio.mode`
+  key. The engine constants and law-themed art remained unchanged in this
+  faithful port; the art redraw remains separate work.
+- 2026-08-22 — Replaced the parchment-on-ink design with the pixel language
+  built for gaurijha.com, and rebuilt the home page on it. Tokens, the four
+  self-hosted faces, and the reset move to `app/styles/`; section styles split
+  one file per section under `app/styles/sections/` so rebuilding a section is a
+  two-file change and two sections never contend for the same stylesheet.
+  Tailwind was removed outright — the previous `globals.css` carried an
+  `@import 'tailwindcss'` and an `@theme` bridge, but no component in `app/` or
+  `components/` used a single utility class, so the bridge existed and nothing
+  crossed it. The eight-section scroll is rebuilt on shared row primitives
+  (`SectionHead`, `RuledRow`, `MatterRow`); contact folds into the footer as the
+  design intends, so the standalone Contact section is unmounted. The mono face
+  is JetBrains Mono Nerd Font, subset by `scripts/build-fonts.sh` to 238 glyphs
+  and 13.5 KB a weight rather than the 190 KB the unsubset Nerd Font ships,
+  because roughly 900 of its glyphs are Font Awesome and devicon outlines
+  nothing here draws. The hero's three.js `AgentGraph` is replaced by the pixel
+  heatfield, dropping `three` from the client bundle. Content, the MDX pipeline,
+  the MCP server, `proxy.ts`, and the whole agent-readiness surface are
+  untouched by this change: it is a presentation-layer replacement, and the
+  contract in `docs/AGENT_READINESS.md` still holds. `vitest.config.ts` now
+  excludes `.trellis/**`, whose runtime symlink pointed at the shared immutable
+  Trellis release and caused the include glob to run the toolchain's own hook
+  tests as this project's.
 - 2026-08-13 — Closed the unblocked entries of the phase-2 AEO spec. The
   63 million MSME figure now carries its source (National Sample Survey Office,
   2017) in both the homepage About paragraph and the Neev case study, with the

@@ -1,0 +1,76 @@
+/* Self-hosted fonts. Sources: Fontshare (Cabinet Grotesk, General Sans),
+   Google Fonts (IBM Plex Mono). Files live in public/fonts/.
+
+   These replace the next/font/google trio (Newsreader / Plus Jakarta / JetBrains
+   Mono) that the previous design used. Self-hosting is deliberate: the pixel
+   canvases sample glyphs from Cabinet Grotesk at runtime (see the marquee and
+   the wordmark exhibit), so the face has to be loadable and measurable, not
+   swapped in behind a next/font hash. */
+
+/* ---- Cabinet Grotesk — headings. 800 is reserved for the hero wordmark. ---- */
+@font-face {
+  font-family: 'Cabinet Grotesk';
+  src: url('/fonts/cabinet-grotesk-500.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Cabinet Grotesk';
+  src: url('/fonts/cabinet-grotesk-700.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Cabinet Grotesk';
+  src: url('/fonts/cabinet-grotesk-800.woff2') format('woff2');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---- General Sans — body and UI. ---- */
+@font-face {
+  font-family: 'General Sans';
+  src: url('/fonts/general-sans-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'General Sans';
+  src: url('/fonts/general-sans-500.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'General Sans';
+  src: url('/fonts/general-sans-600.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---- JetBrains Mono Nerd Font — labels, tags, bylines, code. ----
+   Subset from the locally-installed JetBrainsMonoNerdFont TTFs to latin +
+   punctuation + arrows + two powerline glyphs: 238 glyphs, 13.5 KB per weight.
+   The full Nerd Font is 190 KB a weight because the Font Awesome and devicon
+   ranges carry ~900 complex outlines, and nothing on this site draws them. If a
+   stack tag ever wants a devicon, widen the range in scripts/build-fonts.sh
+   rather than shipping the unsubset file. */
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/jetbrains-mono-nerd-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/jetbrains-mono-nerd-500.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}

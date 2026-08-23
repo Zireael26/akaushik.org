@@ -18,6 +18,15 @@ export default defineConfig({
       '**/e2e/**',
       '**/*.spec.{ts,tsx}',
       '**/.claude/worktrees/**',
+      // `.trellis/runtime` is a symlink to the shared immutable Trellis release
+      // (~/.trellis/releases/<version>/payload), added by the portable-manifest
+      // migration in 4585ec6. The include glob follows it and runs the
+      // toolchain's own hook tests as if they were this project's — they fail
+      // here because the hook subprocesses don't find `jq` on their PATH, and
+      // the suite reports zero tests. Those tests belong to the release, not to
+      // akaushik.org, and nothing in this repo can fix them: the payload is
+      // immutable and shared by every attached project.
+      '**/.trellis/**',
     ],
     coverage: {
       provider: 'v8',
@@ -35,6 +44,40 @@ export default defineConfig({
         'lib/services.ts',
         'lib/stats.ts',
         'lib/mdx-options.ts',
+
+        // Generated. `lib/mdx/generated/**` is emitted by
+        // scripts/build-mdx-modules.ts on every prebuild/pretest and is not
+        // checked in; measuring coverage of a file this repo does not author
+        // says nothing about this repo.
+        'lib/mdx/generated/**',
+
+        // The canvas mount engines. Each one is `mount(canvas) => dispose`:
+        // it reads element geometry and devicePixelRatio, attaches listeners,
+        // opens a requestAnimationFrame loop and paints. There is no return
+        // value to assert on and no seam that is not the DOM itself, so a
+        // vitest "test" of these would be a test of a jsdom canvas stub —
+        // green regardless of whether the real thing draws anything.
+        //
+        // They are covered, and by the only thing that can cover them:
+        // e2e/canvas.spec.ts asserts each field mounts and is sized by the
+        // engine rather than left at the 300x150 HTML default, and
+        // e2e/reduced-motion.spec.ts samples the canvas twice a second apart
+        // to prove it moves when motion is allowed and holds still when it is
+        // not. That is a stronger claim than any unit test here could make.
+        //
+        // Deliberately narrow: this excludes the mount engines and NOT the
+        // pure drawing functions beside them. `lib/pixel/sources.ts`,
+        // `stages.ts` and `neural.ts` are ordinary functions over a 2D context
+        // and stay in scope — they were the reason coverage failed, and the fix
+        // was `lib/pixel/sources.test.ts`, not a wider exclusion.
+        'lib/scenes/**',
+        'lib/pixel/field.ts',
+
+        // A test helper, not production code. `stub-context.ts` lives in lib/
+        // rather than beside one test because three test files need it, and
+        // measuring its coverage would report on the instrument rather than on
+        // what it measures.
+        'lib/pixel/stub-context.ts',
       ],
       reporter: ['text', 'html'],
       thresholds: {

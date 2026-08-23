@@ -1,7 +1,4 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import {
   getPost,
   getPostSlugs,
@@ -86,22 +83,23 @@ describe('content — getPost', () => {
     );
   });
 
+  // Content is inlined by `scripts/build-content-bundle.ts` rather than read
+  // from disk, so a fixture is a fake bundle rather than a temp directory. The
+  // requirement is unchanged: a quoted inline-array value keeps its commas.
   it('keeps commas inside quoted inline-array values', async () => {
-    const root = mkdtempSync(join(tmpdir(), 'akaushik-content-'));
-    const caseStudies = join(root, 'content', 'case-studies');
-    mkdirSync(caseStudies, { recursive: true });
-    writeFileSync(join(caseStudies, 'inline-array.mdx'), '---\nstack: ["a, b", c]\n---\nBody\n');
-
-    const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(root);
     vi.resetModules();
+    vi.doMock('./content-bundle.generated', () => ({
+      CONTENT_BUNDLE: {
+        'case-studies/inline-array': '---\nstack: ["a, b", c]\n---\nBody\n',
+      },
+    }));
     try {
       const { getPost: getIsolatedPost } = await import('./content');
       const post = getIsolatedPost('case-studies', 'inline-array');
       expect(post?.frontmatter.stack).toEqual(['a, b', 'c']);
     } finally {
-      cwdSpy.mockRestore();
+      vi.doUnmock('./content-bundle.generated');
       vi.resetModules();
-      rmSync(root, { recursive: true, force: true });
     }
   });
 

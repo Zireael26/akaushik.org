@@ -1,0 +1,110 @@
+/* open — section styles. Owned by the open section component.
+
+   The layout is entirely shared: .px-section for rhythm, .px-split for the
+   split-editorial columns, .px-row for the repository rows. Only the two things
+   specific to this section live here: the weekly-contribution cell grid and the
+   mono provenance line under the rows.
+
+   One deliberate departure from the sections it sits between. The prototype's
+   split sections open on prose; this one opens on the cell grid, above the
+   intro. The grid is the section's evidence, and burying it under a paragraph
+   would put the copy ahead of the receipt. */
+
+/* height:auto with the intrinsic viewBox ratio keeps the cells square at every
+   width. Stretching to fill would turn them into rectangles, which is the one
+   thing the pixel language does not permit. */
+/* "AUG 2026" does not fit the shared 56px tag column. */
+.px-open .px-row-tag {
+  flex: 0 0 82px;
+}
+
+.px-open-meta {
+  margin: 18px 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink40);
+}
+
+.px-open-meta a {
+  color: inherit;
+}
+
+/* ---------- the contribution field ---------- */
+/* Larger than the sparkline it replaces, and interrogable: every week is a real
+   focusable column, so the chart works with a keyboard and reads to a screen
+   reader. Columns size themselves off the container so 53 weeks always span it. */
+.px-open-contrib {
+  margin: 0 0 26px;
+  /* Fifty-three weekly columns have a hard floor: each cell is square with a
+     7px minimum, so the grid cannot compress below ~477px without the weeks
+     becoming too small to hover or read. On a 375px phone that dragged the
+     whole document sideways — measured 496px of scroll width against a 375px
+     viewport. The chart scrolls inside itself now instead; the page never
+     does. Shrinking the cells was the other option and it is the wrong one:
+     this chart is meant to be bigger than the sparkline it replaced, not
+     smaller than a phone. */
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  /* Room for the focus ring, which sits 6px outside the grid and would
+     otherwise be clipped by the scroll container. */
+  padding: 8px 0;
+}
+
+.px-contrib {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 2px;
+  align-items: end;
+  padding: 4px 0;
+  /* The floor above, stated. Wider containers still spread the columns to fill,
+     because the columns are 1fr. */
+  min-width: 480px;
+}
+
+.px-contrib:focus-visible {
+  outline: 2px solid var(--px-cobalt);
+  outline-offset: 6px;
+}
+
+.px-contrib-col {
+  display: grid;
+  gap: 2px;
+  opacity: 0.92;
+  transition: opacity 0.14s ease;
+}
+
+/* Dim the rest rather than brightening one — the palette is already at full
+   saturation, so there is no brighter to go. */
+.px-contrib:hover .px-contrib-col,
+.px-contrib:focus-within .px-contrib-col {
+  opacity: 0.34;
+}
+
+.px-contrib:hover .px-contrib-col.is-active,
+.px-contrib:focus-within .px-contrib-col.is-active {
+  opacity: 1;
+}
+
+.px-contrib-cell {
+  display: block;
+  aspect-ratio: 1;
+  min-height: 7px;
+  background: transparent;
+}
+
+.px-contrib-readout {
+  margin: 0 0 22px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink45);
+}
+
+.px-contrib-readout strong {
+  font-weight: 400;
+  color: var(--ink);
+}

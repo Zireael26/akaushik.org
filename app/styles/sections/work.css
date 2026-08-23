@@ -1,0 +1,26 @@
+/* work — section styles. Owned by the work section component.
+
+   The stack is entirely shared: .px-section for rhythm and gutters,
+   .px-head--block for the head, .px-matter for the rows. Only the two things
+   that are specific to this section's content live here. */
+
+/* Case-study tags are authored in sentence case in the MDX frontmatter
+   ("Production scale"), because that is also how they read on the /work cards.
+   Every mono tag slot in this design is uppercase, so the case change happens
+   here rather than in content/. */
+.px-work .px-matter-tag {
+  text-transform: uppercase;
+  text-align: right;
+}
+
+/* The rows are anchors, so the hover indent is a link affordance. Reduced
+   motion keeps the colour change and drops the movement. */
+@media (prefers-reduced-motion: reduce) {
+  .px-work .px-matter {
+    transition: color 0.18s ease;
+  }
+
+  .px-work .px-matter:hover {
+    padding-left: 0;
+  }
+}

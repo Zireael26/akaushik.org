@@ -1,5 +1,4 @@
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
-import { join, resolve, sep } from 'node:path';
+import { CONTENT_BUNDLE } from './content-bundle.generated';
 import { getReadingTime } from './reading-time';
 
 export type ContentType = 'case-studies' | 'writing';
@@ -35,10 +34,22 @@ export type Post<T extends ContentType> = {
   content: string;
 };
 
-const CONTENT_ROOT = join(process.cwd(), 'content');
-
-function contentDir(type: ContentType): string {
-  return join(CONTENT_ROOT, type);
+/**
+ * Content comes from a generated module, not from disk.
+ *
+ * This used to `readFileSync` out of `content/` at request time, which is fine
+ * on a Node server and impossible on Cloudflare Workers — `node:fs` there is an
+ * empty per-request scratch space, so every content page 404'd. The pages
+ * cannot be prerendered around the problem either: `app/layout.tsx` reads
+ * `headers()` for the CSP nonce (ADR-0014), which makes the whole route tree
+ * dynamic. `scripts/build-content-bundle.ts` inlines the MDX instead, and runs
+ * in `prebuild`.
+ *
+ * The path-traversal guard that used to live in `getPost` is gone with the
+ * filesystem: a key either is in the bundle or is not, and `..` is not a key.
+ */
+function bundleKey(type: ContentType, slug: string): string {
+  return `${type}/${slug}`;
 }
 
 // Minimal YAML-front-matter parser. Supports the scalar + array shapes our
@@ -161,11 +172,10 @@ export function isDraftHidden(fm: { draft?: boolean }): boolean {
 }
 
 export function getPostSlugs(type: ContentType): string[] {
-  const dir = contentDir(type);
-  if (!existsSync(dir)) return [];
-  return readdirSync(dir)
-    .filter((name) => name.endsWith('.mdx'))
-    .map((name) => name.replace(/\.mdx$/, ''))
+  const prefix = `${type}/`;
+  return Object.keys(CONTENT_BUNDLE)
+    .filter((key) => key.startsWith(prefix))
+    .map((key) => key.slice(prefix.length))
     .sort();
 }
 
@@ -174,11 +184,8 @@ export function getPost<T extends ContentType>(
   slug: string,
 ): Post<T> | null {
   if (!/^[a-z0-9_-]+$/.test(slug)) return null;
-  const dir = resolve(contentDir(type));
-  const path = resolve(join(dir, `${slug}.mdx`));
-  if (!path.startsWith(dir + sep)) return null;
-  if (!existsSync(path)) return null;
-  const raw = readFileSync(path, 'utf8');
+  const raw = CONTENT_BUNDLE[bundleKey(type, slug)];
+  if (raw === undefined) return null;
   const { data, content } = parseFrontmatter(raw);
   return {
     slug,

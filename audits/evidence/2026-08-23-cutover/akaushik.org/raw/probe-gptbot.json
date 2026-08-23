@@ -1,0 +1,32 @@
+{
+  "agent": "gptbot",
+  "body_bytes": 99858,
+  "error": "",
+  "fetched_at": "2026-08-23T05:19:51Z",
+  "final_url": "https://akaushik.org",
+  "headers": {
+    "alt-svc": "h3=\":443\"; ma=86400",
+    "cache-control": "private, no-cache, no-store, max-age=0, must-revalidate",
+    "cf-ray": "a2f7aa298e9770ef-SIN",
+    "connection": "keep-alive",
+    "content-security-policy": "default-src 'self'; script-src 'self' 'nonce-NGNhNGMyMGItNDcxZi00MzI3LWEzNGEtYjg0OTI2ZDE3YzBi' 'strict-dynamic' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://cloudflareinsights.com https://static.cloudflareinsights.com; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'",
+    "content-type": "text/html; charset=utf-8",
+    "date": "Sun, 23 Aug 2026 05:19:51 GMT",
+    "link": "</images/about/abhishek.webp>; rel=preload; as=\"image\", </llms.txt>; rel=\"describedby\"; type=\"text/markdown\", </llms-full.txt>; rel=\"describedby\"; type=\"text/markdown\", </sitemap.xml>; rel=\"sitemap\"; type=\"application/xml\", </.well-known/agent-skills/index.json>; rel=\"describedby\"; type=\"application/json\", </.well-known/mcp.json>; rel=\"describedby\"; type=\"application/json\", </.well-known/api-catalog>; rel=\"api-catalog\"; type=\"application/linkset+json\", </api/openapi.json>; rel=\"service-desc\"; type=\"application/json\", </api/docs>; rel=\"service-doc\"; type=\"text/html\"",
+    "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+    "referrer-policy": "strict-origin-when-cross-origin",
+    "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=cPtOAmrllPGSy0%2BzD9rXO6p9KO%2BFJl2%2BoGf4GfuxKm7sF7oH9WKf%2B9EuLKfu9%2BAsOOREQId0xh0sJ2dhYXdr%2B2PJ406yzNw9WePUH%2FWwRWHYaKiKFQrePvIcqTH1J3o%3D\"}]}",
+    "server": "cloudflare",
+    "server-timing": "cfEdge;dur=11,cfOrigin;dur=0,cfWorker;dur=28",
+    "strict-transport-security": "max-age=63072000; includeSubDomains; preload",
+    "transfer-encoding": "chunked",
+    "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+  },
+  "redirects": [],
+  "requested_url": "https://akaushik.org",
+  "status": 200,
+  "truncated": false,
+  "user_agent": "GPTBot/1.0"
+}

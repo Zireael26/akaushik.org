@@ -1,0 +1,27 @@
+/* experience — section styles. Owned by the experience section component.
+
+   The shape is entirely shared: .px-section for rhythm and gutters, .px-split
+   for the two columns, .px-head--column for the left column, .px-row for the
+   dated rows. Only the three things that are specific to this section's copy
+   live here, so this file stays short by design. */
+
+/* The right column has no min-width in _shared.css, so a long unbroken row lead
+   (curat.money, ClusterBid) can push the flex basis past the viewport before
+   the wrap kicks in. */
+.px-experience .px-split-body {
+  min-width: min(100%, 300px);
+}
+
+/* The intro is justified by the shared rule. This paragraph runs long enough,
+   with long enough words, to open rivers without hyphenation. */
+.px-experience .px-split-intro {
+  hyphens: auto;
+}
+
+/* Dates read better with a little more air than the default tag column: the
+   tags here are year ranges rather than the two-letter tags the primitive was
+   sized for. */
+.px-experience .px-row-tag {
+  flex-basis: 64px;
+  white-space: nowrap;
+}

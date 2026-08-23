@@ -1,62 +1,77 @@
+import { createElement } from 'react';
 import Link from 'next/link';
-import { MDXRemote } from 'next-mdx-remote/rsc';
 import type { Post, CaseStudyFrontmatter } from '@/lib/content';
-import { MDX_OPTIONS } from '@/lib/mdx-options';
+import { getMdxModule } from '@/lib/mdx/generated';
 import { HyperframesLoop } from '@/components/media/hyperframes-loop';
+import { RouteField } from '@/components/pixel/RouteField';
+import { RuledRow } from '@/components/pixel/RuledRow';
 import { Reel, type ReelSlug } from './reels';
 
 export function CaseStudyPage({
   post,
-  slug,
+  routeSlug,
+  reelSlug,
 }: {
   post: Post<'case-studies'>;
-  slug: ReelSlug | null;
+  routeSlug: string;
+  reelSlug: ReelSlug | null;
 }) {
   const fm = post.frontmatter as CaseStudyFrontmatter;
   return (
-    <main id="top" className="work-detail">
-      <Link href="/#work" className="work-stub-back">
+    <main id="top" className="px-work-detail">
+      <RouteField slug={routeSlug} />
+      <Link href="/#work" className="px-work-back">
         ← Back to selected work
       </Link>
-      <header className="work-detail-head">
-        <div className="work-stub-meta">
-          {fm.index ? <span className="case-index">{fm.index}</span> : null}
-          {fm.tag ? <span className="case-tag">{fm.tag}</span> : null}
-          {fm.year ? <span className="case-year">{fm.year}</span> : null}
+      <header className="px-work-detail-head">
+        <div className="px-work-detail-meta">
+          {fm.index ? <span className="px-work-detail-index">{fm.index}</span> : null}
+          {fm.tag ? <span className="px-work-detail-tag">{fm.tag}</span> : null}
+          {fm.year ? <span className="px-work-detail-year">{fm.year}</span> : null}
         </div>
-        {fm.role || fm.stack || fm.evidenceOf ? (
-          <dl className="case-spec">
-            {fm.role ? (
-              <div>
-                <dt>Role</dt>
-                <dd>{fm.role}</dd>
-              </div>
-            ) : null}
-            {fm.stack?.length ? (
-              <div>
-                <dt>Stack</dt>
-                <dd>{fm.stack.join(' · ')}</dd>
-              </div>
-            ) : null}
-            {fm.evidenceOf ? (
-              <div>
-                <dt>Evidence of</dt>
-                <dd>{fm.evidenceOf}</dd>
-              </div>
-            ) : null}
-          </dl>
-        ) : null}
+        <div className="px-work-detail-spec">
+          {fm.role ? <RuledRow tag="Role">{fm.role}</RuledRow> : null}
+          {fm.stack?.length ? <RuledRow tag="Stack">{fm.stack.join(' · ')}</RuledRow> : null}
+          {fm.evidenceOf ? (
+            <RuledRow tag="Evidence" last>
+              {fm.evidenceOf}
+            </RuledRow>
+          ) : null}
+        </div>
       </header>
-      {slug === 'neev' ? (
-        <HyperframesLoop kind="work-inline" slug="neev" className="work-inline-loop" />
-      ) : slug ? (
-        <figure className="work-detail-reel work-detail-reel--card" aria-hidden="true">
-          <Reel slug={slug} variant="card" />
+      {reelSlug === 'neev' ? (
+        <HyperframesLoop kind="work-inline" slug="neev" className="px-work-inline-loop" />
+      ) : reelSlug ? (
+        <figure className="px-work-detail-reel" aria-hidden="true">
+          <Reel slug={reelSlug} variant="card" />
         </figure>
       ) : null}
-      <article className="work-detail-body">
-        <MDXRemote source={post.content} options={MDX_OPTIONS} />
+      <article className="px-work-body">
+        <MdxBody slug={post.slug} />
       </article>
     </main>
   );
+}
+
+/**
+ * The compiled body for this case study.
+ *
+ * MDX is compiled during the build (`scripts/build-mdx-modules.ts`) rather
+ * than per request: Cloudflare Workers refuse both halves of runtime
+ * compilation — `new Function` and instantiating Shiki's WebAssembly grammar
+ * engine — so `next-mdx-remote` cannot run there at all.
+ *
+ * A missing module means a slug reached this component without a compiled
+ * body, which the route's own `notFound()` should have caught. Render nothing
+ * rather than throw: the header, spec rows and media above are still the
+ * correct page.
+ */
+function MdxBody({ slug }: { slug: string }) {
+  // `createElement` rather than `<MDXContent />`: the registry is a
+  // module-scope constant, so the reference is stable across renders, but the
+  // capitalised-local-from-a-call shape reads to react-hooks/static-components
+  // as a component being minted during render. This says the same thing
+  // without the false positive.
+  const mdx = getMdxModule('case-studies', slug);
+  return mdx ? createElement(mdx) : null;
 }

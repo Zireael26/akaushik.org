@@ -11,7 +11,7 @@
   "scripts": {
     "predev": "sh scripts/local-infra-preflight.sh",
     "dev": "next dev --turbo -p 3100",
-    "prebuild": "tsx scripts/build-agent-skills-index.ts",
+    "prebuild": "tsx scripts/build-content-bundle.ts && tsx scripts/build-mdx-modules.ts && tsx scripts/build-agent-skills-index.ts",
     "build": "next build",
     "prestart": "sh scripts/local-infra-preflight.sh",
     "start": "next start -p 3100",
@@ -31,7 +31,15 @@
     "analyze": "ANALYZE=true next build --webpack",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install --with-deps",
-    "ci:serve": "pnpm build && pnpm start"
+    "ci:serve": "pnpm build && pnpm start",
+    "cf:build": "node scripts/cf-build.mjs",
+    "cf:preview": "node scripts/cf-build.mjs && wrangler dev --env preview",
+    "cf:deploy:preview": "node scripts/cf-build.mjs && wrangler deploy --env preview",
+    "content:bundle": "tsx scripts/build-content-bundle.ts",
+    "mdx:modules": "tsx scripts/build-mdx-modules.ts",
+    "generate": "tsx scripts/build-content-bundle.ts && tsx scripts/build-mdx-modules.ts",
+    "pretypecheck": "tsx scripts/build-content-bundle.ts && tsx scripts/build-mdx-modules.ts",
+    "pretest": "tsx scripts/build-content-bundle.ts && tsx scripts/build-mdx-modules.ts"
   },
   "dependencies": {
     "next": "16.3.0",
@@ -41,26 +49,27 @@
     "rehype-pretty-code": "^0.14.3",
     "rehype-slug": "^6.0.0",
     "remark-gfm": "^4.0.1",
-    "shiki": "^4.3.0",
-    "three": "^0.185.0"
+    "shiki": "^4.3.0"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
+    "@mdx-js/mdx": "^3.1.1",
     "@next/bundle-analyzer": "^16.3.0",
+    "@opennextjs/cloudflare": "1.20.2",
     "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "4.3.3",
     "@types/node": "24.13.3",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
-    "@types/three": "^0.185.0",
     "@typescript-eslint/eslint-plugin": "^8.62.1",
     "@typescript-eslint/parser": "^8.62.1",
+    "@typescript/native": "npm:typescript@7.0.2",
     "@vitest/coverage-v8": "^4.1.9",
     "autoprefixer": "^10.5.2",
-    "@typescript/native": "npm:typescript@7.0.2",
     "eslint": "9.39.2",
     "eslint-config-next": "16.3.0",
     "husky": "^9.1.7",
+    "jsdom": "^30.0.1",
     "postcss": "8.5.26",
     "prettier": "^3.9.4",
     "prettier-plugin-tailwindcss": "0.7.4",
@@ -69,6 +78,7 @@
     "typescript": "6.0.2",
     "vitest": "4.1.10",
     "wait-on": "^9.0.10",
+    "wrangler": "^4.123.0",
     "yaml": "2.9.0"
   }
 }

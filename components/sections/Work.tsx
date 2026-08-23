@@ -1,7 +1,8 @@
-import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { SectionHeader } from './SectionHeader';
-import { Reel, type ReelSlug } from '@/components/work/reels';
+import type { ReelSlug } from '@/components/work/reels';
+import { MatterRow } from '@/components/pixel/RuledRow';
+import { SectionHead } from '@/components/pixel/SectionHead';
+import { getAllPosts } from '@/lib/content';
 
 type CaseStudy = {
   index: string;
@@ -16,6 +17,11 @@ type CaseStudy = {
   draft?: boolean;
 };
 
+// Card data for the /work routes: app/work/page.tsx renders it as the index
+// grid, app/work/[slug]/page.tsx reads it for the OG-card fallback, and
+// CaseStudyStub renders it for slugs whose MDX body is still a stub. The
+// section below no longer reads it — its rows come from the MDX frontmatter,
+// which is where the editorial copy actually lives.
 export const CASE_STUDIES: ReadonlyArray<CaseStudy> = [
   {
     index: '01',
@@ -24,7 +30,7 @@ export const CASE_STUDIES: ReadonlyArray<CaseStudy> = [
     year: '2026 — now',
     title: 'Neev',
     dek: 'Bringing AI to an industry that still runs on WhatsApp.',
-    lede: 'A modular operations platform for Indian textile distributors — built to be boring where boring matters, and quietly smart where it counts.',
+    lede: 'A modular operations platform for Indian textile distributors. Built to be boring where boring matters, and quietly smart where it counts.',
     spec: [
       { term: 'Role', def: 'Co-founder & CTO — product, architecture, build' },
       { term: 'Stack', def: 'Next.js · Postgres · multi-tenant monolith' },
@@ -58,7 +64,7 @@ export const CASE_STUDIES: ReadonlyArray<CaseStudy> = [
     year: '2025 — now',
     title: 'Bluehost · agents framework',
     dek: "The foundational platform behind Bluehost's agentic AI products.",
-    lede: 'Where AI agents meet web-hosting reality — customer scale, production uptime, and real users with real bills. A major hand in maintaining and continuously improving the platform.',
+    lede: 'Where AI agents meet web-hosting reality: customer scale, production uptime, and real users with real bills. I have a major hand in maintaining and continuously improving the platform.',
     spec: [
       { term: 'Role', def: 'Platform engineer · ongoing' },
       { term: 'Stack', def: 'Agent runtime · tool-calling · observability' },
@@ -72,7 +78,7 @@ export const CASE_STUDIES: ReadonlyArray<CaseStudy> = [
     year: '2026 — now',
     title: 'curat.money',
     dek: 'A fair-comparison tool for crypto cards, built like a real product.',
-    lede: 'Custody checks, provider coverage, multi-environment deploys — the boring-but-important scaffolding most crypto product sites skip.',
+    lede: 'Custody checks, provider coverage, multi-environment deploys: the boring-but-important scaffolding most crypto product sites skip.',
     spec: [
       { term: 'Role', def: 'CTO · Tech Lead' },
       { term: 'Stack', def: 'High-throughput data pipeline · K8s · RBAC · CI/CD' },
@@ -86,7 +92,7 @@ export const CASE_STUDIES: ReadonlyArray<CaseStudy> = [
     year: '2026 — UAT',
     title: 'ClusterBid',
     dek: 'From monorepo checks to a real-host k3s UAT, with every mock and boundary named.',
-    lede: 'A Go-service and Next.js platform taken through root-level validation, Helm deployment, and a mock-inference metering-to-billing smoke — pre-production proof, not a production or customer outcome.',
+    lede: 'A Go-service and Next.js platform taken through root-level validation, Helm deployment, and a mock-inference metering-to-billing smoke. Pre-production proof, not a production or customer outcome.',
     spec: [
       { term: 'Role', def: 'Engineering advisor · process & platform' },
       { term: 'Stack', def: 'Go · Next.js · TypeScript · Helm · k3s' },
@@ -95,57 +101,54 @@ export const CASE_STUDIES: ReadonlyArray<CaseStudy> = [
   },
 ];
 
+/** Tag colour rotates across the stack, as in the matters list it ports from. */
+const TAG_TONES = ['cobalt', 'amber', 'red', 'ink'] as const;
+
+function tagTone(i: number): (typeof TAG_TONES)[number] {
+  switch (i % 4) {
+    case 0:
+      return 'cobalt';
+    case 1:
+      return 'amber';
+    case 2:
+      return 'red';
+    default:
+      return 'ink';
+  }
+}
+
+/**
+ * Selected work — the matter-row stack.
+ *
+ * Rows are the case-study frontmatter, ordered by its `index` rather than by
+ * filename, because `index` is the strategic ordering the case studies were
+ * written against and getPostSlugs sorts alphabetically.
+ *
+ * The heading is short, so it carries no `headingTarget`: a lime cursor arrow
+ * pointing at two words reads as noise rather than emphasis.
+ */
 export function Work() {
+  const studies = getAllPosts('case-studies').sort((a, b) =>
+    a.frontmatter.index.localeCompare(b.frontmatter.index),
+  );
+
   return (
     <section
-      className="work"
+      className="px-section px-work"
       id="work"
       data-screen-label="03 Work"
-      data-companion-pose="work"
-      aria-label="03 Work"
+      aria-labelledby="work-head"
     >
-      <SectionHeader
-        num="03"
-        title="Selected work"
-        kicker="Five case studies, ordered by strategic weight. Each is a problem in the client's words, an approach, what shipped, and honest scope on what was and wasn't included."
-      />
-      <ol className="case-list" role="list">
-        {CASE_STUDIES.filter((c) => c.draft !== true).map((c) => (
-          <li
-            key={c.slug}
-            className={`case-item${c.lead ? ' case-item--lead' : ''}`}
-            id={`case-${c.slug}`}
-          >
-            <div className="case-meta">
-              <span className="case-index">{c.index}</span>
-              <span className="case-tag">{c.tag}</span>
-              <span className="case-year">{c.year}</span>
-            </div>
-            <div className="case-body">
-              <h3 className="case-title">{c.title}</h3>
-              <p className="case-dek">{c.dek}</p>
-              <p className="case-lede">{c.lede}</p>
-              <dl className="case-spec">
-                {c.spec.map((s) => (
-                  <div key={s.term}>
-                    <dt>{s.term}</dt>
-                    <dd>{s.def}</dd>
-                  </div>
-                ))}
-              </dl>
-              <Link className="case-link" href={`/work/${c.slug}`}>
-                Read the case study
-                <span className="arrow" aria-hidden="true">
-                  →
-                </span>
-              </Link>
-            </div>
-            <div className="case-reel" aria-hidden="true">
-              <Reel slug={c.slug} />
-            </div>
-          </li>
-        ))}
-      </ol>
+      <SectionHead heading="Selected work." label="2025 — present" id="work-head" />
+      {studies.map((study, i) => (
+        <MatterRow
+          key={study.slug}
+          title={study.frontmatter.title}
+          tag={study.frontmatter.tag}
+          tagTone={tagTone(i)}
+          href={`/work/${study.slug}`}
+        />
+      ))}
     </section>
   );
 }

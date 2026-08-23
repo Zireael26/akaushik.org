@@ -36,12 +36,39 @@ test.describe('agent readiness', () => {
     expect(body).toContain('<case-study slug="neev">');
   });
 
-  test('/robots.txt allows crawlers and references the sitemap', async ({ request }) => {
+  /**
+   * `robots.txt` answers differently by host on purpose: the canonical site
+   * welcomes crawlers and hands them a sitemap, and any preview host refuses
+   * everything and hands them nothing (`lib/agent-proxy.ts`). Running this
+   * suite against `beta.akaushik.org` must therefore assert the *refusal*, not
+   * the welcome — the previous version failed there, which looked like a
+   * broken agent surface and was in fact the guard working.
+   */
+  test('/robots.txt answers correctly for the host it is served from', async ({
+    request,
+    baseURL,
+  }) => {
     const res = await request.get('/robots.txt');
     expect(res.status()).toBe(200);
     const body = await res.text();
     expect(body).toMatch(/User-agent:\s*\*/);
-    expect(body).toMatch(/sitemap/i);
+
+    const host = new URL(baseURL ?? 'http://localhost').hostname.toLowerCase();
+    const isCanonical =
+      host === 'akaushik.org' ||
+      host === 'www.akaushik.org' ||
+      host === 'localhost' ||
+      host === '127.0.0.1';
+
+    if (isCanonical) {
+      expect(body).toMatch(/sitemap/i);
+      expect(body).not.toMatch(/Disallow:\s*\/\s*$/m);
+    } else {
+      // A preview must not hand a crawler a map of itself.
+      expect(body).toMatch(/Disallow:\s*\//);
+      expect(body).not.toMatch(/sitemap/i);
+      expect(res.headers()['x-robots-tag']).toMatch(/noindex/);
+    }
   });
 
   test('/sitemap.xml lists at least the home, work, and writing trees', async ({ request }) => {

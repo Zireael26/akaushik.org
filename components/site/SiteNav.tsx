@@ -1,43 +1,53 @@
 import Link from 'next/link';
 
-import ThemeToggle from './ThemeToggle';
+import { ThemeSwitch } from '@/components/pixel/ThemeSwitch';
 
-const NAV_LINKS: Array<{ href: string; label: string }> = [
-  { href: '/#work', label: 'Work' },
-  { href: '/#writing', label: 'Writing' },
-  { href: '/#services', label: 'Services' },
-  { href: '/#process', label: 'Process' },
-  { href: '/#open', label: 'Open' },
-  { href: '/#contact', label: 'Contact' },
+/**
+ * Site header — wordmark left, nav + theme switch right.
+ *
+ * Ported from gaurijha.com's Header.astro (tag `public-site-v1`): the same
+ * flex-wrap row, the same 16px/var(--wrap-pad) padding, the same 13px/500
+ * muted type, the same `(pointer: coarse)` hit-target widening.
+ *
+ * Two deliberate departures from that source:
+ *   - The row is capped at var(--wrap-max) and centred. Gauri's header runs
+ *     edge to edge, which puts the wordmark left of the hero title on a wide
+ *     screen; design.md § Layout caps content at 1560px and the hero here
+ *     already does.
+ *   - No `is-current` state. That needs the pathname, which would make this a
+ *     client component for a colour change; it stays a server component.
+ */
+const NAV: ReadonlyArray<{ label: string; href: string }> = [
+  { label: 'Profile', href: '/#profile' },
+  { label: 'Method', href: '/#method' },
+  { label: 'Work', href: '/#work' },
+  { label: 'Writing', href: '/writing' },
+  { label: 'Services', href: '/#services' },
+  { label: 'Contact', href: '/#contact' },
 ];
 
 export default function SiteNav() {
   return (
-    <header className="site-nav" role="banner">
-      <Link className="wordmark" href="/#top" aria-label="Abhishek Kaushik, home">
-        <span className="wordmark-mark" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="18" height="18">
-            <circle cx="5" cy="12" r="2.2" />
-            <circle cx="19" cy="6" r="2.2" />
-            <circle cx="19" cy="18" r="2.2" />
-            <path d="M6.8 11 17 6.8 M6.8 13 17 17.2" stroke="currentColor" strokeWidth="1.1" fill="none" />
-          </svg>
-        </span>
-        <span className="wordmark-text">Abhishek Kaushik</span>
+    <header className="px-header">
+      <Link className="px-wordmark" href="/">
+        akaushik.org
       </Link>
-      <nav className="nav-links" aria-label="Primary">
-        <ul className="nav-links-list">
-          {NAV_LINKS.map((link) => (
-            <li key={link.href}>
-              <Link href={link.href}>{link.label}</Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
-      <div className="nav-meta">
-        <span className="status-dot" aria-hidden="true" />
-        <span className="nav-status-text">Open to one project this quarter</span>
-        <ThemeToggle />
+      <div className="px-header-end">
+        {/* A list, not bare anchors. Screen readers announce "list, 6 items"
+            and offer list navigation; a run of loose links announces nothing
+            about how many there are or where you are in them. The markers and
+            spacing are stripped in CSS, so this is invisible to sighted
+            readers and useful to everyone else. */}
+        <nav className="px-nav" aria-label="Primary">
+          <ul className="px-nav-list">
+            {NAV.map((item) => (
+              <li key={item.href}>
+                <Link href={item.href}>{item.label}</Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <ThemeSwitch />
       </div>
     </header>
   );

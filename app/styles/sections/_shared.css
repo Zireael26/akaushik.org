@@ -1,0 +1,191 @@
+/* Shared section primitives: the statement-head pattern, ruled rows, matter
+   rows, split-editorial layout, and the section rhythm.
+   Owned centrally — every section builds on these, so they don't live in any
+   one section's file. */
+
+/* ---------- section rhythm ---------- */
+.px-section {
+  max-width: var(--wrap-max);
+  margin: 0 auto;
+  padding: clamp(56px, 9vh, 118px) var(--wrap-pad) 0;
+}
+
+/* ---------- statement head ---------- */
+.px-head--block {
+  margin-bottom: clamp(8px, 2vh, 18px);
+}
+
+.px-head--column {
+  flex: 1 1 300px;
+  min-width: min(100%, 280px);
+}
+
+.px-head-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(30px, 3.4vw, 52px);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.px-head--column .px-head-title {
+  line-height: 1.12;
+  text-wrap: pretty;
+}
+
+.px-head-label {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 12px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--ink40);
+}
+
+.px-head--block .px-head-label {
+  margin-top: 14px;
+}
+
+.px-head--column .px-head-label {
+  margin-top: 16px;
+}
+
+/* ---------- split-editorial ---------- */
+.px-split {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px clamp(32px, 5vw, 90px);
+  align-items: flex-start;
+}
+
+.px-split-body {
+  flex: 2 1 460px;
+  /* A flex item defaults to `min-width: auto`, which means "never smaller than
+     my content". The contribution grid has a 480px floor, so without this the
+     column refuses to narrow on a phone and takes the document with it — the
+     `overflow-x: auto` on the chart itself cannot help while its ancestor is
+     the thing that will not shrink. */
+  min-width: 0;
+}
+
+.px-split-intro {
+  margin: 0 0 22px;
+  font-size: 14.5px;
+  line-height: 1.75;
+  color: var(--ink70);
+  text-align: justify;
+}
+
+/* A link inside a paragraph cannot be marked by colour alone — someone who
+   cannot separate the two hues has no way to tell it is a link. axe-core
+   measured 2.68:1 between this link and the prose around it in light mode and
+   1.73:1 in dark, well under the 3:1 that would let colour carry it by itself.
+   The underline does the work; the colour stays as emphasis. */
+.px-split-intro a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--px-cobalt);
+  transition: text-decoration-color 0.18s ease;
+}
+
+.px-split-intro a:hover,
+.px-split-intro a:focus-visible {
+  text-decoration-thickness: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .px-split-intro a {
+    transition: none;
+  }
+}
+
+/* ---------- ruled rows ---------- */
+.px-row {
+  display: flex;
+  gap: 20px;
+  align-items: baseline;
+  padding: 15px 0;
+  border-top: 1px solid var(--line);
+}
+
+.px-row.is-last {
+  border-bottom: 1px solid var(--line);
+}
+
+.px-row-tag {
+  flex: 0 0 56px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--ink40);
+}
+
+.px-row-body {
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--ink70);
+}
+
+.px-row-body strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ---------- matter rows ---------- */
+.px-matter {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 32px;
+  align-items: baseline;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+  transition:
+    padding-left 0.18s ease,
+    color 0.18s ease;
+  color: var(--ink);
+}
+
+.px-matter:hover {
+  padding-left: 14px;
+}
+
+.px-matter:hover .px-matter-title {
+  color: var(--px-cobalt-ink);
+}
+
+.px-matter-title {
+  font-weight: 600;
+  font-size: clamp(18px, 2.2vw, 26px);
+  letter-spacing: -0.015em;
+  transition: color 0.18s ease;
+}
+
+.px-matter-tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+}
+
+/* ---------- tone utilities ----------
+   These colour glyphs, so they take the text-safe siblings. The plain palette
+   tokens stay for cells, rules and underlines, where the contrast question is
+   against a neighbouring cell rather than against the page. See tokens.css. */
+.is-cobalt {
+  color: var(--px-cobalt-ink);
+}
+.is-amber {
+  color: var(--px-amber-ink);
+}
+.is-red {
+  color: var(--px-red-ink);
+}
+.is-lime {
+  color: var(--px-lime-ink);
+}
+.is-ink {
+  color: var(--ink);
+}
