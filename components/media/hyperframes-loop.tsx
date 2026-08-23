@@ -7,8 +7,7 @@ export type WritingLoopSlug =
   | 'micrograd-makemore'
   | 'ai-for-msme'
   | 'fastembed-to-tei';
-export type WorkInlineLoopSlug = 'neev';
-type LoopSlug = WritingLoopSlug | WorkInlineLoopSlug;
+type LoopSlug = WritingLoopSlug;
 
 function MicrogradFloor() {
   return (
@@ -184,62 +183,15 @@ function MsmEFloor() {
   );
 }
 
-function NeevInlineFloor() {
-  return (
-    <svg viewBox="0 0 1200 676" className="media-loop-fallback" aria-hidden="true">
-      <rect width="1200" height="676" fill="var(--bg)" />
-      <rect width="1200" height="676" fill="var(--accent-05)" />
-      <g stroke="var(--accent-60)" strokeWidth="2" fill="none">
-        <path d="M230 180 H500" />
-        <path d="M640 180 C 740 180, 780 280, 780 360" />
-        <path d="M780 455 C 700 545, 570 555, 470 555" />
-        <path d="M330 555 C 230 520, 160 410, 160 315" />
-      </g>
-      <g fill="var(--bg-2)" stroke="var(--hairline)" strokeWidth="1.5">
-        <rect
-          x="90"
-          y="105"
-          width="180"
-          height="150"
-          fill="rgba(19, 66, 61, 0.10)"
-          stroke="var(--accent)"
-        />
-        <rect x="500" y="105" width="180" height="150" />
-        <rect x="690" y="335" width="180" height="150" />
-        <rect x="330" y="480" width="180" height="120" />
-        <rect x="90" y="280" width="180" height="120" />
-      </g>
-      <g fontFamily="var(--mono)" fontSize="19" fill="var(--ink)">
-        <text x="125" y="178">
-          WhatsApp
-        </text>
-        <text x="536" y="178">
-          Order
-        </text>
-        <text x="728" y="408">
-          Inventory
-        </text>
-        <text x="366" y="552">
-          Invoice
-        </text>
-        <text x="126" y="352">
-          Ledger
-        </text>
-      </g>
-    </svg>
-  );
-}
-
 const FLOORS: Record<LoopSlug, () => ReactNode> = {
   'building-this-portfolio': PortfolioFloor,
   'micrograd-makemore': MicrogradFloor,
   'ai-for-msme': MsmEFloor,
   'fastembed-to-tei': FastembedFloor,
-  neev: NeevInlineFloor,
 };
 
-function assetPath(kind: 'writing' | 'work-inline', slug: LoopSlug) {
-  const base = kind === 'writing' ? `/video/writing/${slug}` : `/video/work/inline/${slug}`;
+function assetPath(kind: 'writing', slug: LoopSlug) {
+  const base = `/video/writing/${slug}`;
   return {
     mp4: `${base}.mp4`,
     poster: `${base}.webp`,
@@ -251,7 +203,7 @@ export function HyperframesLoop({
   slug,
   className,
 }: {
-  kind: 'writing' | 'work-inline';
+  kind: 'writing';
   slug: LoopSlug;
   className?: string;
 }) {

@@ -62,6 +62,7 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 - 2026-08-23 — U4 — human visual correction: topic route fields now use sparse ruled outlines over texture, with fills limited to small packet/node/receipt accents and style-density tests at route sizes.
 - 2026-08-23 — U1 — human visual correction: product fields keep their approved compositions but now trace semantic boxes/rows as restrained strokes, reserving fills for small packets/nodes/citations, with density/style tests across presets.
 - 2026-08-23 — U1 — human visual correction (follow-up): beta review found thick outlines still read as slabs; all product-field semantic strokes now capped near one grid cell, stores/CI blocks are thin ruled frames, and accent/fill ink is guarded below 20%.
+- 2026-08-23 — U2 — after a five-vote deletion proof, removed all 18 MP4/poster assets under `public/video/work` (four card pairs, four hero pairs, and `inline/neev`); removed the dead `work-inline` branch from `components/media/hyperframes-loop.tsx` (`NeevInlineFloor`, `WorkInlineLoopSlug`, `LoopSlug` union, `assetPath` `work-inline` case, `kind: 'work-inline'`) and the `app/styles/sections/work-detail.css` `work-inline`/`reel` video rules; writing videos/components remain (`public/video/writing` — four loops / 8 assets — and `HyperframesLoop` writing branch); `scripts/hyperframes` retained by hard stop even though its eight work compositions now regenerate unconsumed assets under `public/video/work`.
 
 ### Added
 

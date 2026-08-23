@@ -434,9 +434,4 @@
   .px-work-index-item .px-matter:hover {
     padding-left: 0;
   }
-
-  .px-work-detail-reel video,
-  .px-work-inline-loop video {
-    display: none;
-  }
 }
