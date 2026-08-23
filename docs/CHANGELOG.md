@@ -36,6 +36,8 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   frontmatter dashes in `year:` and `role:` are data fields rendered as labels,
   not prose, and are left alone.
 
+- 2026-08-23 — VeriCite case-study voice pass: removed non-appositive em-dash splices and folded the five bold-lead-in Approach paragraphs into prose; facts, frontmatter, and links unchanged.
+
 ### Fixed
 
 - 2026-08-23 — The mobile header. It was not a mobile header; it was a desktop

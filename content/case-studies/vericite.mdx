@@ -23,19 +23,19 @@ VeriCite is a multi-tenant institutional RAG platform. The product surface runs 
 
 I started the pipeline on Fastembed running ONNX models on CPU. That's a reasonable place to start: low infrastructure overhead, quick to iterate, and good enough to validate the retrieval idea. But it imposed real limits that compounded as the product matured.
 
-First, the embedding-model catalog available through Fastembed's ONNX path is narrower than what HF TEI can serve. I needed `paraphrase-multilingual-MiniLM-L12-v2` as the primary embedder and `BAAI/bge-reranker-v2-m3` as the cross-encoder reranker — both worth running correctly, and the throughput curve on CPU-ONNX gets expensive before it gets good. Second, batching behavior and GPU-aware scheduling are first-class in TEI; bolting them onto a CPU-ONNX path is the wrong direction. Third, the system needed to stay defensibly multi-tenant from the start, with identity enforced at the query path, not added as a filter at read time.
+First, the embedding-model catalog available through Fastembed's ONNX path is narrower than what HF TEI can serve. I needed `paraphrase-multilingual-MiniLM-L12-v2` as the primary embedder and `BAAI/bge-reranker-v2-m3` as the cross-encoder reranker. Both are worth running correctly. The throughput curve on CPU-ONNX gets expensive before it gets good. Second, batching behavior and GPU-aware scheduling are first-class in TEI; bolting them onto a CPU-ONNX path is the wrong direction. Third, the system needed to stay defensibly multi-tenant from the start, with identity enforced at the query path, not added as a filter at read time.
 
 ## Approach
 
-**Move embedding and reranking to Hugging Face Text Embeddings Inference (TEI).** TEI is purpose-built for serving transformer-based embedders and rerankers: it handles dynamic batching, GPU allocation, and model-specific optimizations that Fastembed on CPU can't match. I migrated the pipeline to TEI — it wasn't a drop-in swap. I re-validated retrieval quality on the institution's corpus, reconciled output format differences, and updated the upstream chunking pipeline to feed TEI's batch interface correctly.
+I moved embedding and reranking to Hugging Face Text Embeddings Inference (TEI). TEI is purpose-built for serving transformer-based embedders and rerankers: it handles dynamic batching, GPU allocation, and model-specific optimizations that Fastembed on CPU can't match. The move to TEI wasn't a drop-in swap. I re-validated retrieval quality on the institution's corpus, reconciled output format differences, and updated the upstream chunking pipeline to feed TEI's batch interface correctly.
 
-**Separate the embedding and reranking paths.** `paraphrase-multilingual-MiniLM-L12-v2` answers the first question: is this chunk plausibly relevant? `BAAI/bge-reranker-v2-m3` answers the harder one: of the plausibly relevant chunks, which ones actually are? Keeping these as independent services means each can scale, be swapped, or be versioned without destabilizing the other.
+I separated the embedding and reranking paths. `paraphrase-multilingual-MiniLM-L12-v2` answers the first question: is this chunk plausibly relevant? `BAAI/bge-reranker-v2-m3` answers the harder one: of the plausibly relevant chunks, which ones actually are? Keeping these as independent services means each can scale, be swapped, or be versioned without destabilizing the other.
 
-**Qdrant as the vector store.** Per-tenant filtering is enforced at the retrieval layer via Qdrant's payload filters, not added on top afterward. This is the correct place to enforce tenancy — letting vectors cross tenant boundaries at retrieval and filtering later is a design flaw, not a trade-off.
+Qdrant is the vector store. Per-tenant filtering is enforced at the retrieval layer via Qdrant's payload filters, not added on top afterward. This is the correct place to enforce tenancy: letting vectors cross tenant boundaries at retrieval and filtering later is a design flaw, not a trade-off.
 
-**Ory for identity.** Institutional tenants arrive with non-trivial auth requirements: SSO, provisioned users, role hierarchies. Ory handles that surface area properly. A lightweight JWT library would have required rebuilding it.
+I used Ory for identity. Institutional tenants arrive with non-trivial auth requirements: SSO, provisioned users, role hierarchies. Ory handles that surface area properly. A lightweight JWT library would have required rebuilding it.
 
-**Monorepo discipline.** The codebase lives in a monorepo with four top-level namespaces: `apps/` for product surfaces, `packages/` for shared retrieval libraries and utilities, `infra/` for Terraform and cloud configuration, and `k8s/` for Kubernetes manifests. This layout lets the serving infrastructure, the retrieval library, and the Vercel-deployed product surface evolve on independent cadences without accumulating drift between them.
+The codebase is a disciplined monorepo with four top-level namespaces: `apps/` for product surfaces, `packages/` for shared retrieval libraries and utilities, `infra/` for Terraform and cloud configuration, and `k8s/` for Kubernetes manifests. This layout lets the serving infrastructure, the retrieval library, and the Vercel-deployed product surface evolve on independent cadences without accumulating drift between them.
 
 ## What shipped
 
@@ -53,7 +53,7 @@ First, the embedding-model catalog available through Fastembed's ONNX path is na
 
 **Qdrant over a Postgres vector extension.** I chose a purpose-built vector store, which adds an extra service to operate and monitor. The operational overhead is real. What it buys is a retrieval layer designed for the access patterns a RAG pipeline actually has — payload filtering, named collections, and a query API that doesn't require thinking around a general-purpose database's constraints.
 
-**Ory over a lightweight auth library.** The surface area is larger and the learning curve is steeper. Institutional identity requirements (provisioned users, SSO, org-level RBAC) make that surface area necessary — not incidental. A lightweight library would have deferred the problem, not solved it.
+**Ory over a lightweight auth library.** The surface area is larger and the learning curve is steeper. Institutional identity requirements (provisioned users, SSO, org-level RBAC) make that surface area necessary, not incidental. A lightweight library would have deferred the problem, not solved it.
 
 ## Honest scope
 
