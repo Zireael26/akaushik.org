@@ -2,19 +2,16 @@ import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 test.describe('Home page', () => {
-  test('all eight sections render', async ({ page }) => {
+  test('home sections render', async ({ page }) => {
     await page.goto('/');
 
     // Pixel hero is `section.px-hero-block` (was `section.hero` in parchment).
     // Same live hero section, class renamed — selector migrated, assertion strength preserved.
     await expect(page.locator('section.px-hero-block')).toBeVisible();
 
-    // Baseline eight: hero + #about, #work, #writing, #services, #process, #open, #contact.
-    // Pixel renames: #about → #profile, #process → #method. #experience is additive in pixel
-    // (Experience section) and is intentionally not asserted here — it is new markup, not baseline contract.
-    // Regressions retained: original selectors `section.hero`, `#about`, and `#process` no longer match pixel
-    // markup (renamed to `.px-hero-block`, `#profile`, `#method`). Migrated selectors find the same live
-    // sections under their pixel ids; the original anchors are documented as missing.
+    // The pixel home keeps the baseline sections, plus authored Experience and
+    // Arcade additions. Presence is asserted individually so future additive
+    // sections do not turn this into a brittle exact-count test.
     const sectionIds = [
       '#profile',
       '#work',
@@ -23,6 +20,7 @@ test.describe('Home page', () => {
       '#method',
       '#open',
       '#contact',
+      '#arcade',
     ];
 
     // Individual presence checks, not an exact count — preserves baseline granularity and avoids failing

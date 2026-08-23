@@ -32,6 +32,11 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   objective and state outside the canvas. Theme changes redraw in place, either
   motion veto switches play to one-input discrete turns, and unmount aborts
   listeners, observers, animation and audio ownership.
+  A focused lifecycle harness proves one pending frame survives input without
+  duplication and is cancelled across dispose/remount. Browser contracts now
+  exercise keyboard, buttons, swipe, contact/loss/restart, theme and sound
+  persistence, both motion vetoes, 375px geometry and zero landing-page axe
+  violations on Chromium desktop and WebKit mobile.
 
 ### Fixed
 

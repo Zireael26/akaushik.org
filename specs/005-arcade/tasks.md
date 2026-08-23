@@ -67,18 +67,18 @@ apex owns final visual acceptance and every push, deploy or merge.
 
 ## U4 — Observable browser contract
 
-- [ ] T27 Add `e2e/arcade.spec.ts` for start, keyboard, buttons, swipe, score,
+- [x] T27 Add `e2e/arcade.spec.ts` for start, keyboard, buttons, swipe, score,
   life presentation, restart, theme persistence, sound control and focus escape
   → SC1, SC4–SC6, SC8
-- [ ] T28 Extend reduced-motion coverage for site and OS vetoes, round-robin
+- [x] T28 Extend reduced-motion coverage for site and OS vetoes, round-robin
   one-turn input, blocked input and immediate collision reset → SC7
-- [ ] T29 Add a focused one-rAF/disposal scene test and extend browser remount
+- [x] T29 Add a focused one-rAF/disposal scene test and extend browser remount
   coverage → SC10
-- [ ] T30 Prove 375px has no horizontal overflow and coarse-pointer controls are
+- [x] T30 Prove 375px has no horizontal overflow and coarse-pointer controls are
   at least 44×44 → SC5, SC11
-- [ ] T31 Run focused Playwright on Chromium desktop and WebKit mobile; keep axe
+- [x] T31 Run focused Playwright on Chromium desktop and WebKit mobile; keep axe
   violations at zero → SC4–SC6, SC10–SC12
-- [ ] T32 Commit U4 with focused browser receipts
+- [x] T32 Commit U4 with focused browser receipts
 
 ## U5 — Hardening and rendered receipts
 

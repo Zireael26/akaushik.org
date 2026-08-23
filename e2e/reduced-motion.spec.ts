@@ -38,6 +38,13 @@ async function sampleTwice(page: Page, selector: string): Promise<[string, strin
   return [a, b];
 }
 
+function arcadeStatus(page: Page, label: string) {
+  return page
+    .locator('#arcade .px-arcade-status > div')
+    .filter({ hasText: label })
+    .locator('dd');
+}
+
 test.describe('prefers-reduced-motion', () => {
   test('the hero field keeps drifting when motion is allowed', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'no-preference' });
@@ -101,5 +108,55 @@ test.describe('prefers-reduced-motion', () => {
     // two reduced-motion assertions above prove nothing.
     const [a, b] = await sampleTwice(page, '.px-reel .px-reel-field');
     expect(a).not.toBe(b);
+  });
+
+  test('the arcade advances one measured turn under the OS preference', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/#arcade');
+
+    const section = page.locator('#arcade');
+    const canvas = page.getByRole('img', { name: 'Interactive asymmetric survey field' });
+    await section.getByRole('button', { name: 'Start survey' }).click();
+    const initialPixels = await canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL());
+
+    await page.keyboard.press('ArrowUp');
+    await expect(arcadeStatus(page, 'Score')).toHaveText('0');
+    await expect
+      .poll(() => canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL()))
+      .toBe(initialPixels);
+
+    await page.keyboard.press('ArrowRight');
+    await expect(arcadeStatus(page, 'Score')).toHaveText('10');
+    const firstTurnPixels = await canvas.evaluate((element: HTMLCanvasElement) =>
+      element.toDataURL(),
+    );
+    expect(firstTurnPixels).not.toBe(initialPixels);
+    await page.waitForTimeout(500);
+    await expect(arcadeStatus(page, 'Score')).toHaveText('10');
+    await expect
+      .poll(() => canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL()))
+      .toBe(firstTurnPixels);
+
+    await page.keyboard.press('ArrowRight');
+    await expect(arcadeStatus(page, 'Score')).toHaveText('20');
+    await expect
+      .poll(() => canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL()))
+      .not.toBe(firstTurnPixels);
+  });
+
+  test('the site motion veto gives the arcade the same discrete contract', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto('/#arcade');
+    await page.evaluate(() => document.documentElement.setAttribute('data-motion', 'off'));
+
+    const section = page.locator('#arcade');
+    await section.getByRole('button', { name: 'Start survey' }).click();
+    await page.keyboard.press('ArrowRight');
+    await expect(arcadeStatus(page, 'Score')).toHaveText('10');
+    await page.waitForTimeout(500);
+    await expect(arcadeStatus(page, 'Score')).toHaveText('10');
+
+    await page.evaluate(() => document.documentElement.setAttribute('data-motion', 'on'));
+    await expect.poll(async () => Number(await arcadeStatus(page, 'Score').textContent())).toBe(40);
   });
 });
