@@ -6,6 +6,18 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Fixed
 
+- 2026-08-23 — The portrait fills its column on a phone. `.px-portrait` is
+  `flex: 0 1 300px`, and grow `0` meant that when the row wraps to a single
+  column the portrait kept its 300px basis instead of filling: measured at
+  375px it spanned 20..320, a 20px gutter on the left and 55px on the right.
+  Off-centre by 35px, which reads as a mistake because it is one.
+
+  Grown rather than centred. Centring would even the gutters and still waste
+  the width; the picture is the point of that section. Now 20px either side at
+  320, 375 and 414.
+
+### Fixed
+
 - 2026-08-23 — Three author-facing placeholders were live on the Neev case
   study, which is the hero case (`index: "01"`). Two `*(Abhishek to fill: …)*`
   notes and one `*(Placeholder — fill after v1 stabilizes …)*`, served in the
