@@ -6,6 +6,34 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Fixed
 
+- 2026-08-23 — The CI accessibility gate stopped failing on a page that is
+  fine. The axe CLI measured the moment each route was ready, without waiting
+  for animation, so a scan landing mid-hero-fade read the h1, sub and note at a
+  contrast ratio of **~1.1** — text nearly transparent against its own
+  background — and reported a colour-contrast violation.
+
+  Measured against the deployed site with the same rule set:
+
+  | when axe looks | result |
+  |---|---|
+  | `domcontentloaded`, no settle | 1 violation, ratios 1.07–1.10 |
+  | `load`, no settle | 1 violation, ratio 2.74 |
+  | `networkidle` + 1500ms | **0 violations** |
+
+  It blocked two unrelated pull requests before anyone read the numbers, and
+  re-running the identical commit passed — the signature of a race, not a
+  regression. WCAG contrast is a property of the resting state, so settling
+  first is what the check was always meant to do. Threshold, rule set and
+  routes are unchanged; this does not weaken the gate.
+
+  Two wrong diagnoses came first and are worth recording: that the element was
+  genuinely low-contrast (it computes 7.45:1 on white), and that the body's
+  250ms theme transition flashed light text on a light background on load
+  (measured: the background is fully dark by 120ms, and CSS transitions do not
+  fire on the initial style resolution). Neither survived measurement.
+
+### Fixed
+
 - 2026-08-23 — The portrait fills its column on a phone. `.px-portrait` is
   `flex: 0 1 300px`, and grow `0` meant that when the row wraps to a single
   column the portrait kept its 300px basis instead of filling: measured at
