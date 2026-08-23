@@ -104,9 +104,8 @@
 }
 
 /* ---------- the pipeline ---------- */
-/* The band carries all four stage glyphs and the conduit between them; the
-   tiles below repeat each glyph beside its caption. Both are PixelFields, so
-   sizing here is the only thing that separates them. */
+/* The band is a detailed system diagram; the tiles below are its sparse icon
+   legend. Both are PixelFields, but they intentionally use different art. */
 .px-pipeline {
   margin-top: clamp(20px, 3.4vh, 34px);
 }
@@ -172,11 +171,7 @@
   bottom: 0;
   left: 0;
   height: 9px;
-  background: repeating-linear-gradient(
-    90deg,
-    var(--px-cobalt) 0 3px,
-    transparent 3px 8px
-  );
+  background: repeating-linear-gradient(90deg, var(--px-cobalt) 0 3px, transparent 3px 8px);
   opacity: calc(var(--px-pipeline-cursor-progress) * 0.5);
   transform: scaleX(var(--px-pipeline-cursor-progress));
   transform-origin: left center;

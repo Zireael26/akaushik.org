@@ -27,7 +27,7 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
   Neev was the worst at 11, and the reason is the doctrine's own point —
   clustering is the signal. Em-dashes plus a run of four `- **Term.**
-  explanation` bullets in one file is a fingerprint no one accumulates by
+explanation` bullets in one file is a fingerprint no one accumulates by
   accident. The bullets are four paragraphs now, and the em-dashes are commas,
   colons and periods per `voice.md` § 4.
 
@@ -64,7 +64,7 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   six-item site, and it needs no JavaScript, no focus trap and no escape key.
 
 - 2026-08-23 — Standalone touch targets reach 44px: work cards, back links, the
-  wordmark, footer links (`X ↗` measured 19.4px *wide*), the article breadcrumb
+  wordmark, footer links (`X ↗` measured 19.4px _wide_), the article breadcrumb
   and byline, and every endpoint link in the API docs list.
 
   Scoped by hand rather than applied to every `a`, because WCAG 2.5.8 exempts a
@@ -93,9 +93,10 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   Not a bug in the chart itself, which I first misread: it is 53 columns of 15
   cells each with most transparent, so the sparse left-hand side is real data
   (the early weeks genuinely are near-zero), not a rendering fault.
+
 ### Changed
 
-- 2026-08-23 — U3 — method pipeline art is taller and denser; cursor-near progress drives reversible tiles; fine-pointer cursor now eases at 0.2 onto the nearest step with reset and reduced-motion/coarse gating.
+- 2026-08-23 — U3 — method pipeline art is taller and denser; cursor-near progress drives reversible tiles; fine-pointer cursor now eases at 0.2 onto the nearest step with reset and reduced-motion/coarse gating. Step tiles now use a separate sparse icon vocabulary instead of repeating the band's four detailed drawings.
 - 2026-08-23 — U4 — writing art validation now rejects unknown topic keys, warns only on absent art, and topic-source tests reuse the shared pixel stub.
 - 2026-08-23 — U4 — human visual correction: topic route fields now use sparse ruled outlines over texture, with fills limited to small packet/node/receipt accents and style-density tests at route sizes.
 - 2026-08-23 — U1 — human visual correction: product fields keep their approved compositions but now trace semantic boxes/rows as restrained strokes, reserving fills for small packets/nodes/citations, with density/style tests across presets.
@@ -128,7 +129,7 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   lands off-grid at one breakpoint and nowhere else.
 
   One assertion is there for the live complaint about this codebase: every
-  source must draw a *distinct* picture. Every article header and every case
+  source must draw a _distinct_ picture. Every article header and every case
   study currently renders the same `trellis`, and nothing would have told us.
 
   The grid check asserts overlap, not containment — the obvious version was
@@ -174,8 +175,8 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 - 2026-08-23 — Playwright's `firefox-desktop` project is skipped on macOS.
 
   It fails by hanging rather than erroring — `sandbox_extension_issue_file_to_
-  process … Operation not permitted`, then `RenderCompositorSWGL failed mapping
-  default framebuffer`. Request-only specs pass because they never open a page;
+process … Operation not permitted`, then `RenderCompositorSWGL failed mapping
+default framebuffer`. Request-only specs pass because they never open a page;
   the first `page.goto` hangs to timeout, so a full local run cost minutes per
   spec and produced nothing.
 
@@ -206,7 +207,7 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   Fixed with `min-height: 44px`, not more padding. Two padding values were
   tried and both fell short — 12px measured 40.3, 14px measured 43.3 — because
   both were arithmetic against the height of the text box, and `line-height:
-  normal` makes that height a property of the font's metrics rather than a
+normal` makes that height a property of the font's metrics rather than a
   constant. Padding can only approach the requirement from below and has to be
   re-derived every time the type changes; a minimum states it once. Measures
   exactly 44.0 on an iPhone SE, and desktop is untouched at 16.
@@ -227,7 +228,7 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
-- 2026-08-23 — Coverage thresholds now exclude the canvas *mount* engines
+- 2026-08-23 — Coverage thresholds now exclude the canvas _mount_ engines
   (`lib/scenes/**`, `lib/pixel/field.ts`) and the generated MDX modules.
 
   A mount engine is `mount(canvas) => dispose`: it reads element geometry and
@@ -266,6 +267,7 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   This is the last code change the Vercel → Cloudflare cutover needed
   (ADR-0018); the Vercel project stays paused-not-deleted for 14 days so a
   rollback is a DNS change rather than a rebuild.
+
 - 2026-08-23 — Writing frontmatter now carries a closed `art` vocabulary; `RouteField` selects topic/product sources with slug-seeded texture, and the content-bundling build visibly warns on trellis fallback.
 - 2026-08-23 — Case-study reels now use live theme-responsive pixel fields; HyperFrames video references/tests are being retired, and ADR-0020 records the decision.
 - 2026-08-23 — Reel field mapping preserves the original `Reel` default and maps `hero` to the engine's `hero` preset while cards use `tile`.
@@ -274,7 +276,7 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   is not the reason. Two attempts at a full five-project run against the
   preview stalled, and the cause is the bundled Firefox Nightly failing the
   macOS sandbox — `sandbox_extension_issue_file_to_process … Operation not
-  permitted`, then `RenderCompositorSWGL failed mapping default framebuffer`.
+permitted`, then `RenderCompositorSWGL failed mapping default framebuffer`.
   The `request`-based specs pass because they never open a page; the first spec
   that calls `page.goto` hangs until timeout, and with retries that is minutes
   per spec. Worth fixing, because it makes any local five-project run useless,
@@ -303,6 +305,7 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
   Verified at 320, 375 and 768 across the home, article and case-study routes:
   no horizontal overflow anywhere.
+
 - 2026-08-23 — Tightened nine phase 1–3 interface strings against `docs/voice.md`: first person where the site speaks as Abhishek, fewer ornamental em dashes, and no changes to sourced facts, links, markup, metadata, or MDX.
 - 2026-08-23 — Added a policy test that parses both theme token blocks and rejects any `--ink*` or `--px-*-ink` colour below WCAG AA’s 4.5:1 contrast floor against that theme’s page background.
 - 2026-08-23 — The site meets WCAG 2 AA now, and the e2e suite is green again.
@@ -383,7 +386,7 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   The script now asks GitHub unauthenticated whether each repository is
   visible, which is exactly the request a reader's browser makes, and records
   it. `OpenSource` links only what comes back public. The flag is optional and
-  absent means *do not link*, so the `stats.json` already committed — which
+  absent means _do not link_, so the `stats.json` already committed — which
   predates the field — stops emitting the four dead links immediately rather
   than waiting for the next scheduled refresh. A rate-limited or ambiguous
   response is treated as not-linkable for the same reason.
@@ -422,6 +425,7 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   image the pixel system converts gets it. The portrait's effect depends on the
   crop's four numbers rather than on the object, because an inline literal is a
   new identity every render and would rebuild the grid sixty times a second.
+
 - 2026-08-23 — Updated Playwright locators for the pixel routes without weakening retained contracts, kept agent-readiness checks mechanism-neutral, and added real 404 coverage plus an explicit blocked error-boundary case.
 - 2026-08-23 — Recorded ADR-0019: Cloudflare Workers runtime code cannot depend on filesystem reads, runtime template compilation, dynamic code generation, or byte-instantiated WASM; those operations belong in build steps.
 - 2026-08-23 — Corrected stale current-code comments to name the live pixel `ThemeSwitch` and footer contact surface; runtime code remains free of `next-mdx-remote`, though its type/test references still prevent dependency removal.
@@ -492,19 +496,19 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
   Accepted review findings (2026-08-23) — three flagged defects fixed within ownership, correct work preserved:
 
-  1) Broken `aria-labelledby` on MCP / Paths / Schemas landmarks: the three sections carried `aria-labelledby="mcp-heading" / paths-heading / schemas-heading` but `SectionHead` was rendered without an `id`, so the IDREFs resolved to nothing. Fixed by passing the matching `id` to each `SectionHead` (`id="mcp-heading"`, `id="paths-heading"`, `id="schemas-heading"`) — `SectionHead` already forwards `id` to its heading element — so assistive technology now names each landmark from its visible statement heading. No other markup changed; every href, method, endpoint, and metadata fact remains from the single sources (`OPENAPI_SPEC`, `MCP_*`).
+  1. Broken `aria-labelledby` on MCP / Paths / Schemas landmarks: the three sections carried `aria-labelledby="mcp-heading" / paths-heading / schemas-heading` but `SectionHead` was rendered without an `id`, so the IDREFs resolved to nothing. Fixed by passing the matching `id` to each `SectionHead` (`id="mcp-heading"`, `id="paths-heading"`, `id="schemas-heading"`) — `SectionHead` already forwards `id` to its heading element — so assistive technology now names each landmark from its visible statement heading. No other markup changed; every href, method, endpoint, and metadata fact remains from the single sources (`OPENAPI_SPEC`, `MCP_*`).
 
-  2) Contract identifiers mutated/hidden by CSS: `.px-docs-block .px-row-tag` applied `text-transform: uppercase`, so `contactUrl` rendered as `CONTACTURL` and similar keys lost case; `.px-docs-schema .px-row-tag` fixed the tag to 96px with `overflow:hidden` + `text-overflow:ellipsis`, truncating `structuredContent`. JSON/OpenAPI names are case-sensitive, so the presentation was unfaithful even though DOM text was intact. Fixed by rendering contract tags without text-transform and without ellipsis — both selectors now use `text-transform:none`, `letter-spacing:0.02em`, `white-space:normal`, `overflow-wrap:anywhere` / `word-break:break-word`, and a flexible tag column (`flex:0 1 160px; min-width:96px; max-width:220px; overflow:visible; text-overflow:clip`). The tag column now grows/wraps instead of uppercasing or clipping; no hard-coded hex added, colours stay through `tokens.css`.
+  2. Contract identifiers mutated/hidden by CSS: `.px-docs-block .px-row-tag` applied `text-transform: uppercase`, so `contactUrl` rendered as `CONTACTURL` and similar keys lost case; `.px-docs-schema .px-row-tag` fixed the tag to 96px with `overflow:hidden` + `text-overflow:ellipsis`, truncating `structuredContent`. JSON/OpenAPI names are case-sensitive, so the presentation was unfaithful even though DOM text was intact. Fixed by rendering contract tags without text-transform and without ellipsis — both selectors now use `text-transform:none`, `letter-spacing:0.02em`, `white-space:normal`, `overflow-wrap:anywhere` / `word-break:break-word`, and a flexible tag column (`flex:0 1 160px; min-width:96px; max-width:220px; overflow:visible; text-overflow:clip`). The tag column now grows/wraps instead of uppercasing or clipping; no hard-coded hex added, colours stay through `tokens.css`.
 
-  3) Light-theme contrast on small API labels: 11px kicks (`Parameters`/`Responses`/`Input`/`Structured output`/`Properties`), TOC group labels, and MCP annotations used `--ink40` (≈2.59:1 on white), while POST badges used `--px-amber` (≈2.02:1) and DELETE/`required` used `--px-red` (≈4.05:1) — all below WCAG AA 4.5:1 for normal text. Fixed by moving small labels to accessible ink (`--ink60` at 4.88:1 light / 6.48:1 dark) for `.px-docs-kicker`, `.px-docs-toc-label`, and `.px-docs-annotations`, and by keeping amber/red only as decorative borders/underlines: `.px-docs-method.is-amber` / `.is-red` (and `.is-cobalt` for dark-theme safety) now use `color:var(--ink)` (≈16.6:1) with `border-color:var(--px-*)`; `.px-docs-required` now uses `color:var(--ink)` with a red underline (`text-decoration-color:var(--px-red)`) instead of red text; `.px-docs-toc .px-matter-tag.is-*` now uses `color:var(--ink60)` with the pixel accent kept as `text-decoration-color`. Cobalt badges already passed in light (5.23:1) but were also fixed for dark (3.58:1 → ink).
+  3. Light-theme contrast on small API labels: 11px kicks (`Parameters`/`Responses`/`Input`/`Structured output`/`Properties`), TOC group labels, and MCP annotations used `--ink40` (≈2.59:1 on white), while POST badges used `--px-amber` (≈2.02:1) and DELETE/`required` used `--px-red` (≈4.05:1) — all below WCAG AA 4.5:1 for normal text. Fixed by moving small labels to accessible ink (`--ink60` at 4.88:1 light / 6.48:1 dark) for `.px-docs-kicker`, `.px-docs-toc-label`, and `.px-docs-annotations`, and by keeping amber/red only as decorative borders/underlines: `.px-docs-method.is-amber` / `.is-red` (and `.is-cobalt` for dark-theme safety) now use `color:var(--ink)` (≈16.6:1) with `border-color:var(--px-*)`; `.px-docs-required` now uses `color:var(--ink)` with a red underline (`text-decoration-color:var(--px-red)`) instead of red text; `.px-docs-toc .px-matter-tag.is-*` now uses `color:var(--ink60)` with the pixel accent kept as `text-decoration-color`. Cobalt badges already passed in light (5.23:1) but were also fixed for dark (3.58:1 → ink).
 
   Re-verified by reading `app/api/docs/page.tsx` (three SectionHead ids present, three aria-labelledby refs resolve), inspecting `app/styles/sections/docs.css` (no `--ink40`, no `text-transform:uppercase` on contract tags, no `ellipsis`, no hard-coded hex, braces balanced), and recomputing contrasts (ink60 4.88/6.48, ink 16.6, amber/red retained only on border/underline). No `route.ts`, OpenAPI source, MCP core, proxy, or other unit's files touched; no new dependency.
-  
+
   Follow-up accepted findings (2026-08-23; cheap/deepseek/flash voted 3-0):
 
-  4) The server-rendered page no longer passes the `prompt` drawing function through the RSC boundary. `ApiDocsField` is a tiny colocated client island that imports `PixelField`, `prompt`, and `seedFrom` internally; `ApiDocsPage` passes no props, while the deterministic strip remains `sources={[prompt]}`, `preset="strip"`, `seedFrom('api-docs')`, and `px-docs-field`.
+  4. The server-rendered page no longer passes the `prompt` drawing function through the RSC boundary. `ApiDocsField` is a tiny colocated client island that imports `PixelField`, `prompt`, and `seedFrom` internally; `ApiDocsPage` passes no props, while the deterministic strip remains `sources={[prompt]}`, `preset="strip"`, `seedFrom('api-docs')`, and `px-docs-field`.
 
-  5) Docs heading labels now override the shared `--ink40` with `.px-docs .px-head-label { color: var(--ink60) }`. All docs hover text stays on accessible `var(--ink)` in both themes; cobalt remains only for non-text decoration (borders, underlines, and focus outlines). No hard-coded colors were added, and API facts, links, anchors, metadata, and prior accessibility fixes remain unchanged.
+  5. Docs heading labels now override the shared `--ink40` with `.px-docs .px-head-label { color: var(--ink60) }`. All docs hover text stays on accessible `var(--ink)` in both themes; cobalt remains only for non-text decoration (borders, underlines, and focus outlines). No hard-coded colors were added, and API facts, links, anchors, metadata, and prior accessibility fixes remain unchanged.
 
   No formatter, linter, build, server, or test command was run for this follow-up per the assignment.
 
@@ -591,6 +595,7 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   Colours come from the palette constants in `lib/pixel.ts`: chevron `PALETTE.cobalt`, caret `PALETTE.amber`, both present in the hero field's streak palette (`lib/pixel/field.ts`). A favicon cannot follow `html[data-mode]`, so it is static by necessity, and both colours read on light and dark chrome. The route returns a plain SVG `Response` rather than `next/og`'s `ImageResponse`: at 16×16 the satori rasteriser is the wrong tool, and this keeps the new file off the OpenNext/`next/og` surface the plan flags as needing a spike before anything new depends on it.
 
   Verified by rendering the SVG in Chrome at native size and at 8× pixelated against white, dark and parchment chrome — the chevron keeps its point and the caret stays solid on all three — and by checking the route's output byte-for-byte against the supersampled geometry it claims to serve; the file lints clean and the surrounding machinery (`proxy.ts`, the legacy `.ico` path, the agent surface) is untouched.
+
 - 2026-08-22 — The hero is a network training on repeat. Four phases an epoch —
   forward pass, loss, backward pass, settle — and the backward pass is
   deliberately a different picture rather than the forward sweep mirrored: it
@@ -609,12 +614,13 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
   Two things that had to be tuned by looking rather than by reasoning. The
   engine's 8-unit glow, which gives the chunky hero silhouettes their bleed, is
-  eight *cells* at this size and welded every edge into its neighbours until the
+  eight _cells_ at this size and welded every edge into its neighbours until the
   network was one blob; the source drops it to 1.5. And dropping weak edges to
   thin the graph left nodes floating unattached, so every node now keeps its
   strongest incoming edge regardless of threshold — a disconnected node is not a
   picture of a network. Hero cell size drops from 6.5 to 5 for the extra
   resolution the subject needs.
+
 - 2026-08-22 — Added the Cloudflare Wallet link to the footer. The handle is a
   subdomain rather than a path: `cloudflare.pay/kau` and `cloudflare.pay/@kau`
   both return 404, and `kau.cloudflare.pay` returns 200. Verified before
@@ -643,6 +649,7 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
   Added the X profile to the footer, matching the `twitter:creator` handle
   already declared in the root metadata.
+
 - 2026-08-22 — The About portrait is now a toggle: pixel field by default, the
   photograph on click, cross-fading between them. Both layers stay mounted and
   the field keeps running underneath, because tearing it down on each toggle
@@ -661,6 +668,7 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   painting into the button would mean a second canvas per CTA. The footer's
   "Get in touch" already carried the attribute from the port; only the engine
   side was missing.
+
 - 2026-08-22 — Mounted the pixel cursor overlay in the root layout and wired
   its stylesheet. The engine itself arrived on `feat/pixel-cursor`; this is the
   integration. It is mounted last in `<body>` and is decorative in the strict
@@ -718,6 +726,7 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   The hero's triple-click secret entrance is removed. It opened a hidden wing
   this site does not have, so what shipped was a dead gesture that swallowed the
   exhibit cycle and fired an event with nothing listening.
+
 - 2026-08-22 — Re-drew the law-specific pixel art for this site. The hero's
   four exhibits are now an agent graph, a shell prompt, a trellis, and the "AK."
   wordmark, replacing gaurijha.com's scales, section sign, gavel and "GJ."; the
@@ -767,8 +776,7 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   Trellis release and caused the include glob to run the toolchain's own hook
   tests as this project's.
 - 2026-08-13 — Closed the unblocked entries of the phase-2 AEO spec. The
-  63 million MSME figure now carries its source (National Sample Survey Office,
-  2017) in both the homepage About paragraph and the Neev case study, with the
+  63 million MSME figure now carries its source (National Sample Survey Office, 2017) in both the homepage About paragraph and the Neev case study, with the
   two wordings reconciled; the Zero to Hero mentions link the author's own
   course index and name author, course, and medium inline;
   `writing/ai-for-msme` gains five H2 sections and three H3s that each name
@@ -867,10 +875,10 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 - 2026-07-13 — Audit-remediation-2 T5 (`specs/002-audit-remediation-2`): three false-green / vacuous quality gates. (a) `e2e/canvas.spec.ts` reduced-motion + `[data-motion="off"]` tests guarded their only assertion behind `const c = await host.count(); if (c > 0) toBeHidden()` — a non-retrying read, so a regression that left `.scene-canvas-host` visible passed anyway. Confirmed via `AgentGraphClient` that the host is JS-gated (never mounts under either condition, not merely CSS-hidden) and replaced both with the deterministic web-first `await expect(host).toHaveCount(0)`. (b) `.github/workflows/lighthouse.yml` Axe-core step still carried `continue-on-error: true` past its arming condition — removed it so WCAG regressions fail the build (verified 0 violations on `/`, `/work/neev`, `/writing` with the exact CI command before arming). (c) `e2e/home.spec.ts` carried a stale comment claiming the WCAG gate was re-`fixme`'d/disabled when it is live — replaced with an accurate note. Verified: `pnpm typecheck`/`lint` clean; chromium-desktop e2e `canvas.spec.ts` + `home.spec.ts` 7 passed / 1 skipped (Wanderer, still disabled).
 - 2026-07-13 — Audit-remediation-2 T4 (`specs/002-audit-remediation-2`): two SEO fixes. (a) Per-page OpenGraph — `openGraph` was declared only in `app/layout.tsx` (url = bare origin + homepage title/description), and Next.js shallow-merges metadata per top-level field, so every `/work/<slug>`, `/writing/<slug>`, `/work`, `/writing` page inherited the homepage's og:title/og:description/og:url verbatim, contradicting its own `rel=canonical`. Added explicit page-scoped `openGraph` + `twitter` to all four metadata sources. Note: Next replaces the nested `openGraph`/`twitter` objects wholesale (no deep-merge — verified via build+curl), so the per-page blocks also re-declare `siteName`/`type`/`twitter.card='summary_large_image'`/`creator` that the layout supplied, else those would silently drop (og:image card downgrade). (b) Sitemap `lastModified` — `app/sitemap.ts` used the build-time `now` for every entry (Google distrusts generation-time lastmod); writing entries now derive it from `frontmatter.date`, case studies from the leading year in `frontmatter.year` (an editorial string, not ISO — a precise `date`/`updated` field stays deferred editorial), static entries keep `now`. New load-bearing unit tests: `app/sitemap.test.ts`, `app/writing/[slug]/page.test.ts`, `app/work/[slug]/page.test.ts` (assert per-page og url/title ≠ homepage + the re-declared fields + exact sitemap dates). Added a `@`→root `resolve.alias` to `vitest.config.ts` so app/ modules importing via `@/` resolve under vitest. `pnpm typecheck`/`lint` clean, `pnpm test:coverage` 70/70, coverage above floor.
 - 2026-07-13 — Audit-remediation-2 T3 (`specs/002-audit-remediation-2`): the CI `verify` job (`.github/workflows/ci.yml`) ran typecheck/lint/build/process-gate but **never the unit suite**, so vitest + the 75/55/75 coverage floor (`vitest.config.ts`) were enforced only by the local `.husky/pre-push` hook — which never fires on PRs merged via the GitHub UI/API. A green CI could ship a broken `lib/*.test.ts` or a coverage regression. Fix: added a `Test` step running `pnpm test:coverage` after Lint, before Build. Current tree: 61/61 tests, coverage 80.8/68.1/100/83.2 (stmts/branch/funcs/lines), above floor.
-- 2026-07-13 — Audit-remediation-2 T2 (`specs/002-audit-remediation-2`): `getPost()` in `lib/content.ts` interpolated the caller-supplied slug straight into the file path (`join(contentDir(type), \`${slug}.mdx\`)`) with no validation, so a dynamic-route slug like `../case-studies/clusterbid` escaped the content-type directory and read an arbitrary `.mdx` (confirmed: pre-fix, `getPost('writing', '../case-studies/clusterbid')` returned the case study). Fix: reject any slug not matching `^[a-z0-9_-]+$`, then resolve the joined path and confirm it stays within the resolved content dir (`startsWith(dir + sep)`, so a sibling like `writing-x` can't false-pass) before reading. Valid slugs unaffected. New `getPost slug sanitization` tests in `lib/content.test.ts` (traversal, path-separator, `..`, and valid-slug-still-works — load-bearing: the traversal test failed pre-fix). `pnpm typecheck`/`lint` clean, `pnpm test` 61/61.
+- 2026-07-13 — Audit-remediation-2 T2 (`specs/002-audit-remediation-2`): `getPost()` in `lib/content.ts` interpolated the caller-supplied slug straight into the file path (`join(contentDir(type), \`${slug}.mdx\`)`) with no validation, so a dynamic-route slug like `../case-studies/clusterbid` escaped the content-type directory and read an arbitrary `.mdx` (confirmed: pre-fix, `getPost('writing', '../case-studies/clusterbid')` returned the case study). Fix: reject any slug not matching `^[a-z0-9_-]+$`, then resolve the joined path and confirm it stays within the resolved content dir (`startsWith(dir + sep)`, so a sibling like `writing-x`can't false-pass) before reading. Valid slugs unaffected. New`getPost slug sanitization`tests in`lib/content.test.ts`(traversal, path-separator,`..`, and valid-slug-still-works — load-bearing: the traversal test failed pre-fix). `pnpm typecheck`/`lint`clean,`pnpm test` 61/61.
 - 2026-07-13 — Audit-remediation-2 T1 (`specs/002-audit-remediation-2`, audit `audits/2026-07-13-audit.md`): draft/unpublished posts leaked in production via the agent/crawler-facing content-negotiation surfaces. `/writing/<slug>.md`, `/work/<slug>.md`, `Accept: text/markdown`, and both per-slug `opengraph-image` routes served `draft: true` content (the `_test-draft` fixture, three draft writing posts, and the `clusterbid` case-study skeleton with its `role: PLACEHOLDER` note) — each tagged `X-Robots-Tag: index, follow` — because they relied on the 2026-05-19 draft system's build-time `generateStaticParams` exclusion but never set `dynamicParams=false` or a runtime guard, so a draft slug was rendered on-demand in prod. The 2026-05-19 entry's claim that "OG image generation, md route handlers … so drafts also drop out of … OG generation" held only at build time, not for on-demand requests. Fix: added `isDraftHidden(fm)` helper to `lib/content.ts`, applied it in all four handlers (mirroring the HTML pages' existing guard), refactored `app/writing/[slug]/page.tsx` + `app/work/[slug]/page.tsx` to the shared helper, and set `export const dynamicParams = false` on the four routes so unknown/draft slugs 404 at the routing layer. New `lib/content.test.ts` `isDraftHidden` block (NODE_ENV-toggled via `vi.stubEnv`, load-bearing) covers the draft×env truth table. `pnpm typecheck` clean, `pnpm lint` clean, `pnpm test` 57/57.
 - 2026-07-04 — Audit-remediation parity pass from `specs/001-audit-remediation-parity`: dependency/security findings cleared with patched Next/Vitest tooling and narrow pnpm workspace overrides (`@babel/core`, `esbuild`, `form-data`, `vite`, `ws`), pnpm bumped to 11.9.0 with a seven-day release-age floor plus exact-version exceptions for the intentionally selected patch set, active GitHub Actions pinned to commit SHAs, `_reference/` scoped out of active Semgrep scans, Next request interception migrated from deprecated `middleware.ts` to `proxy.ts`, TweakBridge iframe messaging hardened to same-origin/configured origins, `THREE.Clock` usage removed, generated coverage ignored by ESLint, Playwright mobile project renamed to `webkit-mobile`, root OG image runtime aligned to Node to clear the edge/static-generation build warning, and the Contact booking CTA now falls back to a mailto subject instead of `href="#"`. Docs/specs refreshed for the raw-Three.js stack, current domain/robots state, July bundle snapshot, and stale draft schedule. Codex primer parity and a project-local `web-next` process-gate validator are part of the same spec.
-- 2026-06-03 — Security CVE remediation from the SE Core scheduled audit (`audits/2026-06-03-dep-vulnerabilities.md`), security-only tier. `pnpm audit` went 2 moderate → 0. **Root cause for the long-standing inertness of the postcss override:** under pnpm v11 with a `pnpm-workspace.yaml` present, dependency *overrides* are read from `pnpm-workspace.yaml` (`overrides:` key), **not** from `package.json`'s `pnpm.overrides`. The 2026-05-04 entry pinned `postcss: 8.5.10` under `package.json#pnpm.overrides`, but pnpm never applied it — `next` continued to pull `postcss@8.4.31` transitively (GHSA-qx2v-qp2m-jg93, XSS via unescaped `</style>`), and the audit kept flagging it. This change moves the override block into `pnpm-workspace.yaml`, so it finally **materializes** in `pnpm-lock.yaml` (a top-level `overrides:` block now exists): `postcss` resolves to exactly `8.5.10` everywhere (`8.4.31` fully removed) and the vulnerable `brace-expansion` `5.0.x` line to `5.0.6` (clears GHSA-jxxr-4gwj-5jf2 ReDoS, which affects `>=5.0.0 <5.0.6`). The brace-expansion override is **scoped** to that range (key `brace-expansion@>=5.0.0 <5.0.6`) so the legacy `1.x` line (`1.1.15`, used by eslint's minimatch and never in the advisory range) is left intact: an initial *global* `brace-expansion: 5.0.6` override hoisted `1.x` up to v5, whose changed export shape broke `pnpm lint` with `TypeError: expand is not a function` (caught by the CI `verify` job — `tsc`/`build`/`test` all passed, lint was the gap). Scoping the override fixes the lint while still clearing the CVE. The `package.json#pnpm.overrides` block is kept (postcss + brace-expansion) for forward-compat / documentation even though it is inert under v11. Mechanical patch within the existing Next/Tailwind/PostCSS stack governed by ADR-0001 and the process-gate policy in ADR-0002; continues the dependency-currency line of ADR-0010. Re-resolution was surgical — no unrelated transitive bumps (vitest 4.1.5, tsx 4.21.0, typescript 6.0.3 held at baseline). Verified: `pnpm install --frozen-lockfile` deterministic, `pnpm typecheck` clean, `pnpm build` clean, `pnpm test` 51/51 pass, `pnpm audit` clean.
+- 2026-06-03 — Security CVE remediation from the SE Core scheduled audit (`audits/2026-06-03-dep-vulnerabilities.md`), security-only tier. `pnpm audit` went 2 moderate → 0. **Root cause for the long-standing inertness of the postcss override:** under pnpm v11 with a `pnpm-workspace.yaml` present, dependency _overrides_ are read from `pnpm-workspace.yaml` (`overrides:` key), **not** from `package.json`'s `pnpm.overrides`. The 2026-05-04 entry pinned `postcss: 8.5.10` under `package.json#pnpm.overrides`, but pnpm never applied it — `next` continued to pull `postcss@8.4.31` transitively (GHSA-qx2v-qp2m-jg93, XSS via unescaped `</style>`), and the audit kept flagging it. This change moves the override block into `pnpm-workspace.yaml`, so it finally **materializes** in `pnpm-lock.yaml` (a top-level `overrides:` block now exists): `postcss` resolves to exactly `8.5.10` everywhere (`8.4.31` fully removed) and the vulnerable `brace-expansion` `5.0.x` line to `5.0.6` (clears GHSA-jxxr-4gwj-5jf2 ReDoS, which affects `>=5.0.0 <5.0.6`). The brace-expansion override is **scoped** to that range (key `brace-expansion@>=5.0.0 <5.0.6`) so the legacy `1.x` line (`1.1.15`, used by eslint's minimatch and never in the advisory range) is left intact: an initial _global_ `brace-expansion: 5.0.6` override hoisted `1.x` up to v5, whose changed export shape broke `pnpm lint` with `TypeError: expand is not a function` (caught by the CI `verify` job — `tsc`/`build`/`test` all passed, lint was the gap). Scoping the override fixes the lint while still clearing the CVE. The `package.json#pnpm.overrides` block is kept (postcss + brace-expansion) for forward-compat / documentation even though it is inert under v11. Mechanical patch within the existing Next/Tailwind/PostCSS stack governed by ADR-0001 and the process-gate policy in ADR-0002; continues the dependency-currency line of ADR-0010. Re-resolution was surgical — no unrelated transitive bumps (vitest 4.1.5, tsx 4.21.0, typescript 6.0.3 held at baseline). Verified: `pnpm install --frozen-lockfile` deterministic, `pnpm typecheck` clean, `pnpm build` clean, `pnpm test` 51/51 pass, `pnpm audit` clean.
 
 ### Changed
 

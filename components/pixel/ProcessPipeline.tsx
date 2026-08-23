@@ -8,7 +8,7 @@ import {
   isCloserCursorTarget,
   type CursorNearDetail,
 } from '@/lib/scenes/cursor';
-import { pipeline, stage, STAGE_ORDER, type StageKind } from '@/lib/pixel/stages';
+import { pipeline, tileStage, STAGE_ORDER, type StageKind } from '@/lib/pixel/stages';
 
 export type ProcessStep = {
   kind: StageKind;
@@ -21,13 +21,12 @@ export type ProcessStep = {
 /**
  * The method, as a pipeline.
  *
- * The band across the top is one field carrying all four stage glyphs joined by
- * a conduit with packets moving along it. Below it, each step gets its own small
- * field showing the same glyph beside its caption.
+ * The band across the top is one field carrying four detailed stage drawings
+ * joined by a conduit. Each tile uses a separate, simpler icon vocabulary for
+ * the same subjects, so the section reads as diagram plus legend rather than
+ * the same art repeated five times.
  *
- * Hovering or focusing a step swells that stage in the band and dims the others,
- * which is the whole reason the band and the tiles draw from the same glyph
- * library rather than being two sets of art that have to be kept in sync.
+ * Hovering or focusing a step emphasises that stage in the band.
  *
  * Fine-pointer proximity is a second input to the same active-stage selection.
  * The cursor engine owns the proximity ramp; the step owns the response, so
@@ -80,9 +79,7 @@ export function ProcessPipeline({ steps }: { steps: readonly ProcessStep[] }) {
       const onLeave = () => {
         cursorCandidates.delete(i);
         setCursorActive(selectCursorWinner());
-        setCursorProgress((current) =>
-          current[i] === 0 ? current : { ...current, [i]: 0 },
-        );
+        setCursorProgress((current) => (current[i] === 0 ? current : { ...current, [i]: 0 }));
       };
 
       element.addEventListener(CURSOR_NEAR_EVENT, onNear);
@@ -107,7 +104,7 @@ export function ProcessPipeline({ steps }: { steps: readonly ProcessStep[] }) {
     [kinds],
   );
 
-  const tileSources = useMemo(() => steps.map((s) => [stage(s.kind)]), [steps]);
+  const tileSources = useMemo(() => steps.map((s) => [tileStage(s.kind)]), [steps]);
 
   return (
     <div className="px-pipeline">
