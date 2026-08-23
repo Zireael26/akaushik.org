@@ -76,3 +76,74 @@
     min-height: 44px;
   }
 }
+
+/* ---------- the header on a phone ---------- */
+/* Six nav items do not fit across 375px, and letting them wrap produced the
+   worst of every option: two ragged rows with a single orphan on the second
+   ("Contact" at 375, "Services Contact" at 320), the theme switch stranded in
+   the gap beside neither row, and ~300px of a 780px screen spent before any
+   content. It was not a mobile header; it was a desktop header that had run
+   out of room.
+
+   So the row is made explicit rather than left to wrap: identity and the theme
+   switch on one line, the nav on its own line as a single strip that scrolls
+   sideways when it overflows. Nothing is hidden behind a tap — every
+   destination stays visible and one tap away, which suits a six-item site far
+   better than a disclosure menu, and it needs no JavaScript, no focus trap and
+   no escape key. */
+@media (max-width: 640px) {
+  /* A two-row grid, so each element is placed rather than landing wherever the
+     wrap happens to put it. `display: contents` on the wrapper lets the nav and
+     the switch — which are siblings inside `.px-header-end`, not children of
+     the header — be placed into these areas directly. */
+  .px-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "wordmark switch"
+      "nav      nav";
+    align-items: center;
+    gap: 4px 16px;
+    padding-block: 12px;
+  }
+
+  .px-header-end {
+    display: contents;
+  }
+
+  .px-wordmark {
+    grid-area: wordmark;
+  }
+
+  .px-theme-switch {
+    grid-area: switch;
+    justify-self: end;
+  }
+
+  .px-nav {
+    grid-area: nav;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    /* Hides the scrollbar without hiding the ability to scroll. This is a
+       navigation strip, not a document; a visible bar under six words reads as
+       damage. */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .px-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .px-nav-list {
+    flex-wrap: nowrap;
+    /* The row has to be allowed to exceed its container, which it cannot do
+       while its items are still shrinkable. */
+    width: max-content;
+  }
+
+  .px-nav-list > li {
+    flex: 0 0 auto;
+  }
+}

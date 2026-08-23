@@ -50,6 +50,38 @@
   /* Room for the focus ring, which sits 6px outside the grid and would
      otherwise be clipped by the scroll container. */
   padding: 8px 0;
+
+  /* A scrollable region with no visible edge looks like a cropped one. On a
+     phone the chart is 480px inside a ~335px window, so a third of the year is
+     off-screen with nothing to say so — the reader sees a chart that appears
+     to stop mid-December.
+
+     The mask fades the right edge while there is more to the right and
+     disappears at the end of the scroll, which is the affordance a scrollbar
+     would give if the scrollbar were visible on iOS before you touch it. It is
+     `mask-image`, so it costs no markup and cannot be mistaken for data: a
+     gradient overlay in the page's background colour would be wrong in dark
+     mode and wrong again over the section's own tint. */
+  animation: px-contrib-edge linear;
+  animation-timeline: scroll(self inline);
+}
+
+@keyframes px-contrib-edge {
+  from {
+    mask-image: linear-gradient(to right, #000 82%, transparent 100%);
+  }
+  to {
+    mask-image: linear-gradient(to right, #000 100%, #000 100%);
+  }
+}
+
+/* Scroll-driven animations are not everywhere yet. Without them the chart is
+   exactly as it was — scrollable, just without the fade — so this is a
+   progressive enhancement and never a dependency. */
+@supports not (animation-timeline: scroll(self inline)) {
+  .px-open-contrib {
+    animation: none;
+  }
 }
 
 .px-contrib {

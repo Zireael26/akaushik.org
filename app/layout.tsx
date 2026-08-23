@@ -26,6 +26,9 @@ import './styles/sections/status.css';
 import './styles/sections/open.css';
 import './styles/sections/footer.css';
 import './styles/sections/cursor.css';
+// Last: small-screen overrides that must beat the section files above.
+// See the file header for why the order is load-bearing.
+import './styles/sections/_mobile.css';
 
 // Cloudflare Web Analytics beacon — cookieless, no consent banner needed
 // (per memory: Cloudflare analytics, not @vercel/analytics). Token read

@@ -1,0 +1,89 @@
+/* mobile — the last word on small screens.
+   
+   Imported LAST from app/layout.tsx, and that is the whole point of the file.
+   These rules were first written into _shared.css, which is imported FIRST, so
+   every section stylesheet after it won the cascade at equal specificity and
+   the type-scale rules silently did nothing — `.px-work-back` stayed at 11px on
+   a phone while the rule that said otherwise sat in the bundle, unapplied.
+   
+   Rather than escalate specificity (which makes every future override harder),
+   the overrides live in a layer that is deliberately last. Anything here is
+   asserting: on a small screen, this wins.
+   
+   Section-specific mobile behaviour still belongs in its own section file. This
+   is only for rules that must beat several of them at once. */
+
+/* ---------- touch ergonomics ---------- */
+/* Standalone controls reach 44px on a coarse pointer.
+   
+   Scoped by hand rather than applied to every `a`, because WCAG 2.5.8 exempts
+   a link inside a sentence and the exemption is the right call: growing an
+   inline prose link to 44px opens a gap in the paragraph around it, and the
+   About section is full of them. These are the controls a thumb actually aims
+   at — cards, back links, footer links, buttons — where the target is the
+   element rather than a word in a line of text.
+   
+   `min-height` with centring, not padding: measured, padding lands short,
+   because `line-height: normal` makes the text box a property of the font's
+   metrics rather than a number to compute against. */
+@media (pointer: coarse) {
+  .px-matter,
+  .px-work-back,
+  .px-docs-back,
+  .px-status-link,
+  .px-writing-more,
+  .px-legal a,
+  .px-contact-mail a,
+  .px-method-open-list a,
+  .px-writing-row {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  /* The wordmark is the identity and the home link; it should not be the
+     smallest target in the header. */
+  .px-wordmark {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  /* `X ↗` measured 19.4px wide — a legitimate target that is simply too narrow
+     to hit. The footer links sit in a wrapping row, so widening them is free. */
+  .px-legal a {
+    min-width: 44px;
+    justify-content: center;
+  }
+
+  /* The article breadcrumb ("Writing"), the byline link, and every endpoint
+     link in the API docs table. All standalone controls in a list or a rule
+     row — none is a word inside a sentence, so none is covered by the WCAG
+     2.5.8 inline exemption, and each was measured at 14–20px tall. */
+  .px-article-crumb a,
+  .px-article-byline a,
+  .px-docs-toc-list a,
+  .px-row-body a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}
+
+/* The mono labels are 11px, which is the design's voice and is fine on a
+   desktop at reading distance. On a phone, uppercase mono at 11px with
+   0.18em of tracking is the smallest thing on the page and the hardest to
+   read. 12px keeps the character and stops it being a squint. */
+@media (max-width: 640px) {
+  .px-matter-tag,
+  .px-work-back,
+  .px-docs-back,
+  .px-docs-kicker,
+  .px-chip-key,
+  .px-portrait-cap,
+  .px-work-detail-tag,
+  .px-head-label,
+  .px-step {
+    font-size: 12px;
+  }
+}
