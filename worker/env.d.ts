@@ -13,6 +13,24 @@
 declare global {
   // eslint-disable-next-line no-var -- ambient var is the only form mergeable onto globalThis
   var STATS_KV: { get(key: string): Promise<string | null> } | undefined;
+
+  /**
+   * The two runtime types the `scheduled` handler's signature needs, declared
+   * to the same minimum as `STATS_KV` above and for the same reason. Only the
+   * members this worker could plausibly read are listed; the handler ignores
+   * both parameters today, so this exists to type the signature, not to model
+   * the runtime.
+   */
+  interface ScheduledController {
+    readonly scheduledTime: number;
+    readonly cron: string;
+    noRetry(): void;
+  }
+
+  interface ExecutionContext {
+    waitUntil(promise: Promise<unknown>): void;
+    passThroughOnException(): void;
+  }
 }
 
 export {};

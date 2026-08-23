@@ -19,12 +19,13 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   a snapshot older than ~36h renders a "data stale" label and a provenance line
   reading "Last good N days ago", so an old number is never presented as
   current. The Actions workflow is retained until the Worker path is proven.
-  **Not yet green**: `tsc` cannot resolve `ScheduledController` and
-  `ExecutionContext` in `worker/index.ts`, and five tests fail across
-  `lib/stats-source.test.ts` and `components/sections/OpenSource.test.tsx`.
-  Committed as a checkpoint so the work is not lost, not as a done claim.
-  Finishing it still needs one operator command, `wrangler secret put
-  GH_STATS_TOKEN`, which is deliberately not automated.
+  The Workers runtime types (`ScheduledController`, `ExecutionContext`) are
+  declared ambient in `worker/env.d.ts`, so a fresh clone typechecks before any
+  build or `wrangler types` run. Tests cover normalize, staleness boundaries,
+  parse fail-closed, and the cron handler against fake fetch + fake KV (no
+  network), plus degraded-state labelling in the component suite. Still needs
+  one operator command, `wrangler secret put GH_STATS_TOKEN`, deliberately not
+  automated.
 
 - 2026-08-23 — Began the original arcade field: a fixed asymmetric 25×17 board
   and deterministic maze-chase state machine with buffered keyboard movement,
