@@ -4,6 +4,58 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ## [Unreleased]
 
+### Fixed
+
+- 2026-08-23 — The mobile header. It was not a mobile header; it was a desktop
+  header that had run out of room.
+
+  Six nav items do not fit across 375px, and letting them wrap gave the worst
+  of every option: two ragged rows with a single orphan on the second
+  ("Contact" at 375, "Services Contact" at 320), the theme switch stranded in
+  the gap beside neither row, and **~300px of a 780px screen spent before any
+  content**.
+
+  It is now an explicit two-row grid — identity and the theme switch on one
+  line, the nav below as a single strip that scrolls sideways when it
+  overflows. **116px at every width**, one nav row everywhere, switch aligned to
+  the wordmark, no horizontal document scroll. At 375px and up all six items
+  fit outright; at 320px the row scrolls and "Contact" clips mid-letter, which
+  is the affordance.
+
+  Deliberately not a hamburger: nothing is hidden behind a tap, which suits a
+  six-item site, and it needs no JavaScript, no focus trap and no escape key.
+
+- 2026-08-23 — Standalone touch targets reach 44px: work cards, back links, the
+  wordmark, footer links (`X ↗` measured 19.4px *wide*), the article breadcrumb
+  and byline, and every endpoint link in the API docs list.
+
+  Scoped by hand rather than applied to every `a`, because WCAG 2.5.8 exempts a
+  link inside a sentence and the exemption is right — growing an inline prose
+  link to 44px opens a gap in the paragraph around it, and the About section is
+  full of them.
+
+- 2026-08-23 — Mono labels go 11px → 12px below 640px. Uppercase mono at 11px
+  with 0.18em of tracking is the smallest thing on the page and the hardest to
+  read on a phone.
+
+  These rules were first written into `_shared.css` and **did nothing**, because
+  `_shared.css` is imported first and every section stylesheet after it won the
+  cascade at equal specificity. `.px-work-back` stayed at 11px on a phone while
+  the rule saying otherwise sat in the bundle, unapplied — a class of bug that
+  produces no error and no failing test. They now live in
+  `app/styles/sections/_mobile.css`, imported last, which is the entire purpose
+  of that file.
+
+- 2026-08-23 — The contribution chart tells you it scrolls. On a phone it is
+  480px inside a ~335px window, so a third of the year sat off-screen with
+  nothing to say so — it read as a chart that stopped in December. A
+  scroll-driven `mask-image` fades the right edge while there is more to the
+  right. Progressive enhancement, behind `@supports`.
+
+  Not a bug in the chart itself, which I first misread: it is 53 columns of 15
+  cells each with most transparent, so the sparse left-hand side is real data
+  (the early weeks genuinely are near-zero), not a rendering fault.
+
 ### Added
 
 - 2026-08-23 — Unit tests for the pixel engine's pure drawing functions: 155
