@@ -96,7 +96,7 @@ explanation` bullets in one file is a fingerprint no one accumulates by
 
 ### Changed
 
-- 2026-08-23 — U3 — method pipeline art is taller and denser; cursor-near progress drives reversible tiles; fine-pointer cursor now eases at 0.2 onto the nearest step with reset and reduced-motion/coarse gating. Step tiles now use a separate sparse icon vocabulary instead of repeating the band's four detailed drawings. Rest is theme-driven ink without palette noise; snap now blooms a sampled circular field behind the accent-coloured glyph instead of drawing the rejected rectangular frame and bleed.
+- 2026-08-23 — U3 — method pipeline art is taller and denser; cursor-near progress drives reversible tiles; fine-pointer cursor now eases at 0.2 onto the nearest step with reset and reduced-motion/coarse gating. Step tiles now use a separate sparse icon vocabulary instead of repeating the band's four detailed drawings. Rest is theme-driven ink without palette noise; snap now blooms a sampled circular field behind the accent-coloured glyph instead of drawing the rejected rectangular frame and bleed. Keyboard focus reaches the same end state through labelled step groups.
 - 2026-08-23 — U4 — writing art validation now rejects unknown topic keys, warns only on absent art, and topic-source tests reuse the shared pixel stub.
 - 2026-08-23 — U4 — human visual correction: topic route fields now use sparse ruled outlines over texture, with fills limited to small packet/node/receipt accents and style-density tests at route sizes.
 - 2026-08-23 — U1 — human visual correction: product fields keep their approved compositions but now trace semantic boxes/rows as restrained strokes, reserving fills for small packets/nodes/citations, with density/style tests across presets.

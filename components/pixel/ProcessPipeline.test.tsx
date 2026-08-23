@@ -78,6 +78,9 @@ describe('ProcessPipeline cursor interaction', () => {
     expect(band?.dataset.cellSize).toBe('3');
     expect(steps).toHaveLength(4);
     expect([...steps].every((step) => step.hasAttribute('data-pixel-hover'))).toBe(true);
+    expect(steps[0]?.getAttribute('role')).toBe('group');
+    expect(steps[0]?.getAttribute('aria-labelledby')).toBe('method-step-read-label');
+    expect(steps[0]?.getAttribute('aria-describedby')).toBe('method-step-read-body');
     const tiles = container.querySelectorAll<HTMLCanvasElement>('.px-pipeline-tile-canvas');
     expect(tiles).toHaveLength(4);
     for (const [i, tile] of [...tiles].entries()) {

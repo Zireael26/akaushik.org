@@ -154,16 +154,19 @@ const GLYPHS: Record<StageKind, UnitGlyph> = {
 
 /**
  * Tile icons deliberately avoid the band's document / branch / wall / gate
- * drawings. They are single-sign vocabulary: inspect, decide, rise, secure.
+ * drawings. They are single-sign vocabulary: scan, decide, rise, secure.
  */
 const readTileGlyph: UnitGlyph = (o, s) => {
   o.lineWidth = Math.min(1, s * 0.048);
   o.beginPath();
-  o.arc(s * 0.43, s * 0.42, s * 0.23, 0, Math.PI * 2);
-  o.stroke();
-  o.beginPath();
-  o.moveTo(s * 0.59, s * 0.59);
-  o.lineTo(s * 0.79, s * 0.79);
+  o.moveTo(s * 0.24, s * 0.22);
+  o.lineTo(s * 0.24, s * 0.78);
+  o.moveTo(s * 0.38, s * 0.28);
+  o.lineTo(s * 0.78, s * 0.28);
+  o.moveTo(s * 0.38, s * 0.5);
+  o.lineTo(s * 0.66, s * 0.5);
+  o.moveTo(s * 0.38, s * 0.72);
+  o.lineTo(s * 0.74, s * 0.72);
   o.stroke();
 };
 
@@ -235,17 +238,13 @@ function drawTileBloom(
   const cx = cols * 0.5;
   const cy = rows * 0.5;
   const radius = size * 0.42 * p;
-  const lineWidth = 0.65;
+  const lineWidth = 0.45;
 
   o.save();
   o.shadowBlur = 0;
   o.lineWidth = lineWidth;
   o.beginPath();
-  const segmentCount = radius < 8 ? 2 : 4;
-  for (let segment = 0; segment < segmentCount; segment++) {
-    const angle = ((segment + 0.5) / segmentCount) * FULL_TURN;
-    o.arc(cx, cy, radius, angle - 0.15, angle + 0.15);
-  }
+  o.arc(cx, cy, radius, 0, FULL_TURN);
   o.stroke();
 
   const innerRadius = Math.max(0, radius - lineWidth * 1.5);

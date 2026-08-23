@@ -121,6 +121,8 @@ export function ProcessPipeline({ steps }: { steps: readonly ProcessStep[] }) {
         {steps.map((step, i) => {
           const cursorValue = cursorProgress[i];
           const progress = focusActive === i ? 1 : (cursorValue ?? (mouseActive === i ? 1 : 0));
+          const labelId = `method-step-${step.kind}-label`;
+          const bodyId = `method-step-${step.kind}-body`;
           return (
             <div
               key={step.kind}
@@ -131,6 +133,9 @@ export function ProcessPipeline({ steps }: { steps: readonly ProcessStep[] }) {
               data-pixel-hover=""
               data-pixel-cursor-response={progress > 0 ? 'active' : undefined}
               className="px-pipeline-step"
+              role="group"
+              aria-labelledby={labelId}
+              aria-describedby={bodyId}
               tabIndex={0}
               onMouseEnter={() => setMouseActive(i)}
               onMouseLeave={() => setMouseActive((current) => (current === i ? null : current))}
@@ -152,8 +157,12 @@ export function ProcessPipeline({ steps }: { steps: readonly ProcessStep[] }) {
                   className="px-pipeline-tile-canvas"
                 />
               </div>
-              <div className={`px-step is-${step.tone}`}>{step.label}</div>
-              <p className="px-step-body">{step.body}</p>
+              <div id={labelId} className={`px-step is-${step.tone}`}>
+                {step.label}
+              </div>
+              <p id={bodyId} className="px-step-body">
+                {step.body}
+              </p>
             </div>
           );
         })}
