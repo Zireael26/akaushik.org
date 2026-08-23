@@ -1,17 +1,17 @@
 /**
- * Process stages — the four steps of the method, drawn as pixel glyphs, plus a
- * pipeline source that lays them out end to end with a conduit between them.
+ * Process stages — the four-step pipeline diagram and the separate, simpler
+ * icon vocabulary used by its tiles.
  *
- * These replace the abstract four-colour flow band the design arrived with.
- * That band was decorative: it said "there are four of these" and nothing else.
- * These say what each step actually is, which is the point of putting a picture
- * next to a process at all.
+ * The band needs enough detail to read as a system: records, decisions,
+ * modules, gates, and a conduit joining them. A tile has a different job. It
+ * needs one large mark that identifies the step at a glance. Keeping those two
+ * vocabularies separate prevents the section from repeating the same picture
+ * five times.
  *
- * Every glyph draws into a unit box — (0,0) to (1,1) — and `at()` maps it into
- * place. That is what lets the same four drawings serve as a wide connected
- * pipeline and as four separate tiles beside their captions, at different cell
- * densities, without being authored twice.
+ * Every glyph draws into a unit box — (0,0) to (1,1) — and its source maps it
+ * into the field.
  */
+import { h } from '../pixel';
 import type { FieldSource, SourceContext } from './field';
 
 export type StageKind = 'read' | 'spec' | 'build' | 'harden';
@@ -152,7 +152,138 @@ const GLYPHS: Record<StageKind, UnitGlyph> = {
   harden: hardenGlyph,
 };
 
-/** One stage, centred and fitted to the field. For the per-step tiles. */
+/**
+ * Tile icons deliberately avoid the band's document / branch / wall / gate
+ * drawings. They are single-sign vocabulary: scan, decide, rise, secure.
+ */
+const readTileGlyph: UnitGlyph = (o, s) => {
+  o.lineWidth = Math.min(1, s * 0.048);
+  o.beginPath();
+  o.moveTo(s * 0.24, s * 0.22);
+  o.lineTo(s * 0.24, s * 0.78);
+  o.moveTo(s * 0.38, s * 0.28);
+  o.lineTo(s * 0.78, s * 0.28);
+  o.moveTo(s * 0.38, s * 0.5);
+  o.lineTo(s * 0.66, s * 0.5);
+  o.moveTo(s * 0.38, s * 0.72);
+  o.lineTo(s * 0.74, s * 0.72);
+  o.stroke();
+};
+
+const specTileGlyph: UnitGlyph = (o, s) => {
+  o.lineWidth = Math.min(1, s * 0.048);
+  o.beginPath();
+  o.moveTo(s * 0.5, s * 0.14);
+  o.lineTo(s * 0.84, s * 0.5);
+  o.lineTo(s * 0.5, s * 0.86);
+  o.lineTo(s * 0.16, s * 0.5);
+  o.closePath();
+  o.stroke();
+  o.beginPath();
+  o.arc(s * 0.5, s * 0.5, s * 0.06, 0, Math.PI * 2);
+  o.fill();
+};
+
+const buildTileGlyph: UnitGlyph = (o, s) => {
+  o.lineWidth = Math.min(1, s * 0.04);
+  o.lineJoin = 'miter';
+  o.beginPath();
+  o.moveTo(s * 0.18, s * 0.78);
+  o.lineTo(s * 0.39, s * 0.78);
+  o.lineTo(s * 0.39, s * 0.58);
+  o.lineTo(s * 0.6, s * 0.58);
+  o.lineTo(s * 0.6, s * 0.38);
+  o.lineTo(s * 0.81, s * 0.38);
+  o.stroke();
+  o.beginPath();
+  o.moveTo(s * 0.68, s * 0.25);
+  o.lineTo(s * 0.81, s * 0.38);
+  o.lineTo(s * 0.68, s * 0.51);
+  o.stroke();
+};
+
+const hardenTileGlyph: UnitGlyph = (o, s) => {
+  o.lineWidth = Math.min(1, s * 0.032);
+  o.beginPath();
+  o.arc(s * 0.5, s * 0.39, s * 0.2, Math.PI, 0);
+  o.stroke();
+  o.strokeRect(s * 0.25, s * 0.39, s * 0.5, s * 0.4);
+};
+
+const TILE_GLYPHS: Record<StageKind, UnitGlyph> = {
+  read: readTileGlyph,
+  spec: specTileGlyph,
+  build: buildTileGlyph,
+  harden: hardenTileGlyph,
+};
+
+const FULL_TURN = Math.PI * 2;
+
+/**
+ * A sampled disc: one round edge plus a deterministic, low-density interior.
+ * The stipple keeps it spherical on the cell grid without turning any 8×8
+ * window into a slab.
+ */
+function drawTileBloom(
+  o: CanvasRenderingContext2D,
+  cols: number,
+  rows: number,
+  progress: number,
+  seed: number,
+): void {
+  const p = Math.max(0, Math.min(1, progress));
+  if (p === 0) return;
+
+  const size = Math.min(cols, rows);
+  const cx = cols * 0.5;
+  const cy = rows * 0.5;
+  const radius = size * 0.42 * p;
+  const lineWidth = 0.45;
+
+  o.save();
+  o.shadowBlur = 0;
+  o.lineWidth = lineWidth;
+  o.beginPath();
+  o.arc(cx, cy, radius, 0, FULL_TURN);
+  o.stroke();
+
+  const innerRadius = Math.max(0, radius - lineWidth * 1.5);
+  const innerSquared = innerRadius * innerRadius;
+  const startX = Math.max(0, Math.floor(cx - innerRadius));
+  const endX = Math.min(cols, Math.ceil(cx + innerRadius));
+  const startY = Math.max(0, Math.floor(cy - innerRadius));
+  const endY = Math.min(rows, Math.ceil(cy + innerRadius));
+
+  for (let y = startY; y < endY; y++) {
+    for (let x = startX; x < endX; x++) {
+      const dx = x + 0.5 - cx;
+      const dy = y + 0.5 - cy;
+      const distanceSquared = dx * dx + dy * dy;
+      if (distanceSquared >= innerSquared) continue;
+
+      const centreWeight = 1 - Math.sqrt(distanceSquared) / Math.max(1, innerRadius);
+      if (h(x + seed * 1.7, y - seed * 2.3) >= 0.02 + centreWeight * 0.025) continue;
+      o.fillRect(x, y, 0.8, 0.8);
+    }
+  }
+  o.restore();
+}
+
+/** One simple icon, centred and fitted to the authoring tile grid. */
+export function tileStage(kind: StageKind): FieldSource {
+  return (o, { cols, rows, progress = 0, seed }) => {
+    drawTileBloom(o, cols, rows, progress, seed);
+
+    const s = Math.min(cols, rows) * 0.88;
+    o.save();
+    o.shadowBlur = 0;
+    o.translate((cols - s) / 2, (rows - s) / 2);
+    TILE_GLYPHS[kind](o, s);
+    o.restore();
+  };
+}
+
+/** One detailed band glyph, centred and fitted to a standalone field. */
 export function stage(kind: StageKind): FieldSource {
   return (o, { cols, rows }) => {
     const s = Math.min(cols, rows) * 0.95;

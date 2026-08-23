@@ -1,12 +1,22 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { mountField, type FieldHandle, type FieldPreset, type FieldSource } from '@/lib/pixel/field';
+import {
+  mountField,
+  type FieldColor,
+  type FieldHandle,
+  type FieldPreset,
+  type FieldSource,
+} from '@/lib/pixel/field';
 
 export type PixelFieldProps = {
   /** One entry per stage. A single source is a static field. */
   sources: readonly FieldSource[];
   preset?: FieldPreset;
+  color?: FieldColor;
+  activeColor?: FieldColor;
+  /** Controlled source response, 0..1. */
+  progress?: number;
   cellSize?: number;
   gain?: number;
   scatter?: number;
@@ -43,6 +53,9 @@ export type PixelFieldProps = {
 export function PixelField({
   sources,
   preset = 'hero',
+  color,
+  activeColor,
+  progress,
   cellSize,
   gain,
   scatter,
@@ -74,6 +87,9 @@ export function PixelField({
     const h = mountField(canvas, {
       sources: sourcesRef.current,
       preset,
+      color,
+      activeColor,
+      progress,
       cellSize,
       gain,
       scatter,
@@ -87,16 +103,35 @@ export function PixelField({
     });
     handle.current = h;
     if (typeof stage === 'number') h.setStage(stage);
+    if (typeof progress === 'number') h.setProgress(progress);
     return () => {
       h.dispose();
       handle.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [preset, cellSize, gain, scatter, shapeNoise, interactive, cycleOnClick, swing, ambient, animate, seed]);
+  }, [
+    preset,
+    color,
+    activeColor,
+    cellSize,
+    gain,
+    scatter,
+    shapeNoise,
+    interactive,
+    cycleOnClick,
+    swing,
+    ambient,
+    animate,
+    seed,
+  ]);
 
   useEffect(() => {
     if (typeof stage === 'number') handle.current?.setStage(stage);
   }, [stage]);
+
+  useEffect(() => {
+    if (typeof progress === 'number') handle.current?.setProgress(progress);
+  }, [progress]);
 
   return (
     <canvas

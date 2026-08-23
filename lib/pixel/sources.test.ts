@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { FieldSource, SourceContext } from './field';
 import { createStubContext, type StubContext } from './stub-context';
-import { stage, pipeline, STAGE_ORDER } from './stages';
+import { stage, pipeline, tileStage, STAGE_ORDER } from './stages';
 import { neuralTraining } from './neural';
 import {
   agentGraph,
@@ -53,6 +53,7 @@ const SOURCES: Array<[string, FieldSource]> = [
   ['neuralTraining', neuralTraining],
   ['wordmark("AK.")', wordmark('AK.')],
   ...STAGE_ORDER.map((k): [string, FieldSource] => [`stage(${k})`, stage(k)]),
+  ...STAGE_ORDER.map((k): [string, FieldSource] => [`tileStage(${k})`, tileStage(k)]),
   ['pipeline(all, null)', pipeline([...STAGE_ORDER], null)],
   ['pipeline(all, 2)', pipeline([...STAGE_ORDER], 2)],
 ];
@@ -138,7 +139,9 @@ describe('sources that respond to their inputs', () => {
     // `prompt` and `trellis` do not destructure `angle`; if one starts to, this
     // is the test that says so rather than a mystery jitter on click.
     expect(ctxFor(prompt, { angle: 0 }).signature()).toBe(ctxFor(prompt, { angle: 1 }).signature());
-    expect(ctxFor(trellis, { angle: 0 }).signature()).toBe(ctxFor(trellis, { angle: 1 }).signature());
+    expect(ctxFor(trellis, { angle: 0 }).signature()).toBe(
+      ctxFor(trellis, { angle: 1 }).signature(),
+    );
   });
 });
 
@@ -217,12 +220,24 @@ describe('seedFrom', () => {
    */
   it('does not collide across the actual content slugs', () => {
     const slugs = [
-      'ai-for-msme', 'best-practices-into-trellis', 'building-this-portfolio',
-      'detection-is-not-continuity', 'fastembed-to-tei', 'gptx-in-trellis',
-      'micrograd-makemore', 'native-git-hooks-for-non-node',
-      'process-gate-stack-profiles', 'renaming-projects', 'trellis-1-0-rc',
-      'trellis-loop-era', 'trellis', 'neev', 'vericite', 'bluehost-agents',
-      'curat-money', 'clusterbid',
+      'ai-for-msme',
+      'best-practices-into-trellis',
+      'building-this-portfolio',
+      'detection-is-not-continuity',
+      'fastembed-to-tei',
+      'gptx-in-trellis',
+      'micrograd-makemore',
+      'native-git-hooks-for-non-node',
+      'process-gate-stack-profiles',
+      'renaming-projects',
+      'trellis-1-0-rc',
+      'trellis-loop-era',
+      'trellis',
+      'neev',
+      'vericite',
+      'bluehost-agents',
+      'curat-money',
+      'clusterbid',
     ];
     expect(new Set(slugs.map(seedFrom)).size).toBe(slugs.length);
   });
@@ -236,6 +251,34 @@ describe('stages', () => {
   it('draws a different glyph per stage', () => {
     const signatures = STAGE_ORDER.map((k) => ctxFor(stage(k)).signature());
     expect(new Set(signatures).size).toBe(STAGE_ORDER.length);
+  });
+
+  it('blooms tile art from a grid-space circle', () => {
+    const rest = ctxFor(tileStage('build'), { cols: 40, rows: 26, progress: 0 });
+    const half = ctxFor(tileStage('build'), { cols: 40, rows: 26, progress: 0.5 });
+    const full = ctxFor(tileStage('build'), { cols: 40, rows: 26, progress: 1 });
+    const restArc = rest.calls.find((call) => call.fn === 'arc');
+    const halfArc = half.calls.find((call) => call.fn === 'arc');
+    const fullArc = full.calls.find((call) => call.fn === 'arc');
+
+    expect(restArc).toBeUndefined();
+    expect(halfArc).toBeDefined();
+    expect(fullArc).toBeDefined();
+    expect(halfArc!.args[0]).toBe(20);
+    expect(halfArc!.args[1]).toBe(13);
+    expect(Number(halfArc!.args[2])).toBeLessThan(Number(fullArc!.args[2]));
+    expect(rest.signature()).not.toBe(full.signature());
+  });
+
+  it('gives every tile its own simple icon', () => {
+    const signatures = STAGE_ORDER.map((k) => ctxFor(tileStage(k)).signature());
+    expect(new Set(signatures).size).toBe(STAGE_ORDER.length);
+  });
+
+  it('keeps tile icons distinct from the matching band drawings', () => {
+    for (const kind of STAGE_ORDER) {
+      expect(ctxFor(tileStage(kind)).signature()).not.toBe(ctxFor(stage(kind)).signature());
+    }
   });
 
   /**

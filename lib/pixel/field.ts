@@ -45,6 +45,8 @@ export type SourceContext = {
   angle: number;
   /** Ambient clock, for sources that want to animate their own geometry. */
   t: number;
+  /** Controlled source response, 0..1. Static sources may ignore it. */
+  progress?: number;
   /**
    * Per-instance offset into the shared hash. Two fields with different seeds
    * draw the same shape with different noise, which is what gives every article
@@ -61,6 +63,24 @@ export type SourceContext = {
 export type FieldSource = (o: CanvasRenderingContext2D, c: SourceContext) => void;
 
 export type FieldPreset = 'hero' | 'band' | 'tile' | 'strip';
+
+/** Optional monochrome treatment. `ink` follows the current theme. */
+export type FieldColor = 'ink' | 'cobalt' | 'amber' | 'red' | 'lime';
+
+const COLOR_RAMP_LIGHT = [
+  navy(false),
+  PALETTE.cobalt,
+  PALETTE.amber,
+  PALETTE.red,
+  PALETTE.lime,
+] as const;
+const COLOR_RAMP_DARK = [
+  navy(true),
+  PALETTE.cobalt,
+  PALETTE.amber,
+  PALETTE.red,
+  PALETTE.lime,
+] as const;
 
 /**
  * Target cell size in CSS pixels, per preset.
@@ -122,6 +142,12 @@ export type FieldOptions = {
    */
   sources: readonly FieldSource[];
   preset?: FieldPreset;
+  /** Draw every lit cell in one palette colour. `ink` follows the theme. */
+  color?: FieldColor;
+  /** Accent used while `progress` is greater than zero. */
+  activeColor?: FieldColor;
+  /** Controlled source response, 0..1. */
+  progress?: number;
   /** Overrides the preset's cell size, in CSS pixels. */
   cellSize?: number;
   /** Overrides the preset's intensity multiplier. */
@@ -167,6 +193,8 @@ export type FieldHandle = {
   dispose(): void;
   /** Cross-fade to a stage. Out-of-range indices are ignored. */
   setStage(index: number): void;
+  /** Rebuild the current source at a controlled 0..1 response. */
+  setProgress(progress: number): void;
   stage(): number;
 };
 
@@ -194,6 +222,9 @@ export function mountField(canvas: HTMLCanvasElement, options: FieldOptions): Fi
   const {
     sources,
     preset = 'hero',
+    color,
+    activeColor,
+    progress = 0,
     cellSize = PRESET_CELL[preset],
     gain = PRESET_GAIN[preset],
     scatter = PRESET_SCATTER[preset],
@@ -231,6 +262,7 @@ export function mountField(canvas: HTMLCanvasElement, options: FieldOptions): Fi
   let rings: Ring[] = [];
   let angle = 0;
   let vel = 0;
+  let sourceProgress = Math.max(0, Math.min(1, progress));
   let stageIndex = 0;
   let clicks = 0;
   let blend = 1;
@@ -255,7 +287,7 @@ export function mountField(canvas: HTMLCanvasElement, options: FieldOptions): Fi
     octx.lineJoin = 'miter';
 
     const source = sources[index] ?? sources[0];
-    source?.(octx, { cols, rows, angle, t, seed });
+    source?.(octx, { cols, rows, angle, t, seed, progress: sourceProgress });
 
     const img = octx.getImageData(0, 0, cols, rows).data;
     const target: Grid = out && out.length === cols * rows ? out : new Float32Array(cols * rows);
@@ -310,7 +342,10 @@ export function mountField(canvas: HTMLCanvasElement, options: FieldOptions): Fi
     const dark = isDark();
     ctx.fillStyle = canvasBg(dark);
     ctx.fillRect(0, 0, cols * cell, rows * cell);
-    const colors = [navy(dark), PALETTE.cobalt, PALETTE.amber, PALETTE.red, PALETTE.lime];
+    const colors = dark ? COLOR_RAMP_DARK : COLOR_RAMP_LIGHT;
+    const responseColor = sourceProgress > 0 ? activeColor : undefined;
+    const solid = responseColor ?? color;
+    const solidColor = solid ? (solid === 'ink' ? navy(dark) : PALETTE[solid]) : null;
     const size = Math.max(1, cell - dpr);
 
     for (let y = 0; y < rows; y++) {
@@ -322,7 +357,7 @@ export function mountField(canvas: HTMLCanvasElement, options: FieldOptions): Fi
         if (i <= 0.09 || r > i * 1.4) continue;
         const v = i + (r - 0.5) * 0.16;
         const c = v > 1.05 ? 4 : v > 0.8 ? 3 : v > 0.55 ? 2 : v > 0.3 ? 1 : 0;
-        ctx.fillStyle = colors[c]!;
+        ctx.fillStyle = solidColor ?? colors[c]!;
         ctx.fillRect(x * cell, y * cell, size, size);
       }
     }
@@ -406,6 +441,17 @@ export function mountField(canvas: HTMLCanvasElement, options: FieldOptions): Fi
   function toGrid(e: PointerEvent): [number, number] {
     const r = canvas.getBoundingClientRect();
     return [((e.clientX - r.left) / r.width) * cols, ((e.clientY - r.top) / r.height) * rows];
+  }
+
+  function goToProgress(value: number): void {
+    const clamped = Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
+    const next = prefersReducedMotion() && clamped > 0 ? 1 : clamped;
+    if (next === sourceProgress) return;
+    sourceProgress = next;
+    base = build(stageIndex, base);
+    from = null;
+    to = null;
+    blend = 1;
   }
 
   function goToStage(index: number, animate = true): void {
@@ -520,6 +566,9 @@ export function mountField(canvas: HTMLCanvasElement, options: FieldOptions): Fi
     },
     setStage(index: number): void {
       goToStage(index);
+    },
+    setProgress(progress: number): void {
+      goToProgress(progress);
     },
     stage(): number {
       return stageIndex;
