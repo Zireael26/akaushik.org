@@ -40,6 +40,8 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 - 2026-08-23 — curat.money case-study voice pass: recast five non-appositive em-dash splices and the clustered rule-of-three cadence as direct sentences; facts, frontmatter, and links unchanged, crypto-card definitional appositive retained.
 
+- 2026-08-23 — ClusterBid case-study voice pass: replaced the single prose em-dash splice with a comma; facts, frontmatter, and links unchanged; remaining checker hits are frontmatter labels.
+
 ### Fixed
 
 - 2026-08-23 — The mobile header. It was not a mobile header; it was a desktop
