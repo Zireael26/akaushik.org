@@ -29,8 +29,10 @@ and the token lives in the Worker's secret store instead of a repo setting.
   the 36-hour staleness line, and `resolveStats` (KV-first, checked-in-file
   fallback). No `fs`, no `process.exit`, injectable clock/fetch — the same
   pure-module/thin-adapter doctrine as `lib/agent-proxy.ts`.
-- **`lib/stats.ts`** — same exports as before; `getStats()` now returns a
-  `StatsView` (`stats`, `degraded`, `reason`) resolved from KV.
+- **`lib/stats.ts`** — `getStats()` returns a `StatsView` (`stats`, `degraded`,
+  `reason`) resolved from KV via OpenNext's `getCloudflareContext().env`.
+  An earlier version read `globalThis.STATS_KV`, which a module Worker never
+  assigns. Cross-family grok review caught that while 669 tests were green.
 - **`components/sections/OpenSource.tsx`** — renders the degraded state
   honestly: label becomes "In the open · data stale", an amber intro paragraph
   names what happened ("the daily refresh has been failing" / "Live refresh not
@@ -100,5 +102,10 @@ silently.
 
 ## Agent review
 
-Data-refresh plumbing below the copy layer; degraded-state copy follows
-ADR-0013 public-data truthfulness and `docs/voice.md` register.
+Cross-family grok review rejected HEAD `4b05f80`: cron wrote KV, the UI
+labelled stale correctly, and the suite was green, but `getStats()` never
+saw the Worker binding. Fixed in `ba40f50`. That is the services-section
+argument in miniature: a passing suite is not a receipt that the feature
+works.
+
+Degraded-state copy follows ADR-0013 public-data truthfulness.
