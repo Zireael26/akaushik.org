@@ -17,7 +17,7 @@ evidenceOf: MSME depth · systems & product discipline
 
 India has roughly 63 million MSMEs — 6.34 crore, per the National Sample Survey Office's 2017 [Key Indicators of Unincorporated Non-Agricultural Enterprises](https://www.mospi.gov.in/sites/default/files/press_release/press_noteNSS_KI_73_2.34_29jun17.pdf). Most of them (textile traders, regional distributors, small manufacturing units) operate on WhatsApp conversations, paper ledgers, a Tally install, and a few shared spreadsheets. This isn't backwardness. It's a pragmatic equilibrium built on trust relationships, cash-flow timing, and a low tolerance for software that doesn't survive contact with the day.
 
-Any AI product aimed at this audience has to earn its place under that daily reality, not above it. That means the platform has to be useful before it's smart — and the smart parts have to be invisible enough that an operator who has never touched AI before doesn't have to think about them.
+Any AI product aimed at this audience has to earn its place under that daily reality, not above it. That means the platform has to be useful before it's smart, and the smart parts have to be invisible enough that an operator who has never touched AI before doesn't have to think about them.
 
 ## Problem
 
@@ -29,18 +29,19 @@ The actual problem is building a platform with enough structural honesty that a 
 
 The architecture reflects the operating environment, not a tech-stack wishlist. Four principles shaped it.
 
-- **Modular monolith with multi-tenant discipline.** One deployable, clean module boundaries, `tenant_id` enforced at every persistence boundary. This trades early micro-service flexibility for operational sanity at the scale MSMEs actually operate. The wrong distributed system on a two-person team costs far more than modularizing later.
-- **Textile distribution as beachhead, not as a limit.** The data models are designed so the platform generalizes to adjacent MSME verticals. The first release narrows to where there is direct operator input and real feedback.
-- **AI where it reduces typing and memory load, not where it replaces judgment.** Order capture, reconciliation assistance, and narrative summarization over the operator's own ledger — not autonomous decisioning. The operator stays in control of the outcome.
-- **Engineering process as proof of intent.** PRD, ADRs, roadmap, changelog, process-gate scripts. Not process theatre. Process that earns trust from any future technical buyer who looks under the hood.
+It is a modular monolith with multi-tenant discipline: one deployable, clean module boundaries, and `tenant_id` enforced at every persistence boundary. That trades early micro-service flexibility for operational sanity at the scale MSMEs actually operate at. The wrong distributed system on a two-person team costs far more than modularizing later does.
+
+Textile distribution is the beachhead, not the ceiling. The data models are built so the platform generalizes to adjacent MSME verticals, and the first release narrows to where there is direct operator input and real feedback.
+
+AI goes where it reduces typing and memory load, not where it replaces judgment. Order capture, reconciliation assistance, and narrative summarization run over the operator's own ledger. Nothing decides autonomously. The operator stays in control of the outcome.
+
+The engineering process is the proof of intent: PRD, ADRs, roadmap, changelog, process-gate scripts. Not process theatre. Process that earns trust from a technical buyer who looks under the hood.
 
 ## What shipped
 
 The first deployable version of the Neev platform is live. It ships a multi-tenant foundation with strict `tenant_id` invariants throughout the persistence layer, core domain models for the textile distribution workflow (orders, ledger, parties, items), and the first AI-assisted surfaces in the operator workflow. Public engineering artifacts (README, PRD, architectural decision records) are available alongside the build.
 
 The stack is Next.js on the front end against a Postgres-backed monolith, with Neev's own process-gate scripts keeping the repo honest across builds.
-
-*(Abhishek to fill: first tenant onboarded, measured effect on at least one workflow, specific milestones from PRs shipped to date.)*
 
 ## Trade-offs
 
@@ -52,10 +53,8 @@ The stack is Next.js on the front end against a Postgres-backed monolith, with N
 
 ## Honest scope
 
-*(Abhishek to fill: name what's live vs. what's in progress, and where real operators are vs. aren't using it yet. Resist the urge to overstate — understated and true beats polished and inflated for this audience.)*
-
 > The engineering artifacts are real and reviewable. The operator validation is in progress. That's the honest state of a system built correctly from the start, not retrofitted after the fact.
 
 ## What I'd do next
 
-*(Placeholder — fill after v1 stabilizes. Candidates: vernacular-language input for WhatsApp order capture; offline-first mobile operator app; reconciliation assistant as the first full agent surface with audit-grade output.)*
+Three things, in the order they'd earn their keep. Vernacular-language input for WhatsApp order capture, because the operators who most need this are not typing in English. An offline-first mobile app, because a distributor's phone loses signal in a warehouse and the ledger cannot wait for it to come back. Then a reconciliation assistant as the first full agent surface, with audit-grade output. That is the first place where the system does real work unsupervised, which is exactly why it has to show what it did.
