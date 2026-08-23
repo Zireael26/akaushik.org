@@ -68,10 +68,16 @@ export default defineConfig({
         // Deliberately narrow: this excludes the mount engines and NOT the
         // pure drawing functions beside them. `lib/pixel/sources.ts`,
         // `stages.ts` and `neural.ts` are ordinary functions over a 2D context
-        // and stay in scope — they are undertested today, and the fix for that
-        // is tests, not a wider exclusion.
+        // and stay in scope — they were the reason coverage failed, and the fix
+        // was `lib/pixel/sources.test.ts`, not a wider exclusion.
         'lib/scenes/**',
         'lib/pixel/field.ts',
+
+        // A test helper, not production code. `stub-context.ts` lives in lib/
+        // rather than beside one test because three test files need it, and
+        // measuring its coverage would report on the instrument rather than on
+        // what it measures.
+        'lib/pixel/stub-context.ts',
       ],
       reporter: ['text', 'html'],
       thresholds: {

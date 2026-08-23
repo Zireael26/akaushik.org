@@ -6,6 +6,49 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Added
 
+- 2026-08-23 — Unit tests for the pixel engine's pure drawing functions: 155
+  new tests taking `lib/pixel` from **1.37% to 85%** and the project from a
+  failing coverage gate to 89.23% lines / 78.33% branches / 94.95% functions.
+
+  The engine shipped with none. `sources.ts` — the file that decides what every
+  canvas on the site draws — was at 2.25%.
+
+  A `FieldSource` returns nothing; its entire output is the sequence of calls it
+  makes on the context it was handed. So `lib/pixel/stub-context.ts` records
+  that sequence and the tests assert on it. Not a jsdom canvas: jsdom's 2D
+  context is a no-op without the native `canvas` package, so a test written
+  against it passes whether or not the source draws anything — which is the
+  exact failure this was meant to catch.
+
+  What is asserted is deliberately not the pixels. There is no correct
+  coordinate, and a test pinning them would fail on every intentional tweak to
+  the art, which is how a suite gets deleted. The properties are the ones the
+  engine relies on and a human would not notice breaking: that a source draws at
+  all, that it is deterministic, that it responds to the inputs it claims to
+  (`t`, `angle`, `seed`), and that it puts marks on the grid at every preset
+  size — including a phone-width one, because art positioned in absolute units
+  lands off-grid at one breakpoint and nowhere else.
+
+  One assertion is there for the live complaint about this codebase: every
+  source must draw a *distinct* picture. Every article header and every case
+  study currently renders the same `trellis`, and nothing would have told us.
+
+  The grid check asserts overlap, not containment — the obvious version was
+  wrong, because `trellis` deliberately overdraws and then `clip()`s.
+
+  Mutation-checked, four ways, all caught: disabling the site motion switch
+  (2 failures), inverting the ink ramp so canvases go invisible (1), making
+  every stage draw the same glyph (2, with a message naming the clash), and
+  removing the feed's date filter.
+
+- 2026-08-23 — `lib/pixel.ts` and `lib/pixel-theme.ts` tested under jsdom,
+  0% to covered. `prefersReducedMotion` gets explicit cases for each of its two
+  veto sources and for the site switch alone, because that is the case that was
+  historically broken: the switch stopped the videos and left every canvas
+  drifting, and nothing failed.
+
+### Added
+
 - 2026-08-23 — An Atom feed at `/feed.xml`, with autodiscovery in `<head>`.
 
   The AEO baseline flagged its absence: fourteen dated posts and no way to
