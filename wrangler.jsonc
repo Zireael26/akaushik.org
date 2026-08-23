@@ -41,12 +41,18 @@
       }
     },
 
-    // Not wired to the apex yet: the Vercel project still serves akaushik.org
-    // and stays paused-not-deleted for 14 days after the eventual cutover
-    // (ADR-0018). Declared here so the cutover is a route change, not a new
-    // config.
+    // The apex. The Vercel project stays paused-not-deleted for 14 days after
+    // the cutover (ADR-0018) so a rollback is a DNS change and not a rebuild.
+    //
+    // `www` is bound here too, and the Worker 308s it to the apex — Vercel was
+    // doing that redirect at the platform level, which is invisible in this
+    // repo and did not survive the move. See `wwwRedirect` in lib/agent-proxy.ts.
     "production": {
       "name": "akaushik-org",
+      "routes": [
+        { "pattern": "akaushik.org", "custom_domain": true },
+        { "pattern": "www.akaushik.org", "custom_domain": true }
+      ],
       "assets": {
         "directory": ".open-next/assets",
         "binding": "ASSETS"

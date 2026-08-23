@@ -17,7 +17,7 @@
  * resolves those against the entry module, which is now this file rather than
  * the generated one.
  */
-import { isContractPath, mergeContractHeaders, planRequest } from '../lib/agent-proxy';
+import { isContractPath, mergeContractHeaders, planRequest, wwwRedirect } from '../lib/agent-proxy';
 
 // Typed by `worker/open-next.d.ts`, which stands in when the generated file is
 // absent — a fresh clone must typecheck before anything has been built.
@@ -43,6 +43,13 @@ const handler = {
   async fetch(request: Request, env: unknown, ctx: unknown): Promise<Response> {
     const url = new URL(request.url);
     const { pathname } = url;
+
+    // Before anything else, including the contract: a request on the wrong host
+    // should not be served at all, so there is nothing to attach headers to.
+    const redirect = wwwRedirect(request.headers.get('host'), url);
+    if (redirect) {
+      return new Response(null, { status: 308, headers: { location: redirect } });
+    }
 
     if (!isContractPath(pathname)) {
       return next.fetch(request, env, ctx);

@@ -85,6 +85,31 @@ export function isPreviewHost(host: string | null | undefined): boolean {
   return !CANONICAL_HOSTS.has(bare);
 }
 
+/**
+ * `www` is canonical enough to serve, and not canonical enough to be indexed.
+ *
+ * Vercel redirected `www.akaushik.org` to the apex with a platform-level 308,
+ * which is invisible in this repo and therefore did not survive the move to
+ * Workers. Without it the Worker would happily serve the whole site on both
+ * hosts: two URLs for every page, `rel=canonical` as the only thing telling
+ * search engines which one counts.
+ *
+ * 308 rather than 301 because it is the one permanent redirect that is
+ * guaranteed not to rewrite a POST into a GET. Nothing on this site posts
+ * today, but the form-action CSP says that is a matter of time, and a redirect
+ * that silently changes the method is a bug that surfaces years later.
+ *
+ * `www` stays in `CANONICAL_HOSTS` deliberately: it must not collect
+ * `X-Robots-Tag: noindex`, because the header would be attached to the
+ * redirect itself, and telling a crawler not to index a redirect is how you
+ * stop it following the redirect.
+ */
+export function wwwRedirect(host: string | null | undefined, url: URL): string | null {
+  if (!host) return null;
+  if (host.toLowerCase().replace(/:\d+$/, '') !== 'www.akaushik.org') return null;
+  return `https://akaushik.org${url.pathname}${url.search}`;
+}
+
 export function rewritePatternB(pathname: string): string | null {
   if (!pathname.endsWith('.md')) return null;
   if (!MD_ALTERNATE_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return null;

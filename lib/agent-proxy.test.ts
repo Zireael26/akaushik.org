@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildResponseHeaders,
+  wwwRedirect,
   isContractPath,
   isPreviewHost,
   mergeContractHeaders,
@@ -45,6 +46,41 @@ describe('isPreviewHost', () => {
   it('does not guess when there is no host header', () => {
     expect(isPreviewHost(null)).toBe(false);
     expect(isPreviewHost('')).toBe(false);
+  });
+});
+
+describe('wwwRedirect', () => {
+  const at = (path: string) => new URL(`https://www.akaushik.org${path}`);
+
+  it('sends www to the apex, keeping path and query', () => {
+    expect(wwwRedirect('www.akaushik.org', at('/work/neev?utm_source=x'))).toBe(
+      'https://akaushik.org/work/neev?utm_source=x',
+    );
+  });
+
+  it('redirects the root', () => {
+    expect(wwwRedirect('www.akaushik.org', at('/'))).toBe('https://akaushik.org/');
+  });
+
+  it.each(['akaushik.org', 'beta.akaushik.org', 'localhost:3000', 'akaushik.dev'])(
+    'leaves %s alone',
+    (host) => {
+      expect(wwwRedirect(host, at('/'))).toBeNull();
+    },
+  );
+
+  it('does not guess when there is no host header', () => {
+    expect(wwwRedirect(null, at('/'))).toBeNull();
+    expect(wwwRedirect('', at('/'))).toBeNull();
+  });
+
+  /**
+   * www must stay canonical for the robots decision even though it redirects:
+   * `X-Robots-Tag: noindex` on a redirect tells a crawler not to follow it,
+   * which is the opposite of consolidating the two hosts.
+   */
+  it('does not make www a preview host', () => {
+    expect(isPreviewHost('www.akaushik.org')).toBe(false);
   });
 });
 

@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { mergeContractHeaders, planRequest } from './lib/agent-proxy';
+import { mergeContractHeaders, planRequest, wwwRedirect } from './lib/agent-proxy';
 
 /**
  * The Next adapter for the agent-readiness contract. Local only.
@@ -18,6 +18,13 @@ import { mergeContractHeaders, planRequest } from './lib/agent-proxy';
  */
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Both adapters redirect before applying the contract; see `wwwRedirect`.
+  // This branch is unreachable locally — nothing resolves www.akaushik.org to
+  // a dev server — and exists so the two runtimes cannot drift.
+  const redirect = wwwRedirect(request.headers.get('host'), new URL(request.url));
+  if (redirect) return NextResponse.redirect(redirect, 308);
+
   const plan = planRequest(
     pathname,
     { host: request.headers.get('host'), accept: request.headers.get('accept') },

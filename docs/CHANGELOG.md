@@ -6,6 +6,28 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-08-23 — `www.akaushik.org` now redirects to the apex from the site's own
+  code rather than from the hosting platform, and the production Worker is
+  routed at both hosts.
+
+  Vercel was doing the `www` redirect with a platform-level 308. That is a
+  setting in someone else's dashboard, invisible in this repo, and it does not
+  move with the site — so binding `www` to the Worker as it stood would have
+  served every page on two hosts, with `rel=canonical` as the only thing
+  telling a search engine which one counted. The redirect now lives in
+  `lib/agent-proxy.ts` with the rest of the contract, which means both adapters
+  get it and `lib/agent-proxy.test.ts` covers it; a rule that exists in only one
+  runtime is a bug by construction (ADR-0018).
+
+  308 rather than 301 because it is the permanent redirect that cannot rewrite
+  a POST into a GET. `www` also stays inside `CANONICAL_HOSTS` deliberately —
+  attaching `X-Robots-Tag: noindex` to a redirect tells a crawler not to follow
+  it, which is the opposite of consolidating the two hosts.
+
+  This is the last code change the Vercel → Cloudflare cutover needed
+  (ADR-0018); the Vercel project stays paused-not-deleted for 14 days so a
+  rollback is a DNS change rather than a rebuild.
+
 - 2026-08-23 — Playwright's Firefox cannot launch on this machine, and the site
   is not the reason. Two attempts at a full five-project run against the
   preview stalled, and the cause is the bundled Firefox Nightly failing the
