@@ -222,6 +222,7 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   rollback is a DNS change rather than a rebuild.
 - 2026-08-23 — Writing frontmatter now carries a closed `art` vocabulary; `RouteField` selects topic/product sources with slug-seeded texture, and the content-bundling build visibly warns on trellis fallback.
 - 2026-08-23 — Case-study reels now use live theme-responsive pixel fields; HyperFrames video references/tests are being retired, and ADR-0020 records the decision.
+- 2026-08-23 — Reel field mapping preserves the original `Reel` default and maps `hero` to the engine's `hero` preset while cards use `tile`.
 
 - 2026-08-23 — Playwright's Firefox cannot launch on this machine, and the site
   is not the reason. Two attempts at a full five-project run against the

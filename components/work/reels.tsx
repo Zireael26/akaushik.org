@@ -6,7 +6,7 @@ import type { FieldPreset } from '@/lib/pixel/field';
  *
  * - `variant="card"`: `preset="tile"` — the home Work index is a matter-row
  *   stack now, so this size only survives on small surfaces.
- * - `variant="hero"`: `preset="band"` — the wide, short band at the top of a
+ * - `variant="hero"`: `preset="hero"` — the wide band at the top of a
  *   case-study detail page (`CaseStudyPage.tsx`, `CaseStudyStub.tsx`).
  *
  * Each reel renders the slug's own product source through the pixel field,
@@ -39,12 +39,12 @@ export function isReelSlug(slug: string): slug is ReelSlug {
 
 type ReelVariant = 'card' | 'hero';
 
-/** Preset per variant. The hero band is a wide, short strip above the case
- * study; the card size is a squatter tile. Both read best on `band`, whose
- * cell/gain/noise tuning is built for exactly this aspect. */
+/** Preset per variant. The hero band is the wide detail-page header at
+ * `hero` scale; the card size is a squatter tile. Each preset's
+ * cell/gain/noise tuning is built for exactly that aspect. */
 const VARIANT_PRESET: Record<ReelVariant, FieldPreset> = {
   card: 'tile',
-  hero: 'band',
+  hero: 'hero',
 };
 
 /**
@@ -52,7 +52,7 @@ const VARIANT_PRESET: Record<ReelVariant, FieldPreset> = {
  * the variant's preset. Same interface the HyperFrames-era component had;
  * different pixels behind it.
  */
-export function Reel({ slug, variant = 'hero' }: { slug: ReelSlug; variant?: ReelVariant }) {
+export function Reel({ slug, variant = 'card' }: { slug: ReelSlug; variant?: ReelVariant }) {
   return (
     // A div rather than a figure: the call sites already wrap the reel in
     // their own media figure, and nesting two adds no semantics.
