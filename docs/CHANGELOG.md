@@ -19,21 +19,14 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   a snapshot older than ~36h renders a "data stale" label and a provenance line
   reading "Last good N days ago", so an old number is never presented as
   current. The Actions workflow is retained until the Worker path is proven.
-  Component tests render the now-async `OpenSource` through awaited trees
-  instead of a synchronous `renderToStaticMarkup(<OpenSource />)` call, which
-  suspended under React 19's server renderer.
-  current. The Actions workflow is retained until the Worker path is proven.
-  Test harness note: the fake-GitHub fetch stub matches repo-root and
-  `/commits` URLs explicitly rather than by a `?` prefix that never fires, so
-  the per-repo branches are exercised as written.
-  current. The Actions workflow is retained until the Worker path is proven.
-  The Workers runtime types (`ScheduledController`, `ExecutionContext`) are
-  declared ambient in `worker/env.d.ts`, so a fresh clone typechecks before any
-  build or `wrangler types` run. Tests cover normalize, staleness boundaries,
-  parse fail-closed, and the cron handler against fake fetch + fake KV (no
-  network), plus degraded-state labelling in the component suite. Still needs
-  one operator command, `wrangler secret put GH_STATS_TOKEN`, deliberately not
-  automated.
+  Ambient `ScheduledController` and `ExecutionContext` live in
+  `worker/env.d.ts` so a fresh clone typechecks before `wrangler types`.
+  Tests cover normalize, staleness, parse fail-closed, the cron handler
+  against fake fetch and fake KV, and degraded-state labelling. The GitHub
+  harness matches `/repos/:name` and `/repos/:name/commits`. OpenSource is
+  async; the component suite awaits the tree before `renderToStaticMarkup`.
+  Still needs one operator command, `wrangler secret put GH_STATS_TOKEN`,
+  deliberately not automated.
 
 - 2026-08-23 — Began the original arcade field: a fixed asymmetric 25×17 board
   and deterministic maze-chase state machine with buffered keyboard movement,
