@@ -6,9 +6,9 @@
    list carried over from the old "Built in the open" section. */
 
 /* ---------- flow band ---------- */
-/* Sized here, drawn by the band engine. The engine reads [data-mstep] on the
-   grid columns below to drive its hover highlight, so the band and the grid
-   have to stay in the same section. */
+/* Sized here, drawn by the band engine. The cursor engine queries
+   [data-pixel-hover] on the grid columns below and the component forwards its
+   progress to the selected tile, so the band and the grid stay in one system. */
 /* ---------- the four steps ---------- */
 .px-step {
   font-family: var(--font-mono);
@@ -114,7 +114,7 @@
 .px-pipeline-band {
   display: block;
   width: 100%;
-  height: clamp(104px, 15vh, 168px);
+  height: clamp(148px, 22vh, 232px);
 }
 
 .px-pipeline-grid {
@@ -125,21 +125,76 @@
 }
 
 .px-pipeline-step {
+  --px-pipeline-cursor-progress: 0;
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
 }
 
+.px-pipeline-step:focus-visible {
+  outline: 2px solid var(--px-cobalt);
+  outline-offset: 6px;
+}
+
 .px-pipeline-tile {
+  position: relative;
+  isolation: isolate;
   width: 100%;
   height: clamp(76px, 9vh, 104px);
   margin-bottom: 14px;
+  overflow: hidden;
+}
+
+.px-pipeline-tile::before,
+.px-pipeline-tile::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  opacity: calc(var(--px-pipeline-cursor-progress) * 0.7);
+  transition:
+    opacity 0.18s steps(4, end),
+    transform 0.18s steps(4, end);
+}
+
+/* A cell-edged frame resolves around the selected glyph as the cursor arrives. */
+.px-pipeline-tile::before {
+  inset: 5px;
+  border: 1px solid var(--px-cobalt);
+  transform: scaleX(calc(0.78 + var(--px-pipeline-cursor-progress) * 0.22));
+  transform-origin: left center;
+}
+
+/* The lower bleed is deliberately made from short pixel bars, not a soft glow. */
+.px-pipeline-tile::after {
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 9px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--px-cobalt) 0 3px,
+    transparent 3px 8px
+  );
+  opacity: calc(var(--px-pipeline-cursor-progress) * 0.5);
+  transform: scaleX(var(--px-pipeline-cursor-progress));
+  transform-origin: left center;
 }
 
 .px-pipeline-tile-canvas {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+@media (prefers-reduced-motion: reduce), (pointer: coarse), (pointer: none) {
+  .px-pipeline-tile::before,
+  .px-pipeline-tile::after {
+    opacity: 0;
+    transform: none;
+    transition: none;
+  }
 }
 
 .px-step {

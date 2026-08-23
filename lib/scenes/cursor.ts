@@ -21,7 +21,63 @@ export type CursorNearDetail = Readonly<{
   distance: number;
   /** Symmetric dissolve ramp, 0..1 in 0.07 steps per animation frame. */
   progress: number;
+  /** False while a previously hit target is dissolving outside the halo. */
+  hit?: boolean;
 }>;
+
+export type CursorPoint = Readonly<{
+  x: number;
+  y: number;
+}>;
+
+type CursorTargetCandidate = Readonly<{
+  distance: number;
+  index: number;
+}>;
+
+/** Selects the nearest target, using DOM order to break equal-distance ties. */
+export function isCloserCursorTarget(
+  candidate: CursorTargetCandidate,
+  current: CursorTargetCandidate | null,
+): boolean {
+  if (!current) return true;
+
+  const candidateDistance =
+    Number.isFinite(candidate.distance) && candidate.distance >= 0
+      ? candidate.distance
+      : Number.POSITIVE_INFINITY;
+  const currentDistance =
+    Number.isFinite(current.distance) && current.distance >= 0
+      ? current.distance
+      : Number.POSITIVE_INFINITY;
+
+  return (
+    candidateDistance < currentDistance ||
+    (candidateDistance === currentDistance && candidate.index < current.index)
+  );
+}
+
+/** The original snap mode eased 20% toward its element anchor each frame. */
+export const CURSOR_SNAP_EASE = 0.2;
+
+/**
+ * Ease a cursor point toward a proximity target.
+ *
+ * A null point is the explicit reset state used when proximity ends or the
+ * engine is disabled. The grid alignment used by the drawn sprites is kept
+ * separate; snapping a target to that grid would make this interaction jump.
+ */
+export function easeCursorPosition(
+  current: CursorPoint | null,
+  target: CursorPoint,
+  origin: CursorPoint,
+): CursorPoint {
+  if (!current) return { x: origin.x, y: origin.y };
+  return {
+    x: current.x + (target.x - current.x) * CURSOR_SNAP_EASE,
+    y: current.y + (target.y - current.y) * CURSOR_SNAP_EASE,
+  };
+}
 
 type Cell = readonly [number, number];
 type VisibleMode = 'arrow' | 'caret' | 'keycap';
@@ -79,7 +135,7 @@ const ARROW_CELLS = buildArrowCells();
 const ARROW_OCCUPANCY = new Set(ARROW_CELLS.map(([x, y]) => x * 100 + y));
 const ARROW_EDGE = ARROW_CELLS.filter(([x, y]) => !ARROW_OCCUPANCY.has(x * 100 + y + 1));
 
-function snap(value: number): number {
+function gridSnap(value: number): number {
   return Math.round(value / CURSOR_GRID) * CURSOR_GRID;
 }
 
@@ -142,7 +198,7 @@ function drawArrow(
       const localRow = (row + localY - 3) * cell;
       const drawX = x + localX * cosine - localRow * sine;
       const drawY = y + localX * sine + localRow * cosine;
-      ctx.fillRect(snap(drawX) + offsetX, snap(drawY) + offsetY, cell - 1, cell - 1);
+      ctx.fillRect(gridSnap(drawX) + offsetX, gridSnap(drawY) + offsetY, cell - 1, cell - 1);
     }
   };
 
@@ -167,8 +223,8 @@ function drawCaret(
   solid?: string,
 ): void {
   const cell = CURSOR_GRID;
-  const left = snap(x) - 8 + offsetX;
-  const top = snap(y) - 14 + offsetY;
+  const left = gridSnap(x) - 8 + offsetX;
+  const top = gridSnap(y) - 14 + offsetY;
 
   ctx.fillStyle = solid ?? inkAlpha(1, dark);
   for (let row = 0; row < 7; row++) {
@@ -195,8 +251,8 @@ function drawKeycap(
   solid?: string,
 ): void {
   const cell = CURSOR_GRID;
-  const left = snap(x) - 22 + offsetX;
-  const top = snap(y) - 18 + offsetY;
+  const left = gridSnap(x) - 22 + offsetX;
+  const top = gridSnap(y) - 18 + offsetY;
   const pressed = pressedAt > 0 && now - pressedAt < PRESS_MS;
   const faceOffset = pressed ? cell : 0;
   const silhouette = solid ?? navy(dark);
@@ -303,6 +359,7 @@ export function mountCursor(canvas: HTMLCanvasElement): () => void {
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const hoverStates = new Map<HTMLElement, number>();
   const arrowTarget: Point = { x: 0, y: 0 };
+  let snapPosition: CursorPoint | null = null;
 
   let dpr = 1;
   let dark = isDark();
@@ -339,6 +396,7 @@ export function mountCursor(canvas: HTMLCanvasElement): () => void {
       }
     }
     hoverStates.clear();
+    snapPosition = null;
   }
 
   function resetMotionState(): void {
@@ -347,6 +405,7 @@ export function mountCursor(canvas: HTMLCanvasElement): () => void {
     velocityX = 0;
     velocityY = 0;
     previousMode = null;
+    snapPosition = null;
   }
 
   function sizeOverlay(): void {
@@ -394,11 +453,14 @@ export function mountCursor(canvas: HTMLCanvasElement): () => void {
     wrapElement = document.querySelector<HTMLElement>('[data-wrap]');
   }
 
+  function updateHoverTargets(): { target: Point | null } {
+    let target: (CursorTargetCandidate & { point: Point }) | null = null;
+    for (let index = 0; index < hoverElements.length; index += 1) {
+      const element = hoverElements[index];
+      if (!element) continue;
 
-  function updateHoverTargets(): boolean {
-    let hidden = false;
-    for (const element of hoverElements) {
       const rect = element.getBoundingClientRect();
+      const distance = distanceToRect(mouseX, mouseY, rect);
       const hit = Boolean(
         pointerInside &&
           rect.width &&
@@ -407,7 +469,10 @@ export function mountCursor(canvas: HTMLCanvasElement): () => void {
           mouseY > rect.top - HOVER_PAD &&
           mouseY < rect.bottom + HOVER_PAD,
       );
-      if (hit) hidden = true;
+      if (hit) {
+        const candidate = { distance, index, point: { x: rect.right + 6, y: rect.top - 12 } };
+        if (isCloserCursorTarget(candidate, target)) target = candidate;
+      }
 
       const previousProgress = hoverStates.get(element);
       if (!hit && previousProgress == null) continue;
@@ -422,7 +487,7 @@ export function mountCursor(canvas: HTMLCanvasElement): () => void {
         element.dispatchEvent(
           new CustomEvent<CursorNearDetail>(CURSOR_NEAR_EVENT, {
             bubbles: true,
-            detail: { distance: distanceToRect(mouseX, mouseY, rect), progress },
+            detail: { distance, progress, hit },
           }),
         );
       } else if (previousProgress != null) {
@@ -439,7 +504,7 @@ export function mountCursor(canvas: HTMLCanvasElement): () => void {
       }
     }
 
-    return hidden;
+    return { target: target?.point ?? null };
   }
 
   function findArrowTarget(): boolean {
@@ -483,10 +548,13 @@ export function mountCursor(canvas: HTMLCanvasElement): () => void {
     velocityX = velocityX * 0.72 + deltaX * 0.28;
     velocityY = velocityY * 0.72 + deltaY * 0.28;
 
-    const hidden = updateHoverTargets();
+    const hover = updateHoverTargets();
+    snapPosition = hover.target
+      ? easeCursorPosition(snapPosition, hover.target, { x: mouseX, y: mouseY })
+      : null;
     setNativeCursorHidden(pointerInside);
-    if (!pointerInside || hidden) {
-      previousMode = hidden ? 'hidden' : null;
+    if (!pointerInside) {
+      previousMode = null;
       return;
     }
 
@@ -504,20 +572,22 @@ export function mountCursor(canvas: HTMLCanvasElement): () => void {
       mode !== 'caret' || Math.floor((now - caretEnteredAt) / CARET_HALF_PERIOD_MS) % 2 === 0;
     if (!caretVisible) return;
 
-    const targetX = hasArrowTarget ? arrowTarget.x : mouseX;
-    const targetY = hasArrowTarget ? arrowTarget.y : mouseY;
+    const drawX = snapPosition?.x ?? mouseX;
+    const drawY = snapPosition?.y ?? mouseY;
+    const targetX = hover.target?.x ?? (hasArrowTarget ? arrowTarget.x : mouseX);
+    const targetY = hover.target?.y ?? (hasArrowTarget ? arrowTarget.y : mouseY);
     const speed = Math.hypot(velocityX, velocityY);
-    if (speed > 2.5) {
+    if (!snapPosition && speed > 2.5) {
       const unitX = -velocityX / speed;
       const unitY = -velocityY / speed;
       const magnitude = Math.min(26, speed * 1.4);
       drawMode(
         ctx,
         mode,
-        mouseX,
-        mouseY,
-        snap(unitX * magnitude * 2),
-        snap(unitY * magnitude * 2),
+        drawX,
+        drawY,
+        gridSnap(unitX * magnitude * 2),
+        gridSnap(unitY * magnitude * 2),
         dark,
         now,
         pressedAt,
@@ -528,10 +598,10 @@ export function mountCursor(canvas: HTMLCanvasElement): () => void {
       drawMode(
         ctx,
         mode,
-        mouseX,
-        mouseY,
-        snap(unitX * magnitude),
-        snap(unitY * magnitude),
+        drawX,
+        drawY,
+        gridSnap(unitX * magnitude),
+        gridSnap(unitY * magnitude),
         dark,
         now,
         pressedAt,
@@ -544,8 +614,8 @@ export function mountCursor(canvas: HTMLCanvasElement): () => void {
     drawMode(
       ctx,
       mode,
-      mouseX,
-      mouseY,
+      drawX,
+      drawY,
       0,
       0,
       dark,

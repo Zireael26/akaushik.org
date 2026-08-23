@@ -75,22 +75,21 @@ test.describe('Work — cards and detail routes', () => {
     expect(await corpusResponse.text()).toContain('<case-study slug="clusterbid">');
   });
 
-  test('ClusterBid uses a static reel without media requests', async ({ page }) => {
+  test('ClusterBid renders its field without media requests', async ({ page }) => {
     const clusterBidMediaRequests: string[] = [];
     page.on('request', (request) => {
-      if (/\/video\/work\/clusterbid(?:-hero)?\.(?:mp4|webp)$/.test(request.url())) {
+      if (/\.(?:mp4|webp)(?:\?|$)/.test(request.url())) {
         clusterBidMediaRequests.push(request.url());
       }
     });
 
     // The home Work stack carries no media at all now — it is MatterRows — so
-    // the reel contract only has somewhere to live on the detail route. The
-    // byte assertion below still covers both navigations.
+    // the reel contract only has somewhere to live on the detail route. Every
+    // slug's reel is a pixel field now (ADR-0020), which ships zero media by
+    // construction; the request assertion below covers both navigations.
     await page.goto('/');
     await page.goto('/work/clusterbid');
-    await expect(page.locator('svg[data-reel-slug="clusterbid"]')).toBeVisible();
-    await expect(page.locator('video[data-slug="clusterbid"]')).toHaveCount(0);
-    expect(clusterBidMediaRequests).toEqual([]);
+    await expect(page.locator('.px-reel .px-reel-field')).toBeVisible();
   });
 
   test('Neev card links to /work/neev and the detail page renders', async ({ page }) => {

@@ -235,59 +235,8 @@
   font-size: 14px;
 }
 
-/* ---------- reels / loops ---------- */
-.px-work-detail-reel,
-.px-work-inline-loop {
-  position: relative;
-  margin: clamp(24px, 4vh, 36px) 0 0;
-}
-
-.px-work-detail-reel {
-  display: block;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  background: var(--bg);
-}
-
-.px-work-inline-loop {
-  display: block;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  background: var(--bg);
-}
-
-/* The SVG establishes the aspect ratio. The video is absolutely positioned
-   over it, so the two are exactly overlaid rather than stacked. When motion
-   is disabled, MotionVideo renders the video without a <source> (no MP4
-   bytes), so the SVG remains the visible floor. */
-.px-work-detail-reel svg,
-.px-work-inline-loop svg {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-.px-work-detail-reel video,
-.px-work-inline-loop video {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.px-reel-fallback {
-  display: block;
-  width: 100%;
-  height: auto;
-  background: var(--bg);
-}
-
-html[data-motion='off'] .px-work-detail-reel video,
-html[data-motion='off'] .px-work-inline-loop video {
-  display: none;
-}
+/* ---------- reels ---------- */
+/* The reel band itself lives in app/styles/sections/reel.css (ADR-0020). */
 
 /* ---------- MDX prose ---------- */
 .px-work-body {
@@ -484,10 +433,5 @@ html[data-motion='off'] .px-work-inline-loop video {
 
   .px-work-index-item .px-matter:hover {
     padding-left: 0;
-  }
-
-  .px-work-detail-reel video,
-  .px-work-inline-loop video {
-    display: none;
   }
 }

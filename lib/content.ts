@@ -1,4 +1,5 @@
 import { CONTENT_BUNDLE } from './content-bundle.generated';
+import { asWritingArt, type WritingArt } from './pixel/topics';
 import { getReadingTime } from './reading-time';
 
 export type ContentType = 'case-studies' | 'writing';
@@ -22,6 +23,13 @@ export type WritingFrontmatter = {
   readingTime?: string;
   draft?: boolean;
   unlisted?: boolean;
+  /**
+   * Topic art for the route strip, from the closed vocabulary in
+   * `lib/pixel/topics.ts`. Optional: an absent value renders the trellis
+   * fallback and the content-bundle build warns about it; an unknown value
+   * is a typo and fails the content-bundle build.
+   */
+  art?: WritingArt;
 };
 
 export type FrontmatterFor<T extends ContentType> = T extends 'case-studies'
@@ -187,9 +195,21 @@ export function getPost<T extends ContentType>(
   const raw = CONTENT_BUNDLE[bundleKey(type, slug)];
   if (raw === undefined) return null;
   const { data, content } = parseFrontmatter(raw);
+  const frontmatter = data as FrontmatterFor<T>;
+  if (type === 'writing') {
+    // `art` is a closed vocabulary, not a free string: normalise it here so
+    // every consumer sees WritingArt | undefined, never an arbitrary value.
+    const fm = frontmatter as WritingFrontmatter;
+    const art = asWritingArt(fm.art);
+    if (art) {
+      fm.art = art;
+    } else {
+      delete fm.art;
+    }
+  }
   return {
     slug,
-    frontmatter: data as FrontmatterFor<T>,
+    frontmatter,
     content,
   };
 }
