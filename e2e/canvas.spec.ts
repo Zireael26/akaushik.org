@@ -93,6 +93,13 @@ test.describe('pixel canvases', () => {
     await expectFieldMounted(page, '.px-heatfield canvas');
   });
 
+  test('writing details keep their single route field', async ({ page }) => {
+    await page.goto('/writing/ai-for-msme');
+    await expect(page.locator('.px-article .px-route-field')).toHaveCount(1);
+    await expect(page.locator('.px-article .px-reel-field')).toHaveCount(0);
+    await expectFieldMounted(page, '.px-article .px-route-field');
+  });
+
   test('the status field mounts on the 404 route', async ({ page }) => {
     await page.goto('/this-route-does-not-exist');
     await expectFieldMounted(page, 'canvas.px-status-field');

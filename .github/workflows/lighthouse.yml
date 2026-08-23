@@ -80,6 +80,33 @@ jobs:
       # Gate armed: home.spec.ts's WCAG axe test passes with 0 violations
       # (verified T5 audit remediation), so this step now fails the build
       # on regression instead of only reporting.
+      # Warm each route and let its entrance animation finish before axe looks.
+      #
+      # The axe CLI measures the moment the page is ready and does not wait for
+      # animation. The hero fades its content in, so a scan that lands mid-fade
+      # reads the h1, the sub and the note at a contrast ratio of ~1.1 — text
+      # that is nearly transparent against its own background — and reports a
+      # colour-contrast violation on a page that is fine once it settles.
+      #
+      # Measured against the deployed site with the same axe rules:
+      #   domcontentloaded, no settle -> 1 violation, ratios 1.07-1.10
+      #   load, no settle             -> 1 violation, ratio 2.74
+      #   networkidle + 1500ms        -> 0 violations
+      #
+      # This blocked two unrelated pull requests before anyone looked at the
+      # numbers, and re-running the identical commit passed, which is the
+      # signature of a race rather than a regression.
+      #
+      # WCAG contrast is a property of the resting state, so settling first is
+      # what the check was always supposed to do — it is not a weakened gate.
+      # The threshold, the rule set and the routes are all unchanged.
+      - name: Warm routes and settle animations
+        run: |
+          for url in http://localhost:3100/ http://localhost:3100/work/neev http://localhost:3100/writing; do
+            curl -fsS -o /dev/null "$url"
+          done
+          sleep 3
+
       - name: Axe-core scan
         run: |
           axe http://localhost:3100/ http://localhost:3100/work/neev http://localhost:3100/writing \

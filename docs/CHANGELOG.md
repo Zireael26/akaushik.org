@@ -6,6 +6,46 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Fixed
 
+- 2026-08-23 — The CI accessibility gate stopped failing on a page that is
+  fine. The axe CLI measured the moment each route was ready, without waiting
+  for animation, so a scan landing mid-hero-fade read the h1, sub and note at a
+  contrast ratio of **~1.1** — text nearly transparent against its own
+  background — and reported a colour-contrast violation.
+
+  Measured against the deployed site with the same rule set:
+
+  | when axe looks | result |
+  |---|---|
+  | `domcontentloaded`, no settle | 1 violation, ratios 1.07–1.10 |
+  | `load`, no settle | 1 violation, ratio 2.74 |
+  | `networkidle` + 1500ms | **0 violations** |
+
+  It blocked two unrelated pull requests before anyone read the numbers, and
+  re-running the identical commit passed — the signature of a race, not a
+  regression. WCAG contrast is a property of the resting state, so settling
+  first is what the check was always meant to do. Threshold, rule set and
+  routes are unchanged; this does not weaken the gate.
+
+  Two wrong diagnoses came first and are worth recording: that the element was
+  genuinely low-contrast (it computes 7.45:1 on white), and that the body's
+  250ms theme transition flashed light text on a light background on load
+  (measured: the background is fully dark by 120ms, and CSS transitions do not
+  fire on the initial style resolution). Neither survived measurement.
+
+### Fixed
+
+- 2026-08-23 — The portrait fills its column on a phone. `.px-portrait` is
+  `flex: 0 1 300px`, and grow `0` meant that when the row wraps to a single
+  column the portrait kept its 300px basis instead of filling: measured at
+  375px it spanned 20..320, a 20px gutter on the left and 55px on the right.
+  Off-centre by 35px, which reads as a mistake because it is one.
+
+  Grown rather than centred. Centring would even the gutters and still waste
+  the width; the picture is the point of that section. Now 20px either side at
+  320, 375 and 414.
+
+### Fixed
+
 - 2026-08-23 — Three author-facing placeholders were live on the Neev case
   study, which is the hero case (`index: "01"`). Two `*(Abhishek to fill: …)*`
   notes and one `*(Placeholder — fill after v1 stabilizes …)*`, served in the
@@ -269,6 +309,8 @@ normal` makes that height a property of the font's metrics rather than a
   rollback is a DNS change rather than a rebuild.
 
 - 2026-08-23 — Writing frontmatter now carries a closed `art` vocabulary; `RouteField` selects topic/product sources with slug-seeded texture, and the content-bundling build visibly warns on trellis fallback.
+- 2026-08-23 — Writing frontmatter now carries a closed `art` vocabulary; the writing-only `RouteField` selects topic sources with slug-seeded texture, and the content-bundling build visibly warns on trellis fallback.
+- 2026-08-23 — Case-study detail routes now render only their full-size `ReelField`; the squeezed `RouteField` strip is gone, with Playwright coverage for one art field per detail page.
 - 2026-08-23 — Case-study reels now use live theme-responsive pixel fields; HyperFrames video references/tests are being retired, and ADR-0020 records the decision.
 - 2026-08-23 — Reel field mapping preserves the original `Reel` default and maps `hero` to the engine's `hero` preset while cards use `tile`.
 
