@@ -23,6 +23,7 @@
  */
 import { readFileSync, readdirSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { WRITING_ART_TOPICS } from '../lib/pixel/topics';
 
 const ROOT = join(import.meta.dirname, '..');
 const CONTENT_ROOT = join(ROOT, 'content');
@@ -38,6 +39,40 @@ for (const type of TYPES) {
     const slug = name.replace(/\.mdx$/, '');
     entries.push([`${type}/${slug}`, readFileSync(join(dir, name), 'utf8')]);
   }
+}
+
+// Writing posts declare their topic art in frontmatter (`art: retrieval`) —
+// a closed vocabulary resolved by components/pixel/RouteField. The
+// vocabulary is closed, so a typo is a build error, not a silent fallback:
+// an unknown value fails the bundle build, while an absent `art:` renders
+// the trellis fallback at runtime and is warned about here, loudly, so an
+// un-arted post gets noticed instead of quietly looking like every other
+// strip.
+const FRONTMATTER_FENCE = /^---\r?\n([\s\S]*?)\r?\n---/;
+const ART_LINE = /^art:\s*(.*)$/m;
+function declaredArt(raw: string): string {
+  const fence = FRONTMATTER_FENCE.exec(raw);
+  const value = fence ? (ART_LINE.exec(fence[1] ?? '')?.[1] ?? '') : '';
+  return value.trim().replace(/^['"]/, '').replace(/['"]$/, '').trim();
+}
+
+let artWarnings = 0;
+for (const [key, raw] of entries) {
+  if (!key.startsWith('writing/')) continue;
+  const art = declaredArt(raw);
+  if (art === '') {
+    console.warn(
+      `content-bundle: WARNING ${key}: no \`art:\` in frontmatter — rendering the trellis fallback. Known topics: ${WRITING_ART_TOPICS.join(', ')}.`,
+    );
+    artWarnings += 1;
+  } else if (!(WRITING_ART_TOPICS as readonly string[]).includes(art)) {
+    throw new Error(
+      `content-bundle: ${key} declares unknown \`art: ${art}\` — not a member of the closed vocabulary. Known topics: ${WRITING_ART_TOPICS.join(', ')}. Fix the frontmatter, or extend the vocabulary in lib/pixel/topics.ts.`,
+    );
+  }
+}
+if (artWarnings > 0) {
+  console.warn(`content-bundle: ${artWarnings} writing post(s) fell back to trellis art.`);
 }
 
 const body = entries

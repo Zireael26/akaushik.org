@@ -170,7 +170,7 @@ export default async function WritingPost({ params }: { params: Promise<{ slug: 
 
       <article className="px-article">
         <header>
-          <RouteField slug={slug} />
+          <RouteField slug={slug} art={fm.art} />
 
           <nav className="px-article-crumb" aria-label="Breadcrumb">
             <Link href="/writing">Writing</Link>

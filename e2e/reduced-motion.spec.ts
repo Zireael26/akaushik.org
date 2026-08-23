@@ -11,9 +11,14 @@ import { expect, test, type Page } from '@playwright/test';
  * The pixel fields are canvases driven by requestAnimationFrame, so there is no
  * `animationPlayState` to read. What a user can observe is whether the picture
  * changes, and that is what these assert: sample the canvas twice, a second
- * apart, and compare. Still under reduced motion, moving without it. The other
- * half of the contract is bytes — a motion-disabled visitor should not pay for
- * video they will never see.
+ * apart, and compare. Still under reduced motion, moving without it.
+ *
+ * The other half of the contract is still bytes — a motion-disabled visitor
+ * should not pay for media they will never see. The case-study reels are
+ * pixel fields now (ADR-0020), so that half is structural: a field ships
+ * zero media requests for anyone, which the `/work/neev` navigation asserts
+ * anyway. What reduced motion changes for a field is that it must hold
+ * still — same sampling technique as the hero specs above, on the reel.
  */
 test.describe.configure({ timeout: 60_000 });
 
@@ -61,27 +66,40 @@ test.describe('prefers-reduced-motion', () => {
     expect(a).toBe(b);
   });
 
-  test('a motion-disabled visitor is never sent video bytes', async ({ page }) => {
-    const videoRequests: string[] = [];
+  test('a motion-disabled visitor is sent no media bytes on a case study', async ({ page }) => {
+    const mediaRequests: string[] = [];
     page.on('request', (r) => {
-      if (/\.(mp4|webm)(\?|$)/.test(r.url())) videoRequests.push(r.url());
+      if (/\.(mp4|webm|webp)(\?|$)/.test(r.url())) mediaRequests.push(r.url());
     });
 
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/work/neev');
     await page.waitForTimeout(SETTLE_MS);
 
-    expect(videoRequests, `unexpected video requests: ${videoRequests.join(', ')}`).toHaveLength(0);
+    expect(
+      mediaRequests,
+      `unexpected media requests: ${mediaRequests.join(', ')}`,
+    ).toHaveLength(0);
   });
 
-  test('the SVG floor is what a motion-disabled visitor sees instead', async ({ page }) => {
+  test('a case-study reel field holds still under reduced motion', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/work/vericite');
 
-    // Every reel draws an SVG floor underneath the video precisely so there is
-    // something to show when the video is gated off.
-    const media = page.locator('.px-work-detail-reel, .px-work-inline-loop').first();
-    await expect(media).toBeVisible();
-    await expect(media.locator('svg').first()).toBeVisible();
+    // The reel is the slug's product source mounted as a pixel field
+    // (ADR-0020). Reduced motion must freeze it, exactly as it freezes the
+    // hero field above.
+    const [a, b] = await sampleTwice(page, '.px-reel .px-reel-field');
+    expect(a).toBe(b);
+  });
+
+  test('a case-study reel field animates when motion is allowed', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto('/work/vericite');
+
+    // The control: the same field, motion allowed. If this ever freezes the
+    // two reduced-motion assertions above prove nothing.
+    const [a, b] = await sampleTwice(page, '.px-reel .px-reel-field');
+    expect(a).not.toBe(b);
   });
 });
