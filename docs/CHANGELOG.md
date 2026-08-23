@@ -14,6 +14,16 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   media asset or dependency. Twenty focused tests cover topology, reachability,
   routing, timing, collision precedence and exact restart.
 
+- 2026-08-23 — Added the field's opt-in WebAudio instrument. Four original cues
+  are scheduled at runtime from square and triangle oscillators with short gain
+  envelopes; there is no sample, audio buffer, fetch, media asset or background
+  loop. Sound defaults off, remembers intent under the site's storage namespace
+  and still creates no `AudioContext` until a fresh gesture. Mute, restart and
+  unmount stop active voices and disconnect both oscillator and gain nodes.
+  Fifteen focused tests cover cue parameters, autoplay gating, persistence,
+  suspended/closed contexts and teardown; separate 48kHz WAV receipts are
+  rendered from the production scheduler for human acceptance.
+
 ### Fixed
 
 - 2026-08-23 — The CI accessibility gate stopped failing on a page that is

@@ -37,12 +37,12 @@ apex owns final visual acceptance and every push, deploy or merge.
 
 ## U2 — Runtime oscillator audio
 
-- [ ] T14 Add the standalone square/triangle event scheduler in
+- [x] T14 Add the standalone square/triangle event scheduler in
   `lib/arcade/audio.ts` → SC8, SC9
-- [ ] T15 Add lazy gesture-gated audio ownership, exact
+- [x] T15 Add lazy gesture-gated audio ownership, exact
   `abhishek.portfolio.arcade.sound` persistence, active-source cleanup and
   disposal → SC8
-- [ ] T16 Add fake-WebAudio tests for default-off, gesture, persistence,
+- [x] T16 Add fake-WebAudio tests for default-off, gesture, persistence,
   scheduling, mute, teardown and non-melodic jitter bounds → SC8
 - [ ] T17 Render a WAV from the production scheduler; inspect duration, peak and
   waveform and listen for harshness or recognizable patterns → SC8
