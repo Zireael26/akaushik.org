@@ -145,6 +145,10 @@ export function ProcessPipeline({ steps }: { steps: readonly ProcessStep[] }) {
                 <PixelField
                   sources={tileSources[i]!}
                   preset="tile"
+                  color="ink"
+                  gain={1}
+                  scatter={0}
+                  shapeNoise={0}
                   ambient={false}
                   seed={i * 137}
                   className="px-pipeline-tile-canvas"

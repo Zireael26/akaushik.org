@@ -1,12 +1,19 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { mountField, type FieldHandle, type FieldPreset, type FieldSource } from '@/lib/pixel/field';
+import {
+  mountField,
+  type FieldColor,
+  type FieldHandle,
+  type FieldPreset,
+  type FieldSource,
+} from '@/lib/pixel/field';
 
 export type PixelFieldProps = {
   /** One entry per stage. A single source is a static field. */
   sources: readonly FieldSource[];
   preset?: FieldPreset;
+  color?: FieldColor;
   cellSize?: number;
   gain?: number;
   scatter?: number;
@@ -43,6 +50,7 @@ export type PixelFieldProps = {
 export function PixelField({
   sources,
   preset = 'hero',
+  color,
   cellSize,
   gain,
   scatter,
@@ -74,6 +82,7 @@ export function PixelField({
     const h = mountField(canvas, {
       sources: sourcesRef.current,
       preset,
+      color,
       cellSize,
       gain,
       scatter,
@@ -92,7 +101,20 @@ export function PixelField({
       handle.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [preset, cellSize, gain, scatter, shapeNoise, interactive, cycleOnClick, swing, ambient, animate, seed]);
+  }, [
+    preset,
+    color,
+    cellSize,
+    gain,
+    scatter,
+    shapeNoise,
+    interactive,
+    cycleOnClick,
+    swing,
+    ambient,
+    animate,
+    seed,
+  ]);
 
   useEffect(() => {
     if (typeof stage === 'number') handle.current?.setStage(stage);

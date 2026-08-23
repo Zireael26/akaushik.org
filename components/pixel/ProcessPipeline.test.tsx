@@ -7,17 +7,32 @@ import { ProcessPipeline, type ProcessStep } from './ProcessPipeline';
 
 vi.mock('@/components/pixel/PixelField', () => ({
   PixelField: ({
+    ambient,
     className,
+    color,
     cellSize,
+    gain,
+    scatter,
+    shapeNoise,
     stage,
   }: {
+    ambient?: boolean;
     className?: string;
+    color?: string;
     cellSize?: number;
+    gain?: number;
+    scatter?: number;
+    shapeNoise?: number;
     stage?: number;
   }) =>
     createElement('canvas', {
       className,
+      'data-ambient': ambient === undefined ? undefined : String(ambient),
+      'data-color': color,
       'data-cell-size': cellSize === undefined ? undefined : String(cellSize),
+      'data-gain': gain === undefined ? undefined : String(gain),
+      'data-scatter': scatter === undefined ? undefined : String(scatter),
+      'data-shape-noise': shapeNoise === undefined ? undefined : String(shapeNoise),
       'data-stage': stage === undefined ? undefined : String(stage),
     }),
 }));
@@ -57,6 +72,15 @@ describe('ProcessPipeline cursor interaction', () => {
     expect(band?.dataset.cellSize).toBe('3');
     expect(steps).toHaveLength(4);
     expect([...steps].every((step) => step.hasAttribute('data-pixel-hover'))).toBe(true);
+    const tiles = container.querySelectorAll<HTMLCanvasElement>('.px-pipeline-tile-canvas');
+    expect(tiles).toHaveLength(4);
+    for (const tile of tiles) {
+      expect(tile.dataset.color).toBe('ink');
+      expect(tile.dataset.gain).toBe('1');
+      expect(tile.dataset.scatter).toBe('0');
+      expect(tile.dataset.shapeNoise).toBe('0');
+      expect(tile.dataset.ambient).toBe('false');
+    }
 
     await act(async () => {
       secondTile.dispatchEvent(

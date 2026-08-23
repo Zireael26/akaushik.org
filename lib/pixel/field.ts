@@ -62,6 +62,24 @@ export type FieldSource = (o: CanvasRenderingContext2D, c: SourceContext) => voi
 
 export type FieldPreset = 'hero' | 'band' | 'tile' | 'strip';
 
+/** Optional monochrome treatment. `ink` follows the current theme. */
+export type FieldColor = 'ink' | 'cobalt' | 'amber' | 'red' | 'lime';
+
+const COLOR_RAMP_LIGHT = [
+  navy(false),
+  PALETTE.cobalt,
+  PALETTE.amber,
+  PALETTE.red,
+  PALETTE.lime,
+] as const;
+const COLOR_RAMP_DARK = [
+  navy(true),
+  PALETTE.cobalt,
+  PALETTE.amber,
+  PALETTE.red,
+  PALETTE.lime,
+] as const;
+
 /**
  * Target cell size in CSS pixels, per preset.
  *
@@ -122,6 +140,8 @@ export type FieldOptions = {
    */
   sources: readonly FieldSource[];
   preset?: FieldPreset;
+  /** Draw every lit cell in one palette colour. `ink` follows the theme. */
+  color?: FieldColor;
   /** Overrides the preset's cell size, in CSS pixels. */
   cellSize?: number;
   /** Overrides the preset's intensity multiplier. */
@@ -194,6 +214,7 @@ export function mountField(canvas: HTMLCanvasElement, options: FieldOptions): Fi
   const {
     sources,
     preset = 'hero',
+    color,
     cellSize = PRESET_CELL[preset],
     gain = PRESET_GAIN[preset],
     scatter = PRESET_SCATTER[preset],
@@ -310,7 +331,8 @@ export function mountField(canvas: HTMLCanvasElement, options: FieldOptions): Fi
     const dark = isDark();
     ctx.fillStyle = canvasBg(dark);
     ctx.fillRect(0, 0, cols * cell, rows * cell);
-    const colors = [navy(dark), PALETTE.cobalt, PALETTE.amber, PALETTE.red, PALETTE.lime];
+    const colors = dark ? COLOR_RAMP_DARK : COLOR_RAMP_LIGHT;
+    const solidColor = color ? (color === 'ink' ? navy(dark) : PALETTE[color]) : null;
     const size = Math.max(1, cell - dpr);
 
     for (let y = 0; y < rows; y++) {
@@ -322,7 +344,7 @@ export function mountField(canvas: HTMLCanvasElement, options: FieldOptions): Fi
         if (i <= 0.09 || r > i * 1.4) continue;
         const v = i + (r - 0.5) * 0.16;
         const c = v > 1.05 ? 4 : v > 0.8 ? 3 : v > 0.55 ? 2 : v > 0.3 ? 1 : 0;
-        ctx.fillStyle = colors[c]!;
+        ctx.fillStyle = solidColor ?? colors[c]!;
         ctx.fillRect(x * cell, y * cell, size, size);
       }
     }
