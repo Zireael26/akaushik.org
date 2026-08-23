@@ -18,7 +18,8 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   energizers are pulsing commit nodes. `ShipItGame.tsx` and `ShipIt.tsx` wire
   the accessible island and `#shipit` section; `shipit.css` imports before
   `_mobile.css`. Every arcade section module is deleted and its callers
-  migrated — no alias remains for this game's old name.
+  migrated — no alias remains for this game's old name. The reduced-motion
+  e2e contract now exercises `#shipit` discrete play under both vetoes.
 
 - 2026-08-23 — Began "Ship It", the maze-chase rebuild that replaces the
   arcade field. `lib/shipit/` adds the pure rule core: `layout.ts` for the

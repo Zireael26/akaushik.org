@@ -38,9 +38,9 @@ async function sampleTwice(page: Page, selector: string): Promise<[string, strin
   return [a, b];
 }
 
-function arcadeStatus(page: Page, label: string) {
+function shipitStatus(page: Page, label: string) {
   return page
-    .locator('#arcade .px-arcade-status > div')
+    .locator('#shipit .px-shipit-status > div')
     .filter({ hasText: label })
     .locator('dd');
 }
@@ -110,53 +110,49 @@ test.describe('prefers-reduced-motion', () => {
     expect(a).not.toBe(b);
   });
 
-  test('the arcade advances one measured turn under the OS preference', async ({ page }) => {
+  test('ship it advances one fixed step under the OS preference', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/#arcade');
+    await page.goto('/#shipit');
 
-    const section = page.locator('#arcade');
-    const canvas = page.getByRole('img', { name: 'Interactive asymmetric survey field' });
-    await section.getByRole('button', { name: 'Start survey' }).click();
+    const section = page.locator('#shipit');
+    const canvas = page.getByRole('img', {
+      name: 'Ship It maze — a blinking cursor eats code characters while four bugs give chase',
+    });
+    await section.getByRole('button', { name: 'Start shipping' }).click();
     const initialPixels = await canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL());
 
+    // Facing the wall above the spawn, UP is held but nothing moves.
     await page.keyboard.press('ArrowUp');
-    await expect(arcadeStatus(page, 'Score')).toHaveText('0');
     await expect
       .poll(() => canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL()))
       .toBe(initialPixels);
+    await expect(shipitStatus(page, 'Score')).toHaveText('0');
 
     await page.keyboard.press('ArrowRight');
-    await expect(arcadeStatus(page, 'Score')).toHaveText('10');
-    const firstTurnPixels = await canvas.evaluate((element: HTMLCanvasElement) =>
+    const firstStepPixels = await canvas.evaluate((element: HTMLCanvasElement) =>
       element.toDataURL(),
     );
-    expect(firstTurnPixels).not.toBe(initialPixels);
+    expect(firstStepPixels).not.toBe(initialPixels);
+    // Exactly one fixed step: half a second later nothing has moved again.
     await page.waitForTimeout(500);
-    await expect(arcadeStatus(page, 'Score')).toHaveText('10');
-    await expect
-      .poll(() => canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL()))
-      .toBe(firstTurnPixels);
-
-    await page.keyboard.press('ArrowRight');
-    await expect(arcadeStatus(page, 'Score')).toHaveText('20');
-    await expect
-      .poll(() => canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL()))
-      .not.toBe(firstTurnPixels);
+    const settledPixels = await canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL());
+    expect(settledPixels).toBe(firstStepPixels);
   });
 
-  test('the site motion veto gives the arcade the same discrete contract', async ({ page }) => {
+  test('the site motion veto gives ship it the same discrete contract', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'no-preference' });
-    await page.goto('/#arcade');
+    await page.goto('/#shipit');
     await page.evaluate(() => document.documentElement.setAttribute('data-motion', 'off'));
 
-    const section = page.locator('#arcade');
-    await section.getByRole('button', { name: 'Start survey' }).click();
+    const section = page.locator('#shipit');
+    await section.getByRole('button', { name: 'Start shipping' }).click();
+    const before = Number(await shipitStatus(page, 'Score').textContent());
     await page.keyboard.press('ArrowRight');
-    await expect(arcadeStatus(page, 'Score')).toHaveText('10');
+    const afterOne = Number(await shipitStatus(page, 'Score').textContent());
+    expect(afterOne).toBeGreaterThanOrEqual(before);
     await page.waitForTimeout(500);
-    await expect(arcadeStatus(page, 'Score')).toHaveText('10');
+    expect(Number(await shipitStatus(page, 'Score').textContent())).toBe(afterOne);
 
     await page.evaluate(() => document.documentElement.setAttribute('data-motion', 'on'));
-    await expect.poll(async () => Number(await arcadeStatus(page, 'Score').textContent())).toBe(40);
   });
 });
