@@ -14,19 +14,21 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   were measured today. The new path adds cron triggers and a `STATS_KV` binding
   to `wrangler.jsonc`, a `scheduled` handler in `worker/index.ts`, and the pure
   `lib/stats-source.ts` owning fetch, normalize, staleness and fallback for both
-  the cron and the site. `lib/stats.ts` keeps its `Stats` contract and serves
-  KV-first, falling back to the checked-in file only as a visibly-degraded path:
+  the cron and the site. `lib/stats.ts` reads KV first via
+  `getCloudflareContext().env`, falling back to the checked-in file only as a visibly-degraded path:
   a snapshot older than ~36h renders a "data stale" label and a provenance line
   reading "Last good N days ago", so an old number is never presented as
-  current. The Actions workflow is retained until the Worker path is proven.
+  current. Request-time reads go through OpenNext's `getCloudflareContext().env`
+  — not `globalThis.STATS_KV`, which is never assigned in a module Worker.
+  The Actions workflow is retained until the Worker path is proven.
   Ambient `ScheduledController` and `ExecutionContext` live in
   `worker/env.d.ts` so a fresh clone typechecks before `wrangler types`.
   Tests cover normalize, staleness, parse fail-closed, the cron handler
-  against fake fetch and fake KV, and degraded-state labelling. The GitHub
-  harness matches `/repos/:name` and `/repos/:name/commits`. OpenSource is
-  async; the component suite awaits the tree before `renderToStaticMarkup`.
-  Still needs one operator command, `wrangler secret put GH_STATS_TOKEN`,
-  deliberately not automated.
+  against fake fetch and fake KV, the OpenNext env adapter, and degraded-state
+  labelling. The GitHub harness matches `/repos/:name` and `/repos/:name/commits`.
+  OpenSource is async; the component suite awaits the tree before
+  `renderToStaticMarkup`. Still needs one operator command,
+  `wrangler secret put GH_STATS_TOKEN`, deliberately not automated.
 
 - 2026-08-23 — Began the original arcade field: a fixed asymmetric 25×17 board
   and deterministic maze-chase state machine with buffered keyboard movement,
