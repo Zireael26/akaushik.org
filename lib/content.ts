@@ -25,9 +25,9 @@ export type WritingFrontmatter = {
   unlisted?: boolean;
   /**
    * Topic art for the route strip, from the closed vocabulary in
-   * `lib/pixel/topics.ts`. Optional: an absent or unknown value renders the
-   * trellis fallback, and the content-bundle build warns about every post
-   * that does.
+   * `lib/pixel/topics.ts`. Optional: an absent value renders the trellis
+   * fallback and the content-bundle build warns about it; an unknown value
+   * is a typo and fails the content-bundle build.
    */
   art?: WritingArt;
 };

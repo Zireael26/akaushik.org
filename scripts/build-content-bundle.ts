@@ -42,11 +42,12 @@ for (const type of TYPES) {
 }
 
 // Writing posts declare their topic art in frontmatter (`art: retrieval`) —
-// a closed vocabulary resolved by components/pixel/RouteField. Unknown or
-// absent values fall back to the trellis source at render time, which is the
-// right behaviour but must stay distinguishable from success: an un-arted or
-// mis-arted post is logged here, loudly, so it gets noticed instead of quietly
-// looking like every other strip.
+// a closed vocabulary resolved by components/pixel/RouteField. The
+// vocabulary is closed, so a typo is a build error, not a silent fallback:
+// an unknown value fails the bundle build, while an absent `art:` renders
+// the trellis fallback at runtime and is warned about here, loudly, so an
+// un-arted post gets noticed instead of quietly looking like every other
+// strip.
 const FRONTMATTER_FENCE = /^---\r?\n([\s\S]*?)\r?\n---/;
 const ART_LINE = /^art:\s*(.*)$/m;
 function declaredArt(raw: string): string {
@@ -65,10 +66,9 @@ for (const [key, raw] of entries) {
     );
     artWarnings += 1;
   } else if (!(WRITING_ART_TOPICS as readonly string[]).includes(art)) {
-    console.warn(
-      `content-bundle: WARNING ${key}: unknown \`art: ${art}\` — rendering the trellis fallback. Known topics: ${WRITING_ART_TOPICS.join(', ')}.`,
+    throw new Error(
+      `content-bundle: ${key} declares unknown \`art: ${art}\` — not a member of the closed vocabulary. Known topics: ${WRITING_ART_TOPICS.join(', ')}. Fix the frontmatter, or extend the vocabulary in lib/pixel/topics.ts.`,
     );
-    artWarnings += 1;
   }
 }
 if (artWarnings > 0) {

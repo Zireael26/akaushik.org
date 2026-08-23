@@ -11,7 +11,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { SourceContext } from './field';
-import { RecordingCtx } from './recording.test-utils';
+import { createStubContext, type StubContext } from './stub-context';
 import {
   WRITING_ART_TOPICS,
   asWritingArt,
@@ -32,21 +32,36 @@ const BASE: Partial<SourceContext> = { angle: 0, t: 12, seed: 4242 };
 function draw(
   topic: WritingArt,
   ctxOverrides: Partial<SourceContext> = {},
-  recorderOverrides?: { cols?: number; rows?: number },
-): RecordingCtx {
-  const o = new RecordingCtx(recorderOverrides);
+  size?: { cols?: number; rows?: number },
+): StubContext {
+  const stub = createStubContext();
   const source = topicSources[topic];
   const c: SourceContext = {
-    cols: o.cols,
-    rows: o.rows,
+    cols: size?.cols ?? 200,
+    rows: size?.rows ?? 40,
     angle: 0,
     t: 0,
     seed: 0,
     ...BASE,
     ...ctxOverrides,
   };
-  source(o as unknown as CanvasRenderingContext2D, c);
-  return o;
+  source(stub, c);
+  return stub;
+}
+
+/** Bounding box of every recorded point, or null when nothing was drawn. */
+function bounds(
+  points: StubContext['points'],
+): { minX: number; minY: number; maxX: number; maxY: number } | null {
+  if (points.length === 0) return null;
+  const xs = points.map(([x]) => x);
+  const ys = points.map(([, y]) => y);
+  return {
+    minX: Math.min(...xs),
+    minY: Math.min(...ys),
+    maxX: Math.max(...xs),
+    maxY: Math.max(...ys),
+  };
 }
 
 describe('topics — the vocabulary is closed', () => {
@@ -77,8 +92,8 @@ describe('topics — every source draws at every rendered aspect', () => {
       it(`${topic} puts non-empty, framed ink on a ${regime.label} grid`, () => {
         const art = draw(topic, {}, { cols: regime.cols, rows: regime.rows });
 
-        expect(art.paints().length).toBeGreaterThan(0);
-        const b = art.totalBounds();
+        expect(art.calls.length).toBeGreaterThan(0);
+        const b = bounds(art.points);
         expect(b).not.toBeNull();
 
         // Composition stays inside the frame: sources read cols/rows rather
@@ -103,7 +118,7 @@ describe('topics — animation and determinism', () => {
     for (const topic of WRITING_ART_TOPICS) {
       const a = draw(topic, { t: 10 }, { cols: 200, rows: 40 });
       const b = draw(topic, { t: 90 }, { cols: 200, rows: 40 });
-      expect(a.toJSON()).not.toBe(b.toJSON());
+      expect(a.signature()).not.toBe(b.signature());
     }
   });
 
@@ -111,7 +126,7 @@ describe('topics — animation and determinism', () => {
     for (const topic of WRITING_ART_TOPICS) {
       const a = draw(topic, {}, { cols: 200, rows: 40 });
       const b = draw(topic, {}, { cols: 200, rows: 40 });
-      expect(a.toJSON()).toBe(b.toJSON());
+      expect(a.signature()).toBe(b.signature());
     }
   });
 
@@ -119,12 +134,12 @@ describe('topics — animation and determinism', () => {
     // Seeds RouteField derives from real slugs of one topic cluster.
     const a = draw('agent-process', { seed: 1234567 }, { cols: 200, rows: 40 });
     const b = draw('agent-process', { seed: 7654321 }, { cols: 200, rows: 40 });
-    expect(a.toJSON()).not.toBe(b.toJSON());
+    expect(a.signature()).not.toBe(b.signature());
   });
 
   it('different topics compose different frames from the same context', () => {
     // The regression guard for "someone wires every post to one source".
-    const logs = WRITING_ART_TOPICS.map((topic) => draw(topic, {}, { cols: 200, rows: 40 }).toJSON());
+    const logs = WRITING_ART_TOPICS.map((topic) => draw(topic, {}, { cols: 200, rows: 40 }).signature());
     expect(new Set(logs).size).toBe(WRITING_ART_TOPICS.length);
   });
 });

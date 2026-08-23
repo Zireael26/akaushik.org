@@ -58,6 +58,7 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 ### Changed
 
 - 2026-08-23 — U3 — method pipeline art is taller and denser; cursor-near progress drives reversible tiles; fine-pointer cursor now eases at 0.2 onto the nearest step with reset and reduced-motion/coarse gating.
+- 2026-08-23 — U4 — writing art validation now rejects unknown topic keys, warns only on absent art, and topic-source tests reuse the shared pixel stub.
 
 ### Added
 

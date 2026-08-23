@@ -16,11 +16,12 @@ export type RouteFieldProps = {
  * surfaces.
  *
  * A case study's art is its product: the slug resolves through U1's
- * `productSource`. A writing post's art is its topic: frontmatter declares one
- * member of the closed vocabulary in `lib/pixel/topics.ts` and it resolves
- * through `topicSource`. Anything that resolves to no source — an absent or
- * unknown topic on a post the bundle build has already warned about — falls
- * back to the trellis strip, still varied by the slug seed.
+ * `productSource`. A writing post's art is its topic: frontmatter declares
+ * one member of the closed vocabulary in `lib/pixel/topics.ts` and it
+ * resolves through `topicSource`. Anything that resolves to no source — an
+ * absent topic the bundle build has already warned about, or a typo it has
+ * already rejected — falls back to the trellis strip, still varied by the
+ * slug seed.
  *
  * Every path keeps the seed, so two posts sharing a topic share a composition,
  * never a texture.
