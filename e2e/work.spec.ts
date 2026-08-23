@@ -76,11 +76,6 @@ test.describe('Work — cards and detail routes', () => {
   });
 
   test('ClusterBid renders one art field without media requests', async ({ page }) => {
-    await page.goto('/');
-
-    // The home Work stack itself carries no media — it is MatterRows — but the
-    // page's separate About portrait does. Start observing at the detail
-    // navigation so this assertion isolates the reel contract.
     const clusterBidMediaRequests: string[] = [];
     page.on('request', (request) => {
       if (/\.(?:mp4|webp)(?:\?|$)/.test(request.url())) {
