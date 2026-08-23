@@ -51,18 +51,28 @@
    The theme switch's own appearance belongs to components/pixel/ThemeSwitch;
    only its hit target in this row is the header's business.
 
-   The padding is 14px, not the 12px this was ported with, because 12 does not
-   reach the number the rule above states: a 13px link renders ~16.3px tall, so
-   12 either side lands at 40.3px and misses by four. Measured on an iPhone SE
-   against production, not derived — `line-height: normal` means the text box is
-   whatever the font's metrics make it, and no arithmetic from font-size alone
-   would have got there. */
+   `min-height`, not `padding-block`. This was ported as 12px of padding and
+   measured 40.3px on an iPhone SE; 14px measured 43.3px. Both were arithmetic
+   against the height of the text box, and that height is not a fixed number —
+   `line-height: normal` hands it to the font's own metrics, so it moves with
+   the face, with font loading, and between links. Padding can only ever
+   approach the requirement from below and needs re-deriving whenever the type
+   changes.
+
+   So state the requirement instead of approximating it: the box is at least
+   44px, whatever the text inside it turns out to be. `inline-flex` is what
+   makes `min-height` apply at all — it does nothing to an inline box — and
+   centring keeps the label where it was. */
 @media (pointer: coarse) {
   .px-nav a {
-    padding-block: 14px;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
   }
 
   .px-theme-switch {
-    padding-block: 11px;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
   }
 }

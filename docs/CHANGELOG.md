@@ -14,6 +14,14 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   `line-height: normal` makes the text box a property of the font's metrics and
   no arithmetic from `font-size` would have found it.
 
+  Fixed with `min-height: 44px`, not more padding. Two padding values were
+  tried and both fell short — 12px measured 40.3, 14px measured 43.3 — because
+  both were arithmetic against the height of the text box, and `line-height:
+  normal` makes that height a property of the font's metrics rather than a
+  constant. Padding can only approach the requirement from below and has to be
+  re-derived every time the type changes; a minimum states it once. Measures
+  exactly 44.0 on an iPhone SE, and desktop is untouched at 16.
+
   Found by CI, on the `chromium-tablet` and `webkit-mobile` Playwright
   projects. Locally only `chromium-desktop` and `webkit-desktop` had been run,
   and neither can see this.
