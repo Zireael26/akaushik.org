@@ -297,25 +297,17 @@ describe('shipit game — R13/R14 fright, flashes, combo, eyes', () => {
     const frightened = game.ghosts[1];
     frightened.state = 'frightened';
     frightened.frightenedTimerMs = FRIGHT_MS;
-    Object.assign(frightened, tileCenter(PLAYER_SPAWN_X, PLAYER_SPAWN_Y));
+    Object.assign(frightened, tileCenter(indexX(PLAYER_SPAWN), indexY(PLAYER_SPAWN)));
     collideForTest(game);
     expect(game.score).toBe(200);
     const second = game.ghosts[2];
     second.state = 'frightened';
     second.frightenedTimerMs = FRIGHT_MS;
-    Object.assign(second, tileCenter(PLAYER_SPAWN_X, PLAYER_SPAWN_Y));
+    Object.assign(second, tileCenter(indexX(PLAYER_SPAWN), indexY(PLAYER_SPAWN)));
     collideForTest(game);
     expect(game.score).toBe(600);
   });
 
-  function PLAYER_SPAWN_X(): number {
-    return indexX(PLAYER_SPAWN);
-  }
-  function PLAYER_SPAWN_Y(): number {
-    return indexY(PLAYER_SPAWN);
-  }
-
-  /** Re-exported collide path through one live step at zero distance. */
   function collideForTest(game: ShipItGame): void {
     stepGame(game, 1);
   }
