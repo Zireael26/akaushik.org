@@ -15,8 +15,8 @@
       WritingFrontmatter (lib/content.ts) carries no topic field and none of
       the 13 published MDX files sets one, and the spec forbids inventing a
       taxonomy. The breadcrumb is therefore `Writing` alone, styled as a mono
-      link; the shared RouteField sits above it as the per-route texture, not
-      as a topic illustration.
+      link; the RouteField sits above it as the per-route texture, not as a
+      topic illustration.
 
    2. The MDX body is styled here, not in a separate article.css. Writing
       MDX ships H2/H3, blockquotes, lists, code and tables through
@@ -80,10 +80,9 @@
   padding: clamp(32px, 6vh, 72px) var(--wrap-pad) clamp(56px, 9vh, 110px);
 }
 
-/* ---------- RouteField — shared detail route strip ---------- */
-/* The same full-width rectangle can sit above writing and case-study detail
-   chrome. PixelField owns the canvas paint and reduced-motion behaviour; this
-   block only reserves the strip and the gap below it. */
+/* ---------- RouteField — writing detail route strip ---------- */
+/* PixelField owns the canvas paint and reduced-motion behaviour; this block
+   reserves the strip and the gap below it. */
 .px-route-field {
   display: block;
   width: 100%;

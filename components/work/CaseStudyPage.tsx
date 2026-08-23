@@ -2,7 +2,6 @@ import { createElement } from 'react';
 import Link from 'next/link';
 import type { Post, CaseStudyFrontmatter } from '@/lib/content';
 import { getMdxModule } from '@/lib/mdx/generated';
-import { RouteField } from '@/components/pixel/RouteField';
 import { RuledRow } from '@/components/pixel/RuledRow';
 import { Reel, type ReelSlug } from './reels';
 
@@ -18,7 +17,6 @@ export function CaseStudyPage({
   const fm = post.frontmatter as CaseStudyFrontmatter;
   return (
     <main id="top" className="px-work-detail">
-      <RouteField slug={routeSlug} />
       <Link href="/#work" className="px-work-back">
         ← Back to selected work
       </Link>

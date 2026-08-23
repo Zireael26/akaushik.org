@@ -306,7 +306,8 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   This is the last code change the Vercel → Cloudflare cutover needed
   (ADR-0018); the Vercel project stays paused-not-deleted for 14 days so a
   rollback is a DNS change rather than a rebuild.
-- 2026-08-23 — Writing frontmatter now carries a closed `art` vocabulary; `RouteField` selects topic/product sources with slug-seeded texture, and the content-bundling build visibly warns on trellis fallback.
+- 2026-08-23 — Writing frontmatter now carries a closed `art` vocabulary; the writing-only `RouteField` selects topic sources with slug-seeded texture, and the content-bundling build visibly warns on trellis fallback.
+- 2026-08-23 — Case-study detail routes now render only their full-size `ReelField`; the squeezed `RouteField` strip is gone, with Playwright coverage for one art field per detail page.
 - 2026-08-23 — Case-study reels now use live theme-responsive pixel fields; HyperFrames video references/tests are being retired, and ADR-0020 records the decision.
 - 2026-08-23 — Reel field mapping preserves the original `Reel` default and maps `hero` to the engine's `hero` preset while cards use `tile`.
 
