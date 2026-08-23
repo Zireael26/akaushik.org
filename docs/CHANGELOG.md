@@ -91,6 +91,20 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   noted inside it.
 
 ### Changed
+- 2026-08-24 — Writing and case-study reading surface. Writing posts drop the
+  HyperFrames loops (eight files under `public/video/writing/`, plus
+  `hyperframes-loop.tsx` and `MotionVideo.tsx`, which had no remaining caller).
+  The article art is a `RouteField` hero band under the byline, not a letterbox
+  strip above the title. Body prose is 75ch with a wider breakout track for
+  figures, code, tables and pull quotes. Case studies render title and dek from
+  frontmatter; `build-mdx-modules.ts` strips the authored H1 + blockquote so the
+  dek cannot fall through to a grey unpadded quote. ADR-0020 now covers writing;
+  ADR-0011 is superseded. Reduced-motion e2e asserts a writing post ships no
+  media bytes. Home-page D5: every section is transparent over one `--bg`;
+  there was no second white to separate, so no band was added.
+
+
+
 
 - 2026-08-23 — Started a voice pass over the case studies, which never had one.
 

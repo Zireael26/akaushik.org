@@ -14,11 +14,13 @@ import { expect, test, type Page } from '@playwright/test';
  * apart, and compare. Still under reduced motion, moving without it.
  *
  * The other half of the contract is still bytes — a motion-disabled visitor
- * should not pay for media they will never see. The case-study reels are
- * pixel fields now (ADR-0020), so that half is structural: a field ships
- * zero media requests for anyone, which the `/work/neev` navigation asserts
- * anyway. What reduced motion changes for a field is that it must hold
- * still — same sampling technique as the hero specs above, on the reel.
+ * should not pay for media they will never see. Case-study reels and writing
+ * posts are pixel fields now (ADR-0020), so that half is structural: a field
+ * ships zero media requests for anyone. `/work/neev` and `/writing/ai-for-msme`
+ * both assert the empty request list. What reduced motion changes for a field
+ * is that it must hold still — same sampling technique as the hero specs, on
+ * the reel and on the writing RouteField.
+
  */
 test.describe.configure({ timeout: 60_000 });
 
@@ -88,6 +90,23 @@ test.describe('prefers-reduced-motion', () => {
       `unexpected media requests: ${mediaRequests.join(', ')}`,
     ).toHaveLength(0);
   });
+
+  test('a motion-disabled visitor is sent no media bytes on a writing post', async ({ page }) => {
+    const mediaRequests: string[] = [];
+    page.on('request', (r) => {
+      if (/\.(mp4|webm|webp)(\?|$)/.test(r.url())) mediaRequests.push(r.url());
+    });
+
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/writing/ai-for-msme');
+    await page.waitForTimeout(SETTLE_MS);
+
+    expect(
+      mediaRequests,
+      `unexpected media requests: ${mediaRequests.join(', ')}`,
+    ).toHaveLength(0);
+  });
+
 
   test('a case-study reel field holds still under reduced motion', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });

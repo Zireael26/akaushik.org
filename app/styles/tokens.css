@@ -64,7 +64,12 @@
   /* Layout */
   --wrap-max: 1560px;
   --wrap-pad: clamp(20px, 4vw, 56px);
+  /* Body prose measure (75ch is applied at .px-article-body; D3). The
+     breakout track is what figures, code, tables and pull quotes widen into —
+     roughly 100 characters of code line, comfortably wider than the prose
+     column but still inside a 900px article shell. */
   --prose-max: 70ch;
+  --prose-breakout: min(100ch, 100%);
 }
 
 [data-mode='dark'] {

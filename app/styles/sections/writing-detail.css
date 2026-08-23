@@ -15,15 +15,16 @@
       WritingFrontmatter (lib/content.ts) carries no topic field and none of
       the 13 published MDX files sets one, and the spec forbids inventing a
       taxonomy. The breadcrumb is therefore `Writing` alone, styled as a mono
-      link; the RouteField sits above it as the per-route texture, not as a
-      topic illustration.
+      link. The RouteField band sits under the byline as the article's piece
+      of art, not as a topic illustration and not as a letterbox above the
+      title (D2).
 
    2. The MDX body is styled here, not in a separate article.css. Writing
       MDX ships H2/H3, blockquotes, lists, code and tables through
       next-mdx-remote (remarkGfm, rehypeSlug, rehypePrettyCode with shiki).
       Those selectors live on `.px-article-body` so a content edit cannot
-      leak unstyled markup. The 70ch max-width matches design.md § Blog/SEO
-      and app/styles/tokens.css --prose-max. The H1/dek/byline/short-answer
+      leak unstyled markup. The 75ch max-width is D3's settled measure (the
+      reasoning sits with .px-article-body below). The H1/dek/byline/short-answer
       chrome is rendered from frontmatter in the page component; the MDX body
       is stripped of its leading H1 + blockquote dek (stripTitleChrome) and
       starts at the first H2, so there is no duplicated H1.
@@ -80,14 +81,24 @@
   padding: clamp(32px, 6vh, 72px) var(--wrap-pad) clamp(56px, 9vh, 110px);
 }
 
-/* ---------- RouteField — writing detail route strip ---------- */
+/* ---------- RouteField — writing detail route band ---------- */
 /* PixelField owns the canvas paint and reduced-motion behaviour; this block
-   reserves the strip and the gap below it. */
+   reserves the box and the gap below it. The hero variant (D2) matches the
+   case-study reel band's ambition — same height curve, hero cell scale, the
+   same 1px line — instead of the retired letterbox strip. It renders under
+   the byline, so its margin opens downward into the body rather than
+   pushing the title below the fold. */
 .px-route-field {
   display: block;
   width: 100%;
   height: clamp(84px, 12vh, 136px);
   margin-bottom: clamp(24px, 4vh, 36px);
+}
+
+.px-route-field.is-hero {
+  height: clamp(220px, 38vh, 420px);
+  margin-bottom: clamp(32px, 5vh, 52px);
+  border: 1px solid var(--line);
 }
 
 .px-article-crumb {
@@ -214,39 +225,31 @@
   color: var(--ink70);
 }
 
-/* ---------- loops inside the article ---------- */
-.px-article-loop {
-  position: relative;
-  display: block;
-  overflow: hidden;
-  margin: clamp(24px, 4vh, 36px) 0 0;
-  border: 1px solid var(--line);
-  background: var(--bg);
-}
-
-.px-article-loop svg {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-.px-article-loop video {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-html[data-motion='off'] .px-article-loop video {
-  display: none;
-}
-
 /* ---------- MDX prose ---------- */
+/* D3, both measures recorded. Tried first: keep --prose-max: 70ch and only
+   widen the non-prose blocks — at 16px that is a 652px column on a 1440px
+   screen, 45% of the width, which is what the operator flagged. Tried
+   second: widen the measure itself, 75ch and 80ch side by side on the
+   longest posts; 80 made the return sweep noticeably longer, 75 did not.
+   Settled on 75ch for body prose — still comfortably readable — and a wider
+   --prose-breakout track for everything that is not body prose: figures,
+   code blocks, tables and pull quotes take the sides back, which is the
+   operator's "they should also be taking up a bit more space on the sides". */
 .px-article-body {
-  max-width: var(--prose-max);
+  max-width: 75ch;
   margin-top: clamp(28px, 4vh, 40px);
+}
+
+/* Non-prose blocks break out to the wider track, centred on the prose
+   column so the breakout is symmetric. --prose-breakout is defined in
+   tokens.css beside --prose-max. */
+.px-article-body pre,
+.px-article-body table,
+.px-article-body img,
+.px-article-body blockquote {
+  max-width: var(--prose-breakout);
+  margin-left: calc((75ch - var(--prose-breakout)) / 2);
+  margin-right: calc((75ch - var(--prose-breakout)) / 2);
 }
 
 .px-article-body > :first-child {
@@ -489,9 +492,5 @@ html[data-motion='off'] .px-article-loop video {
 
   .px-article-next .px-matter:hover {
     padding-left: 0;
-  }
-
-  .px-article-loop video {
-    display: none;
   }
 }

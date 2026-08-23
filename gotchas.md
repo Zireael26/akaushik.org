@@ -15,7 +15,8 @@ Review at session start. Recurring patterns (n≥2 projects) promote to `core-ru
 
 - **2026-05-11 — Wanderer disable is mount-level, not asset-level.** `<Wanderer />` in `app/layout.tsx` ships both the Three.js crane and its SVG fallback through a single mount point (`#companion`). Commenting out `<Wanderer />` hides both surfaces; the SVG fallback does **not** stay visible on its own. Revert path is uncomment-only. Tests that assert `#companion` is attached fail vacuously today (`e2e/canvas.spec.ts` skip wrappers added 2026-05-19). Redesign brief: `docs/wanderer-redesign-brief.md`.
 
-- **2026-05-11 — Writing-post HyperFrames loops live across two component layers.** `components/media/hyperframes-loop.tsx` owns the SVG floor per slug; `components/media/MotionVideo.tsx` owns the `<video>` element and its motion gating. MP4 + webp assets in `public/video/writing/`. Adding a new slug requires touching the loop-component switch and committing the rendered assets — render pass needs FFmpeg + Chrome locally and does not run in the sandbox.
+- **2026-08-24 — Writing posts no longer ship HyperFrames loops.** ADR-0020 now covers writing as well as case studies. `components/media/hyperframes-loop.tsx`, `MotionVideo.tsx` and `public/video/writing/*` are gone. A new writing slug needs a `WritingArt` topic in frontmatter, not a render pass.
+
 
 - **2026-05-19 — Vercel GitHub auto-deploy broken since 2026-04-24 (`cd559de`).** PR-based CI workflows that wait on a `*.vercel.app` preview URL stall forever. PR-2 of the gap-analysis plan switches `.github/workflows/e2e.yml` + `lighthouse.yml` to `pnpm build` + `pnpm start` + wait-on against localhost. Do not add new workflows that depend on the Vercel preview URL until the GitHub integration is repaired.
 
