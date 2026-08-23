@@ -14,6 +14,9 @@ export type PixelFieldProps = {
   sources: readonly FieldSource[];
   preset?: FieldPreset;
   color?: FieldColor;
+  activeColor?: FieldColor;
+  /** Controlled source response, 0..1. */
+  progress?: number;
   cellSize?: number;
   gain?: number;
   scatter?: number;
@@ -51,6 +54,8 @@ export function PixelField({
   sources,
   preset = 'hero',
   color,
+  activeColor,
+  progress,
   cellSize,
   gain,
   scatter,
@@ -83,6 +88,8 @@ export function PixelField({
       sources: sourcesRef.current,
       preset,
       color,
+      activeColor,
+      progress,
       cellSize,
       gain,
       scatter,
@@ -96,6 +103,7 @@ export function PixelField({
     });
     handle.current = h;
     if (typeof stage === 'number') h.setStage(stage);
+    if (typeof progress === 'number') h.setProgress(progress);
     return () => {
       h.dispose();
       handle.current = null;
@@ -104,6 +112,7 @@ export function PixelField({
   }, [
     preset,
     color,
+    activeColor,
     cellSize,
     gain,
     scatter,
@@ -119,6 +128,10 @@ export function PixelField({
   useEffect(() => {
     if (typeof stage === 'number') handle.current?.setStage(stage);
   }, [stage]);
+
+  useEffect(() => {
+    if (typeof progress === 'number') handle.current?.setProgress(progress);
+  }, [progress]);
 
   return (
     <canvas

@@ -11,6 +11,7 @@
  * Every glyph draws into a unit box — (0,0) to (1,1) — and its source maps it
  * into the field.
  */
+import { h } from '../pixel';
 import type { FieldSource, SourceContext } from './field';
 
 export type StageKind = 'read' | 'spec' | 'build' | 'harden';
@@ -156,7 +157,7 @@ const GLYPHS: Record<StageKind, UnitGlyph> = {
  * drawings. They are single-sign vocabulary: inspect, decide, rise, secure.
  */
 const readTileGlyph: UnitGlyph = (o, s) => {
-  o.lineWidth = s * 0.06;
+  o.lineWidth = Math.min(1, s * 0.048);
   o.beginPath();
   o.arc(s * 0.43, s * 0.42, s * 0.23, 0, Math.PI * 2);
   o.stroke();
@@ -167,7 +168,7 @@ const readTileGlyph: UnitGlyph = (o, s) => {
 };
 
 const specTileGlyph: UnitGlyph = (o, s) => {
-  o.lineWidth = s * 0.06;
+  o.lineWidth = Math.min(1, s * 0.048);
   o.beginPath();
   o.moveTo(s * 0.5, s * 0.14);
   o.lineTo(s * 0.84, s * 0.5);
@@ -181,7 +182,7 @@ const specTileGlyph: UnitGlyph = (o, s) => {
 };
 
 const buildTileGlyph: UnitGlyph = (o, s) => {
-  o.lineWidth = s * 0.06;
+  o.lineWidth = Math.min(1, s * 0.04);
   o.lineJoin = 'miter';
   o.beginPath();
   o.moveTo(s * 0.18, s * 0.78);
@@ -199,12 +200,11 @@ const buildTileGlyph: UnitGlyph = (o, s) => {
 };
 
 const hardenTileGlyph: UnitGlyph = (o, s) => {
-  o.lineWidth = s * 0.06;
+  o.lineWidth = Math.min(1, s * 0.032);
   o.beginPath();
   o.arc(s * 0.5, s * 0.39, s * 0.2, Math.PI, 0);
   o.stroke();
   o.strokeRect(s * 0.25, s * 0.39, s * 0.5, s * 0.4);
-  o.fillRect(s * 0.47, s * 0.54, s * 0.06, s * 0.14);
 };
 
 const TILE_GLYPHS: Record<StageKind, UnitGlyph> = {
@@ -214,11 +214,70 @@ const TILE_GLYPHS: Record<StageKind, UnitGlyph> = {
   harden: hardenTileGlyph,
 };
 
+const FULL_TURN = Math.PI * 2;
+
+/**
+ * A sampled disc: one round edge plus a deterministic, low-density interior.
+ * The stipple keeps it spherical on the cell grid without turning any 8×8
+ * window into a slab.
+ */
+function drawTileBloom(
+  o: CanvasRenderingContext2D,
+  cols: number,
+  rows: number,
+  progress: number,
+  seed: number,
+): void {
+  const p = Math.max(0, Math.min(1, progress));
+  if (p === 0) return;
+
+  const size = Math.min(cols, rows);
+  const cx = cols * 0.5;
+  const cy = rows * 0.5;
+  const radius = size * 0.42 * p;
+  const lineWidth = 0.65;
+
+  o.save();
+  o.shadowBlur = 0;
+  o.lineWidth = lineWidth;
+  o.beginPath();
+  const segmentCount = radius < 8 ? 2 : 4;
+  for (let segment = 0; segment < segmentCount; segment++) {
+    const angle = ((segment + 0.5) / segmentCount) * FULL_TURN;
+    o.arc(cx, cy, radius, angle - 0.15, angle + 0.15);
+  }
+  o.stroke();
+
+  const innerRadius = Math.max(0, radius - lineWidth * 1.5);
+  const innerSquared = innerRadius * innerRadius;
+  const startX = Math.max(0, Math.floor(cx - innerRadius));
+  const endX = Math.min(cols, Math.ceil(cx + innerRadius));
+  const startY = Math.max(0, Math.floor(cy - innerRadius));
+  const endY = Math.min(rows, Math.ceil(cy + innerRadius));
+
+  for (let y = startY; y < endY; y++) {
+    for (let x = startX; x < endX; x++) {
+      const dx = x + 0.5 - cx;
+      const dy = y + 0.5 - cy;
+      const distanceSquared = dx * dx + dy * dy;
+      if (distanceSquared >= innerSquared) continue;
+
+      const centreWeight = 1 - Math.sqrt(distanceSquared) / Math.max(1, innerRadius);
+      if (h(x + seed * 1.7, y - seed * 2.3) >= 0.02 + centreWeight * 0.025) continue;
+      o.fillRect(x, y, 0.8, 0.8);
+    }
+  }
+  o.restore();
+}
+
 /** One simple icon, centred and fitted to the authoring tile grid. */
 export function tileStage(kind: StageKind): FieldSource {
-  return (o, { cols, rows }) => {
+  return (o, { cols, rows, progress = 0, seed }) => {
+    drawTileBloom(o, cols, rows, progress, seed);
+
     const s = Math.min(cols, rows) * 0.88;
     o.save();
+    o.shadowBlur = 0;
     o.translate((cols - s) / 2, (rows - s) / 2);
     TILE_GLYPHS[kind](o, s);
     o.restore();

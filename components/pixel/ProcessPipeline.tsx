@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { PixelField } from '@/components/pixel/PixelField';
 import {
   CURSOR_LEAVE_EVENT,
@@ -119,7 +119,8 @@ export function ProcessPipeline({ steps }: { steps: readonly ProcessStep[] }) {
 
       <div className="px-pipeline-grid">
         {steps.map((step, i) => {
-          const progress = cursorProgress[i] ?? 0;
+          const cursorValue = cursorProgress[i];
+          const progress = focusActive === i ? 1 : (cursorValue ?? (mouseActive === i ? 1 : 0));
           return (
             <div
               key={step.kind}
@@ -130,11 +131,6 @@ export function ProcessPipeline({ steps }: { steps: readonly ProcessStep[] }) {
               data-pixel-hover=""
               data-pixel-cursor-response={progress > 0 ? 'active' : undefined}
               className="px-pipeline-step"
-              style={
-                {
-                  '--px-pipeline-cursor-progress': progress,
-                } as CSSProperties
-              }
               tabIndex={0}
               onMouseEnter={() => setMouseActive(i)}
               onMouseLeave={() => setMouseActive((current) => (current === i ? null : current))}
@@ -146,6 +142,8 @@ export function ProcessPipeline({ steps }: { steps: readonly ProcessStep[] }) {
                   sources={tileSources[i]!}
                   preset="tile"
                   color="ink"
+                  activeColor={step.tone}
+                  progress={progress}
                   gain={1}
                   scatter={0}
                   shapeNoise={0}

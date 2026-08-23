@@ -253,6 +253,23 @@ describe('stages', () => {
     expect(new Set(signatures).size).toBe(STAGE_ORDER.length);
   });
 
+  it('blooms tile art from a grid-space circle', () => {
+    const rest = ctxFor(tileStage('build'), { cols: 40, rows: 26, progress: 0 });
+    const half = ctxFor(tileStage('build'), { cols: 40, rows: 26, progress: 0.5 });
+    const full = ctxFor(tileStage('build'), { cols: 40, rows: 26, progress: 1 });
+    const restArc = rest.calls.find((call) => call.fn === 'arc');
+    const halfArc = half.calls.find((call) => call.fn === 'arc');
+    const fullArc = full.calls.find((call) => call.fn === 'arc');
+
+    expect(restArc).toBeUndefined();
+    expect(halfArc).toBeDefined();
+    expect(fullArc).toBeDefined();
+    expect(halfArc!.args[0]).toBe(20);
+    expect(halfArc!.args[1]).toBe(13);
+    expect(Number(halfArc!.args[2])).toBeLessThan(Number(fullArc!.args[2]));
+    expect(rest.signature()).not.toBe(full.signature());
+  });
+
   it('gives every tile its own simple icon', () => {
     const signatures = STAGE_ORDER.map((k) => ctxFor(tileStage(k)).signature());
     expect(new Set(signatures).size).toBe(STAGE_ORDER.length);

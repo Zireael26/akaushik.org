@@ -14,6 +14,7 @@ import {
 } from './products';
 import { seedFrom } from './sources';
 import { createStubContext, type StubContext } from './stub-context';
+import { STAGE_ORDER, tileStage } from './stages';
 
 type GridProfile = {
   label: string;
@@ -39,6 +40,16 @@ const RASTER_PROFILES: readonly GridProfile[] = [
   { label: 'desktop-tile', cols: 113, rows: 35 },
   { label: 'compact-mobile-tile', cols: 117, rows: 26 },
 ];
+
+const METHOD_TILE_PROFILES: readonly GridProfile[] = [
+  { label: 'authoring-tile', cols: 40, rows: 26 },
+  { label: 'desktop-tile', cols: 113, rows: 35 },
+  { label: 'compact-mobile-tile', cols: 117, rows: 26 },
+];
+
+const METHOD_TILE_PROGRESS = [
+  0, 0.07, 0.14, 0.21, 0.28, 0.35, 0.42, 0.49, 0.56, 0.63, 0.7, 0.77, 0.84, 0.91, 0.98, 1,
+] as const;
 
 type SemanticPhase = {
   label: string;
@@ -116,6 +127,9 @@ function rasterizeCallLog(stub: StubContext, cols: number, rows: number): Uint8A
   let cursor: [number, number] | null = null;
   let subpathStart: [number, number] | null = null;
   let path: RasterPath[] = [];
+  let offsetX = 0;
+  let offsetY = 0;
+  const offsetStack: Array<readonly [number, number]> = [];
 
   const mark = (
     minX: number,
@@ -145,11 +159,23 @@ function rasterizeCallLog(stub: StubContext, cols: number, rows: number): Uint8A
     }
   };
 
-  const rasterizeRect = (x: number, y: number, width: number, height: number, outlined: boolean): void => {
+  const rasterizeRect = (
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    outlined: boolean,
+  ): void => {
     if (![x, y, width, height].every(Number.isFinite) || width < 0 || height < 0) return;
 
     if (!outlined) {
-      mark(x, y, x + width, y + height, (px, py) => px >= x && px < x + width && py >= y && py < y + height);
+      mark(
+        x,
+        y,
+        x + width,
+        y + height,
+        (px, py) => px >= x && px < x + width && py >= y && py < y + height,
+      );
       return;
     }
 
@@ -231,6 +257,26 @@ function rasterizeCallLog(stub: StubContext, cols: number, rows: number): Uint8A
   };
 
   for (const { fn, args } of stub.calls) {
+    if (fn === 'save') {
+      offsetStack.push([offsetX, offsetY]);
+      continue;
+    }
+
+    if (fn === 'restore') {
+      const previous = offsetStack.pop();
+      if (previous) [offsetX, offsetY] = previous;
+      continue;
+    }
+
+    if (fn === 'translate') {
+      const [x, y] = args;
+      if (typeof x === 'number' && typeof y === 'number') {
+        offsetX += x;
+        offsetY += y;
+      }
+      continue;
+    }
+
     if (fn === 'set:lineWidth') {
       const width = args[0];
       if (typeof width === 'number' && Number.isFinite(width)) lineWidth = width;
@@ -239,8 +285,13 @@ function rasterizeCallLog(stub: StubContext, cols: number, rows: number): Uint8A
 
     if (fn === 'fillRect' || fn === 'strokeRect') {
       const [x, y, width, height] = args;
-      if (typeof x === 'number' && typeof y === 'number' && typeof width === 'number' && typeof height === 'number') {
-        rasterizeRect(x, y, width, height, fn === 'strokeRect');
+      if (
+        typeof x === 'number' &&
+        typeof y === 'number' &&
+        typeof width === 'number' &&
+        typeof height === 'number'
+      ) {
+        rasterizeRect(x + offsetX, y + offsetY, width, height, fn === 'strokeRect');
       }
       continue;
     }
@@ -255,8 +306,8 @@ function rasterizeCallLog(stub: StubContext, cols: number, rows: number): Uint8A
     if (fn === 'moveTo') {
       const [x, y] = args;
       if (typeof x === 'number' && typeof y === 'number') {
-        cursor = [x, y];
-        subpathStart = [x, y];
+        cursor = [x + offsetX, y + offsetY];
+        subpathStart = cursor;
       }
       continue;
     }
@@ -264,15 +315,24 @@ function rasterizeCallLog(stub: StubContext, cols: number, rows: number): Uint8A
     if (fn === 'lineTo') {
       const [x, y] = args;
       if (typeof x === 'number' && typeof y === 'number') {
-        if (cursor !== null) path.push({ kind: 'line', ax: cursor[0], ay: cursor[1], bx: x, by: y });
-        cursor = [x, y];
+        const next: [number, number] = [x + offsetX, y + offsetY];
+        if (cursor !== null) {
+          path.push({ kind: 'line', ax: cursor[0], ay: cursor[1], bx: next[0], by: next[1] });
+        }
+        cursor = next;
       }
       continue;
     }
 
     if (fn === 'closePath') {
       if (cursor !== null && subpathStart !== null) {
-        path.push({ kind: 'line', ax: cursor[0], ay: cursor[1], bx: subpathStart[0], by: subpathStart[1] });
+        path.push({
+          kind: 'line',
+          ax: cursor[0],
+          ay: cursor[1],
+          bx: subpathStart[0],
+          by: subpathStart[1],
+        });
         cursor = subpathStart;
       }
       continue;
@@ -287,8 +347,18 @@ function rasterizeCallLog(stub: StubContext, cols: number, rows: number): Uint8A
         typeof start === 'number' &&
         typeof end === 'number'
       ) {
-        path.push({ kind: 'arc', x, y, radius, start, end, counterclockwise: counterclockwise === true });
-        cursor = [x + radius * Math.cos(end), y + radius * Math.sin(end)];
+        const transformedX = x + offsetX;
+        const transformedY = y + offsetY;
+        path.push({
+          kind: 'arc',
+          x: transformedX,
+          y: transformedY,
+          radius,
+          start,
+          end,
+          counterclockwise: counterclockwise === true,
+        });
+        cursor = [transformedX + radius * Math.cos(end), transformedY + radius * Math.sin(end)];
       }
       continue;
     }
@@ -296,7 +366,8 @@ function rasterizeCallLog(stub: StubContext, cols: number, rows: number): Uint8A
     if (fn === 'stroke' || fn === 'fill') {
       for (const primitive of path) {
         if (primitive.kind === 'line') {
-          if (fn === 'stroke') rasterizeLine(primitive.ax, primitive.ay, primitive.bx, primitive.by);
+          if (fn === 'stroke')
+            rasterizeLine(primitive.ax, primitive.ay, primitive.bx, primitive.by);
         } else {
           rasterizeArc(primitive, fn === 'stroke');
         }
@@ -331,7 +402,8 @@ function maxLitWindow(lit: Uint8Array, cols: number, rows: number): LitWindow {
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
       const index = (y + 1) * stride + x + 1;
-      sums[index] = lit[y * cols + x]! + sums[index - 1]! + sums[index - stride]! - sums[index - stride - 1]!;
+      sums[index] =
+        lit[y * cols + x]! + sums[index - 1]! + sums[index - stride]! - sums[index - stride - 1]!;
     }
   }
 
@@ -356,9 +428,16 @@ const PRODUCTS: readonly [ProductSlug, FieldSource][] = [
   ['clusterbid', clusterbid],
 ];
 
-function render(source: FieldSource, cols: number, rows: number, seed: number, t: number): StubContext {
+function render(
+  source: FieldSource,
+  cols: number,
+  rows: number,
+  seed: number,
+  t: number,
+  progress = 0,
+): StubContext {
   const stub = createStubContext();
-  const context: SourceContext = { cols, rows, angle: 0, t, seed };
+  const context: SourceContext = { cols, rows, angle: 0, t, seed, progress };
   source(stub, context);
   return stub;
 }
@@ -420,7 +499,8 @@ function estimatedInk(stub: StubContext): EstimatedInk {
       const x = args[0];
       const y = args[1];
       if (typeof x !== 'number' || typeof y !== 'number') continue;
-      if (fn === 'lineTo' && cursor !== null) pathLength += Math.hypot(x - cursor[0], y - cursor[1]);
+      if (fn === 'lineTo' && cursor !== null)
+        pathLength += Math.hypot(x - cursor[0], y - cursor[1]);
       cursor = [x, y];
       continue;
     }
@@ -440,8 +520,14 @@ function assertOneCellLineWidth(stub: StubContext): void {
     .map(({ args }) => args[0] as number);
   expect(widths.length, 'source should declare semantic outline width').toBeGreaterThan(0);
   for (const width of widths) {
-    expect(width, 'semantic outline strokes should be at least three quarters of one cell').toBeGreaterThanOrEqual(0.75);
-    expect(width, 'semantic outline strokes should stay within one-cell tolerance').toBeLessThanOrEqual(1.25);
+    expect(
+      width,
+      'semantic outline strokes should be at least three quarters of one cell',
+    ).toBeGreaterThanOrEqual(0.75);
+    expect(
+      width,
+      'semantic outline strokes should stay within one-cell tolerance',
+    ).toBeLessThanOrEqual(1.25);
   }
 }
 
@@ -452,10 +538,18 @@ function assertAccentDensity(stub: StubContext, cols: number, rows: number): voi
     if (fn !== 'fillRect') continue;
     const width = args[2];
     const height = args[3];
-    if (typeof width !== 'number' || typeof height !== 'number' || width <= 0 || height <= 0) continue;
-    expect(width, 'filled accents must stay packet-sized').toBeLessThanOrEqual(Math.max(2, cols * 0.08));
-    expect(height, 'filled accents must stay packet-sized').toBeLessThanOrEqual(Math.max(2, rows * 0.14));
-    expect(width * height, 'large semantic fills must be replaced by thin rules').toBeLessThanOrEqual(Math.max(4, frameArea * 0.005));
+    if (typeof width !== 'number' || typeof height !== 'number' || width <= 0 || height <= 0)
+      continue;
+    expect(width, 'filled accents must stay packet-sized').toBeLessThanOrEqual(
+      Math.max(2, cols * 0.08),
+    );
+    expect(height, 'filled accents must stay packet-sized').toBeLessThanOrEqual(
+      Math.max(2, rows * 0.14),
+    );
+    expect(
+      width * height,
+      'large semantic fills must be replaced by thin rules',
+    ).toBeLessThanOrEqual(Math.max(4, frameArea * 0.005));
   }
   const { fillArea, strokeInk } = estimatedInk(stub);
 
@@ -478,10 +572,17 @@ function assertStrokeRestraint(stub: StubContext, cols: number, rows: number): v
     if (fn !== 'fillRect') continue;
     const width = args[2];
     const height = args[3];
-    if (typeof width !== 'number' || typeof height !== 'number' || width <= 0 || height <= 0) continue;
-    expect(width, 'large semantic boxes should be outlined, not filled').toBeLessThanOrEqual(cols * 0.3);
-    expect(height, 'large semantic boxes should be outlined, not filled').toBeLessThanOrEqual(rows * 0.3);
-    expect(width * height, 'filled accents should remain cell-sized').toBeLessThanOrEqual(canvasArea * 0.02);
+    if (typeof width !== 'number' || typeof height !== 'number' || width <= 0 || height <= 0)
+      continue;
+    expect(width, 'large semantic boxes should be outlined, not filled').toBeLessThanOrEqual(
+      cols * 0.3,
+    );
+    expect(height, 'large semantic boxes should be outlined, not filled').toBeLessThanOrEqual(
+      rows * 0.3,
+    );
+    expect(width * height, 'filled accents should remain cell-sized').toBeLessThanOrEqual(
+      canvasArea * 0.02,
+    );
   }
 
   expect(
@@ -500,7 +601,10 @@ function assertInk(stub: StubContext): void {
   // A 1×1 dot would pass the predicate above but is not legible.
   // The density pass deliberately removes redundant marks, so require twenty
   // recorded operations rather than rewarding a crowded call log.
-  expect(stub.calls.length, 'source should do substantial drawing work, not a single dot').toBeGreaterThanOrEqual(20);
+  expect(
+    stub.calls.length,
+    'source should do substantial drawing work, not a single dot',
+  ).toBeGreaterThanOrEqual(20);
 }
 
 function assertInGrid(stub: StubContext, cols: number, rows: number): void {
@@ -524,7 +628,13 @@ function assertInGrid(stub: StubContext, cols: number, rows: number): void {
       expect(typeof y).toBe('number');
       expect(typeof width).toBe('number');
       expect(typeof height).toBe('number');
-      if (typeof x !== 'number' || typeof y !== 'number' || typeof width !== 'number' || typeof height !== 'number') continue;
+      if (
+        typeof x !== 'number' ||
+        typeof y !== 'number' ||
+        typeof width !== 'number' ||
+        typeof height !== 'number'
+      )
+        continue;
       expect(width).toBeGreaterThanOrEqual(0);
       expect(height).toBeGreaterThanOrEqual(0);
       expect(x).toBeGreaterThanOrEqual(-tolerance);
@@ -548,8 +658,8 @@ function assertInGrid(stub: StubContext, cols: number, rows: number): void {
 }
 
 function assertThemeAgnostic(stub: StubContext): void {
-  const colorWrites = stub.calls.filter(({ fn }) =>
-    fn === 'set:fillStyle' || fn === 'set:strokeStyle' || fn === 'set:shadowColor',
+  const colorWrites = stub.calls.filter(
+    ({ fn }) => fn === 'set:fillStyle' || fn === 'set:strokeStyle' || fn === 'set:shadowColor',
   );
   expect(colorWrites).toHaveLength(0);
 }
@@ -756,24 +866,31 @@ describe.each(PRODUCTS)('%s product field', (slug, source) => {
       const later = render(source, cols, rows, seed, 3.17).signature();
       const nextSeed = render(source, cols, rows, seed + 1, 3.17).signature();
 
-      expect(later, `${slug} should animate between t=0 and t=3.17 at ${cols}×${rows}`).not.toBe(resting);
+      expect(later, `${slug} should animate between t=0 and t=3.17 at ${cols}×${rows}`).not.toBe(
+        resting,
+      );
       expect(nextSeed, `${slug} should vary with seed at ${cols}×${rows}`).not.toBe(later);
       // If the source ignored t, the phase-specific helpers below would also be dead.
-      expect(callDiffRatio(render(source, cols, rows, seed, 0), render(source, cols, rows, seed, 3.17))).toBeGreaterThan(0.05);
+      expect(
+        callDiffRatio(render(source, cols, rows, seed, 0), render(source, cols, rows, seed, 3.17)),
+      ).toBeGreaterThan(0.05);
     }
   });
 });
 describe('product stroke accents', () => {
-  it.each(PROFILES)('keeps small emphasis while outlines carry the structure at $label size', ({ cols, rows }) => {
-    for (const [slug, source] of PRODUCTS) {
-      const seed = seedFrom(slug);
-      const frames = [0, 1.35, 3.17].map((t) => render(source, cols, rows, seed, t));
-      expect(
-        frames.some((stub) => fillCount(stub) > 0),
-        `${slug} should retain a small node, packet, or lit accent`,
-      ).toBe(true);
-    }
-  });
+  it.each(PROFILES)(
+    'keeps small emphasis while outlines carry the structure at $label size',
+    ({ cols, rows }) => {
+      for (const [slug, source] of PRODUCTS) {
+        const seed = seedFrom(slug);
+        const frames = [0, 1.35, 3.17].map((t) => render(source, cols, rows, seed, t));
+        expect(
+          frames.some((stub) => fillCount(stub) > 0),
+          `${slug} should retain a small node, packet, or lit accent`,
+        ).toBe(true);
+      }
+    },
+  );
 });
 
 describe('product density guardrails', () => {
@@ -807,17 +924,42 @@ describe('product raster density oracle', () => {
   });
 });
 
-describe('product field identity', () => {
-  it.each(PROFILES)('keeps all five silhouettes distinct at $label size even with one shared seed', ({ cols, rows }) => {
-    const signatures = PRODUCTS.map(([, source]) => render(source, cols, rows, 2718, 3.17).signature());
-    for (let left = 0; left < signatures.length; left++) {
-      for (let right = left + 1; right < signatures.length; right++) {
-        expect(signatures[left], `${PRODUCTS[left]![0]} and ${PRODUCTS[right]![0]} drew the same trace`).not.toBe(
-          signatures[right],
-        );
+describe('method tile raster density oracle', () => {
+  it('keeps every bloom phase below 35% in each tile grid', () => {
+    for (const { label, cols, rows } of METHOD_TILE_PROFILES) {
+      for (const [index, kind] of STAGE_ORDER.entries()) {
+        const source = tileStage(kind);
+        const seed = index * 137;
+        for (const progress of METHOD_TILE_PROGRESS) {
+          const lit = rasterizeCallLog(render(source, cols, rows, seed, 0, progress), cols, rows);
+          const peak = maxLitWindow(lit, cols, rows);
+          expect(
+            peak.lit / (DENSITY_WINDOW_SIDE * DENSITY_WINDOW_SIDE),
+            `${kind} progress ${progress} at ${label} peaks at ${peak.lit}/64 cells in the 8×8 window at ${peak.x},${peak.y}`,
+          ).toBeLessThanOrEqual(MAX_LIT_WINDOW_RATIO);
+        }
       }
     }
   });
+});
+
+describe('product field identity', () => {
+  it.each(PROFILES)(
+    'keeps all five silhouettes distinct at $label size even with one shared seed',
+    ({ cols, rows }) => {
+      const signatures = PRODUCTS.map(([, source]) =>
+        render(source, cols, rows, 2718, 3.17).signature(),
+      );
+      for (let left = 0; left < signatures.length; left++) {
+        for (let right = left + 1; right < signatures.length; right++) {
+          expect(
+            signatures[left],
+            `${PRODUCTS[left]![0]} and ${PRODUCTS[right]![0]} drew the same trace`,
+          ).not.toBe(signatures[right]);
+        }
+      }
+    },
+  );
 
   it('keeps silhouettes distinct at rest and with slug-derived seeds by a wide margin', () => {
     for (const { cols, rows } of PROFILES) {
@@ -826,14 +968,20 @@ describe('product field identity', () => {
       for (let a = 0; a < restingStubs.length; a++) {
         for (let b = a + 1; b < restingStubs.length; b++) {
           expect(restingStubs[a]!.signature()).not.toBe(restingStubs[b]!.signature());
-          expect(callDiffRatio(restingStubs[a]!, restingStubs[b]!), `resting ${PRODUCTS[a]![0]} vs ${PRODUCTS[b]![0]} at ${cols}×${rows} should differ by >20%`).toBeGreaterThan(0.2);
+          expect(
+            callDiffRatio(restingStubs[a]!, restingStubs[b]!),
+            `resting ${PRODUCTS[a]![0]} vs ${PRODUCTS[b]![0]} at ${cols}×${rows} should differ by >20%`,
+          ).toBeGreaterThan(0.2);
         }
       }
       // Slug-derived seeds are the real call-site; they must also stay distinct.
       const slugStubs = PRODUCTS.map(([s, src]) => render(src, cols, rows, seedFrom(s), 3.17));
       for (let a = 0; a < slugStubs.length; a++) {
         for (let b = a + 1; b < slugStubs.length; b++) {
-          expect(callDiffRatio(slugStubs[a]!, slugStubs[b]!), `slug-seeded ${PRODUCTS[a]![0]} vs ${PRODUCTS[b]![0]} at ${cols}×${rows}`).toBeGreaterThan(0.2);
+          expect(
+            callDiffRatio(slugStubs[a]!, slugStubs[b]!),
+            `slug-seeded ${PRODUCTS[a]![0]} vs ${PRODUCTS[b]![0]} at ${cols}×${rows}`,
+          ).toBeGreaterThan(0.2);
         }
       }
     }
@@ -845,7 +993,10 @@ describe('product field identity', () => {
         const neuralCalls = render(neuralTraining, cols, rows, 2718, t).calls.length;
         for (const [, source] of PRODUCTS) {
           const calls = render(source, cols, rows, 2718, t).calls.length;
-          expect(calls, `product should stay under neural budget at ${cols}×${rows} t=${t}`).toBeLessThan(neuralCalls);
+          expect(
+            calls,
+            `product should stay under neural budget at ${cols}×${rows} t=${t}`,
+          ).toBeLessThan(neuralCalls);
         }
       }
     }
@@ -864,24 +1015,38 @@ describe('clusterbid UAT boundary', () => {
           .map(({ args }) => args[0])
           .filter((v): v is number => typeof v === 'number');
         const uatLeft = Math.max(...strokeXs);
-        const uatFrames = stub.calls.filter(({ fn, args }) => fn === 'strokeRect' && args[0] === uatLeft);
-        expect(uatFrames, `expected sparse UAT pod frames at ${label} t=${t}`).toHaveLength(rows < 40 ? 1 : 2);
+        const uatFrames = stub.calls.filter(
+          ({ fn, args }) => fn === 'strokeRect' && args[0] === uatLeft,
+        );
+        expect(uatFrames, `expected sparse UAT pod frames at ${label} t=${t}`).toHaveLength(
+          rows < 40 ? 1 : 2,
+        );
         for (const { fn, args } of stub.calls) {
           if (fn !== 'fillRect') continue;
           const [x, , width] = args;
           if (typeof x !== 'number' || typeof width !== 'number') continue;
-          expect(x + width, `fill entered the UAT column at ${label} t=${t}`).toBeLessThanOrEqual(uatLeft);
+          expect(x + width, `fill entered the UAT column at ${label} t=${t}`).toBeLessThanOrEqual(
+            uatLeft,
+          );
         }
         // Even the travelling final packet must stop at the boundary.
         const marker = Math.max(1, rows * 0.043);
         for (const { fn, args } of stub.calls) {
           if (fn !== 'fillRect') continue;
           const [x, y, w, h] = args;
-          if (typeof x !== 'number' || typeof y !== 'number' || typeof w !== 'number' || typeof h !== 'number') continue;
+          if (
+            typeof x !== 'number' ||
+            typeof y !== 'number' ||
+            typeof w !== 'number' ||
+            typeof h !== 'number'
+          )
+            continue;
           if (w !== marker || h !== marker) continue;
           // Final packet rides at y ≈ podY+podH+gapY*0.5; its x must stay left of UAT
           if (Math.abs(y - (rows * 0.25 + rows * 0.18 + rows * 0.07)) < rows * 0.1) {
-            expect(x + w, `final packet crossed UAT at ${label} t=${t}`).toBeLessThanOrEqual(uatLeft);
+            expect(x + w, `final packet crossed UAT at ${label} t=${t}`).toBeLessThanOrEqual(
+              uatLeft,
+            );
           }
         }
       }
@@ -898,8 +1063,14 @@ describe('tiny legibility', () => {
       const resting = render(source, cols, rows, seed, 0);
       const moving = render(source, cols, rows, seed, 3.17);
       // Both frames must have meaningful work (catches 1×1 dot collapse).
-      expect(resting.calls.length, `${slug} tiny resting should have many calls`).toBeGreaterThanOrEqual(20);
-      expect(moving.calls.length, `${slug} tiny moving should have many calls`).toBeGreaterThanOrEqual(20);
+      expect(
+        resting.calls.length,
+        `${slug} tiny resting should have many calls`,
+      ).toBeGreaterThanOrEqual(20);
+      expect(
+        moving.calls.length,
+        `${slug} tiny moving should have many calls`,
+      ).toBeGreaterThanOrEqual(20);
       assertInGrid(resting, cols, rows);
       assertInGrid(moving, cols, rows);
 
@@ -924,8 +1095,14 @@ describe('tiny legibility', () => {
     const rows = 12;
     const resting = render(clusterbid, cols, rows, seedFrom('clusterbid'), 0);
     const moving = render(clusterbid, cols, rows, seedFrom('clusterbid'), 3.17);
-    expect(resting.calls.filter(({ fn }) => fn === 'fillRect').length, 'resting should be wireframe').toBe(0);
-    expect(moving.calls.filter(({ fn }) => fn === 'fillRect').length, 'moving should retain ingress and boundary packets').toBeGreaterThanOrEqual(2);
+    expect(
+      resting.calls.filter(({ fn }) => fn === 'fillRect').length,
+      'resting should be wireframe',
+    ).toBe(0);
+    expect(
+      moving.calls.filter(({ fn }) => fn === 'fillRect').length,
+      'moving should retain ingress and boundary packets',
+    ).toBeGreaterThanOrEqual(2);
   });
 });
 
@@ -939,7 +1116,10 @@ describe('vericite pipeline phases', () => {
     const encoding = render(vericite, cols, rows, seed, 0.9); // cycle 0.252 ∈ [0.18,0.42]
     expect(vericiteEncodes(resting, cols, rows)).toHaveLength(0);
     const midEncodes = vericiteEncodes(encoding, cols, rows);
-    expect(midEncodes.length, 'expected 3 embedding bars to be outlined during encode').toBeGreaterThan(0);
+    expect(
+      midEncodes.length,
+      'expected 3 embedding bars to be outlined during encode',
+    ).toBeGreaterThan(0);
     // If the encode branch were deleted, the mid frame would look identical to resting
     expect(encoding.signature()).not.toBe(resting.signature());
     expect(callDiffRatio(resting, encoding)).toBeGreaterThan(0.05);
@@ -990,7 +1170,9 @@ describe('vericite pipeline phases', () => {
     const answerAccentsMoving = assembling.calls.filter(
       ({ fn, args }) => fn === 'strokeRect' && typeof args[0] === 'number' && args[0] > cols * 0.68,
     ).length;
-    expect(answerAccentsMoving, 'answer assembly should add outlined accents').toBeGreaterThan(answerAccentsRest);
+    expect(answerAccentsMoving, 'answer assembly should add outlined accents').toBeGreaterThan(
+      answerAccentsRest,
+    );
 
     // At encode time there is no citation yet
     expect(vericiteCitations(render(vericite, cols, rows, seed, 0.9), cols, rows)).toHaveLength(0);
@@ -1021,12 +1203,19 @@ describe('neev pipeline phases', () => {
     const arrivalsRest = resting.calls.filter(
       ({ fn, args }) => fn === 'fillRect' && args[2] === packetW && args[3] === packetH,
     );
-    const arrivalsMid = mid.calls.filter(({ fn, args }) => fn === 'fillRect' && args[2] === packetW && args[3] === packetH);
-    const arrivalsLate = late.calls.filter(({ fn, args }) => fn === 'fillRect' && args[2] === packetW && args[3] === packetH);
+    const arrivalsMid = mid.calls.filter(
+      ({ fn, args }) => fn === 'fillRect' && args[2] === packetW && args[3] === packetH,
+    );
+    const arrivalsLate = late.calls.filter(
+      ({ fn, args }) => fn === 'fillRect' && args[2] === packetW && args[3] === packetH,
+    );
 
     expect(arrivalsRest).toHaveLength(0);
     expect(arrivalsLate).toHaveLength(0);
-    expect(arrivalsMid.length, 'expected one arrival packet in flight at t=2.3').toBeGreaterThanOrEqual(1);
+    expect(
+      arrivalsMid.length,
+      'expected one arrival packet in flight at t=2.3',
+    ).toBeGreaterThanOrEqual(1);
 
     // The packet must sit between the bubble row and the parser
     const parserX = cols * 0.405;
@@ -1085,7 +1274,12 @@ describe('curat-money pipeline phases', () => {
     // Row frames are strokeRect with width gridW*0.6; keep draw order (per-row) to detect per-row moves.
     const frames = (stub: StubContext) =>
       stub.calls
-        .filter(({ fn, args }) => fn === 'strokeRect' && typeof args[2] === 'number' && Math.abs(args[2] - cols * 0.59 * 0.6) < 1)
+        .filter(
+          ({ fn, args }) =>
+            fn === 'strokeRect' &&
+            typeof args[2] === 'number' &&
+            Math.abs(args[2] - cols * 0.59 * 0.6) < 1,
+        )
         .map(({ args }) => args[1] as number);
     const y0 = frames(intake);
     const ySettled = frames(settled);
@@ -1103,9 +1297,15 @@ describe('curat-money pipeline phases', () => {
     const settled = render(curatMoney, cols, rows, seed, 4.5); // cycle 0.9 feed=1 packet at bottom
     const feederBox = Math.max(8, rows * 0.075);
     const feedSize = feederBox * 0.25;
-    const feedBefore = before.calls.filter(({ fn, args }) => fn === 'fillRect' && args[2] === feedSize && args[3] === feedSize);
-    const feedEarly = early.calls.filter(({ fn, args }) => fn === 'fillRect' && args[2] === feedSize && args[3] === feedSize);
-    const feedSettled = settled.calls.filter(({ fn, args }) => fn === 'fillRect' && args[2] === feedSize && args[3] === feedSize);
+    const feedBefore = before.calls.filter(
+      ({ fn, args }) => fn === 'fillRect' && args[2] === feedSize && args[3] === feedSize,
+    );
+    const feedEarly = early.calls.filter(
+      ({ fn, args }) => fn === 'fillRect' && args[2] === feedSize && args[3] === feedSize,
+    );
+    const feedSettled = settled.calls.filter(
+      ({ fn, args }) => fn === 'fillRect' && args[2] === feedSize && args[3] === feedSize,
+    );
     expect(feedBefore).toHaveLength(0);
     expect(feedEarly.length).toBeGreaterThan(0);
     expect(feedSettled.length).toBeGreaterThan(0);
@@ -1128,16 +1328,30 @@ describe('bluehost-agents pipeline phases', () => {
     expect(a.signature()).not.toBe(b.signature());
     // At least one outbound packet (fill) and the clock-driven positions must differ
     const packetsA = a.calls.filter(
-      ({ fn, args }) => fn === 'fillRect' && args[2] === marker && args[3] === marker && typeof args[0] === 'number',
+      ({ fn, args }) =>
+        fn === 'fillRect' &&
+        args[2] === marker &&
+        args[3] === marker &&
+        typeof args[0] === 'number',
     );
     const packetsB = b.calls.filter(
-      ({ fn, args }) => fn === 'fillRect' && args[2] === marker && args[3] === marker && typeof args[0] === 'number',
+      ({ fn, args }) =>
+        fn === 'fillRect' &&
+        args[2] === marker &&
+        args[3] === marker &&
+        typeof args[0] === 'number',
     );
     expect(packetsA.length).toBeGreaterThan(0);
     expect(packetsB.length).toBeGreaterThan(0);
     // Positions should not be identical across a half-second gap; at least one packet moves.
-    const posA = packetsA.map((c) => `${(c.args[0] as number).toFixed(2)},${(c.args[1] as number).toFixed(2)}`).sort().join('|');
-    const posB = packetsB.map((c) => `${(c.args[0] as number).toFixed(2)},${(c.args[1] as number).toFixed(2)}`).sort().join('|');
+    const posA = packetsA
+      .map((c) => `${(c.args[0] as number).toFixed(2)},${(c.args[1] as number).toFixed(2)}`)
+      .sort()
+      .join('|');
+    const posB = packetsB
+      .map((c) => `${(c.args[0] as number).toFixed(2)},${(c.args[1] as number).toFixed(2)}`)
+      .sort()
+      .join('|');
     expect(posB).not.toBe(posA);
   });
 
@@ -1146,8 +1360,12 @@ describe('bluehost-agents pipeline phases', () => {
     let sawReturning = false;
     for (const t of [0, 1.0, 2.0, 3.17]) {
       const stub = render(bluehostAgents, cols, rows, seed, t);
-      const outbound = stub.calls.filter(({ fn, args }) => fn === 'fillRect' && args[2] === marker && args[3] === marker);
-      const returning = stub.calls.filter(({ fn, args }) => fn === 'strokeRect' && args[2] === marker && args[3] === marker);
+      const outbound = stub.calls.filter(
+        ({ fn, args }) => fn === 'fillRect' && args[2] === marker && args[3] === marker,
+      );
+      const returning = stub.calls.filter(
+        ({ fn, args }) => fn === 'strokeRect' && args[2] === marker && args[3] === marker,
+      );
       if (outbound.length > 0) sawOutbound = true;
       if (returning.length > 0) sawReturning = true;
     }
@@ -1175,7 +1393,9 @@ describe('clusterbid pipeline phases', () => {
 
     expect(resting.calls.filter(({ fn }) => fn === 'fillRect')).toHaveLength(0);
     expect(early.calls.filter(({ fn }) => fn === 'fillRect').length).toBeGreaterThan(0);
-    expect(late.calls.filter(({ fn }) => fn === 'fillRect').length).toBeGreaterThan(early.calls.filter(({ fn }) => fn === 'fillRect').length);
+    expect(late.calls.filter(({ fn }) => fn === 'fillRect').length).toBeGreaterThan(
+      early.calls.filter(({ fn }) => fn === 'fillRect').length,
+    );
 
     // CI checkmarks appear only after complete>0 (phase 0.04-0.12 etc.)
     // At t=0 there should be no checkmark segments (which are stroke calls with short diagonal)
@@ -1187,14 +1407,20 @@ describe('clusterbid pipeline phases', () => {
     const without = render(clusterbid, cols, rows, seed, 0);
     const withPacket = render(clusterbid, cols, rows, seed, 3.17);
     const marker = Math.max(1, rows * 0.043);
-    const packetsWithout = without.calls.filter(({ fn, args }) => fn === 'fillRect' && args[2] === marker && args[3] === marker);
-    const packetsWith = withPacket.calls.filter(({ fn, args }) => fn === 'fillRect' && args[2] === marker && args[3] === marker);
+    const packetsWithout = without.calls.filter(
+      ({ fn, args }) => fn === 'fillRect' && args[2] === marker && args[3] === marker,
+    );
+    const packetsWith = withPacket.calls.filter(
+      ({ fn, args }) => fn === 'fillRect' && args[2] === marker && args[3] === marker,
+    );
     // At t=0 only ticks exist, not the travelling final packet at y ≈ podY+podH+gapY*0.5
     // At t=3.17 there is at least one more marker (the final packet) beyond the per-pod ticks.
     expect(packetsWith.length).toBeGreaterThan(packetsWithout.length);
 
     const uatLeft = Math.max(
-      ...withPacket.calls.filter(({ fn }) => fn === 'strokeRect').map(({ args }) => args[0] as number),
+      ...withPacket.calls
+        .filter(({ fn }) => fn === 'strokeRect')
+        .map(({ args }) => args[0] as number),
     );
     for (const p of packetsWith) {
       const x = p.args[0] as number;

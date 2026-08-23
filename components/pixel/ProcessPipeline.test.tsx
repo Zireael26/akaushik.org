@@ -7,30 +7,36 @@ import { ProcessPipeline, type ProcessStep } from './ProcessPipeline';
 
 vi.mock('@/components/pixel/PixelField', () => ({
   PixelField: ({
+    activeColor,
     ambient,
     className,
     color,
     cellSize,
     gain,
+    progress,
     scatter,
     shapeNoise,
     stage,
   }: {
+    activeColor?: string;
     ambient?: boolean;
     className?: string;
     color?: string;
     cellSize?: number;
     gain?: number;
+    progress?: number;
     scatter?: number;
     shapeNoise?: number;
     stage?: number;
   }) =>
     createElement('canvas', {
       className,
+      'data-active-color': activeColor,
       'data-ambient': ambient === undefined ? undefined : String(ambient),
       'data-color': color,
       'data-cell-size': cellSize === undefined ? undefined : String(cellSize),
       'data-gain': gain === undefined ? undefined : String(gain),
+      'data-progress': progress === undefined ? undefined : String(progress),
       'data-scatter': scatter === undefined ? undefined : String(scatter),
       'data-shape-noise': shapeNoise === undefined ? undefined : String(shapeNoise),
       'data-stage': stage === undefined ? undefined : String(stage),
@@ -74,8 +80,10 @@ describe('ProcessPipeline cursor interaction', () => {
     expect([...steps].every((step) => step.hasAttribute('data-pixel-hover'))).toBe(true);
     const tiles = container.querySelectorAll<HTMLCanvasElement>('.px-pipeline-tile-canvas');
     expect(tiles).toHaveLength(4);
-    for (const tile of tiles) {
+    for (const [i, tile] of [...tiles].entries()) {
       expect(tile.dataset.color).toBe('ink');
+      expect(tile.dataset.activeColor).toBe(STEPS[i]!.tone);
+      expect(tile.dataset.progress).toBe('0');
       expect(tile.dataset.gain).toBe('1');
       expect(tile.dataset.scatter).toBe('0');
       expect(tile.dataset.shapeNoise).toBe('0');
@@ -92,7 +100,7 @@ describe('ProcessPipeline cursor interaction', () => {
     });
 
     expect(band?.dataset.stage).toBe('2');
-    expect(steps[1]?.style.getPropertyValue('--px-pipeline-cursor-progress')).toBe('0.7');
+    expect(tiles[1]?.dataset.progress).toBe('0.7');
     expect(steps[1]?.dataset.pixelCursorResponse).toBe('active');
 
     await act(async () => {
@@ -100,7 +108,7 @@ describe('ProcessPipeline cursor interaction', () => {
     });
 
     expect(band?.dataset.stage).toBe('0');
-    expect(steps[1]?.style.getPropertyValue('--px-pipeline-cursor-progress')).toBe('0');
+    expect(tiles[1]?.dataset.progress).toBe('0');
     expect(steps[1]?.dataset.pixelCursorResponse).toBeUndefined();
   });
 
@@ -171,11 +179,13 @@ describe('ProcessPipeline cursor interaction', () => {
 
     const band = container.querySelector<HTMLCanvasElement>('.px-pipeline-band');
     const steps = container.querySelectorAll<HTMLElement>('.px-pipeline-step');
+    const tiles = container.querySelectorAll<HTMLCanvasElement>('.px-pipeline-tile-canvas');
 
     await act(async () => {
       steps[0]!.focus();
     });
     expect(band?.dataset.stage).toBe('1');
+    expect(tiles[0]?.dataset.progress).toBe('1');
 
     await act(async () => {
       steps[1]!.dispatchEvent(
@@ -186,10 +196,13 @@ describe('ProcessPipeline cursor interaction', () => {
       );
     });
     expect(band?.dataset.stage).toBe('1');
+    expect(tiles[0]?.dataset.progress).toBe('1');
+    expect(tiles[1]?.dataset.progress).toBe('1');
 
     await act(async () => {
       steps[0]!.blur();
     });
     expect(band?.dataset.stage).toBe('2');
+    expect(tiles[0]?.dataset.progress).toBe('0');
   });
 });
