@@ -20,20 +20,20 @@ apex owns final visual acceptance and every push, deploy or merge.
 
 ## U1 — Deterministic field engine
 
-- [ ] T07 Add the asymmetric fixed board, topology bans, minimum spawn distance
+- [x] T07 Add the asymmetric fixed board, topology bans, minimum spawn distance
   and typed tile grid in `lib/arcade/layout.ts` → SC2, SC9
-- [ ] T08 Add pure state, fixed live periods, phases, buffered movement and
+- [x] T08 Add pure state, fixed live periods, phases, buffered movement and
   discrete/live clocks in `lib/arcade/game.ts` → SC1, SC7
-- [ ] T09 Add Direct and three-cell Cutline distance routing with reused typed
+- [x] T09 Add Direct and three-cell Cutline distance routing with reused typed
   scratch buffers → SC3
-- [ ] T10 Add deterministic non-reversing Drift routing through `h(x, y)`, with
+- [x] T10 Add deterministic non-reversing Drift routing through `h(x, y)`, with
   dead-end reversal → SC3
-- [ ] T11 Add reading score, same-cell/swap collisions, 900ms live respawn,
+- [x] T11 Add reading score, same-cell/swap collisions, 900ms live respawn,
   immediate discrete reset, final-reading precedence, win, loss and restart →
   SC1
-- [ ] T12 Add focused layout and game tests for every U1 invariant → SC1–SC3,
+- [x] T12 Add focused layout and game tests for every U1 invariant → SC1–SC3,
   SC7
-- [ ] T13 Run focused Vitest and typecheck receipts; commit U1
+- [x] T13 Run focused Vitest and typecheck receipts; commit U1
 
 ## U2 — Runtime oscillator audio
 

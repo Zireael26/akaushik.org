@@ -4,6 +4,16 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ## [Unreleased]
 
+### Added
+
+- 2026-08-23 — Began the original arcade field: a fixed asymmetric 25×17 board
+  and deterministic maze-chase state machine with buffered keyboard movement,
+  three distinct routing strategies, score, lives, collision/respawn, win/loss
+  and a discrete reduced-motion turn mode. The engine uses the site's shared
+  hash and preallocated typed pathfinding buffers; it adds no framework, sprite,
+  media asset or dependency. Twenty focused tests cover topology, reachability,
+  routing, timing, collision precedence and exact restart.
+
 ### Fixed
 
 - 2026-08-23 — The CI accessibility gate stopped failing on a page that is
