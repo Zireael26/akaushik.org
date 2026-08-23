@@ -2,7 +2,6 @@ import { createElement } from 'react';
 import Link from 'next/link';
 import type { Post, CaseStudyFrontmatter } from '@/lib/content';
 import { getMdxModule } from '@/lib/mdx/generated';
-import { HyperframesLoop } from '@/components/media/hyperframes-loop';
 import { RouteField } from '@/components/pixel/RouteField';
 import { RuledRow } from '@/components/pixel/RuledRow';
 import { Reel, type ReelSlug } from './reels';
@@ -39,12 +38,8 @@ export function CaseStudyPage({
           ) : null}
         </div>
       </header>
-      {reelSlug === 'neev' ? (
-        <HyperframesLoop kind="work-inline" slug="neev" className="px-work-inline-loop" />
-      ) : reelSlug ? (
-        <figure className="px-work-detail-reel" aria-hidden="true">
-          <Reel slug={reelSlug} variant="card" />
-        </figure>
+      {reelSlug ? (
+        <Reel slug={reelSlug} variant="hero" />
       ) : null}
       <article className="px-work-body">
         <MdxBody slug={post.slug} />

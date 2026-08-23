@@ -220,6 +220,7 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   This is the last code change the Vercel → Cloudflare cutover needed
   (ADR-0018); the Vercel project stays paused-not-deleted for 14 days so a
   rollback is a DNS change rather than a rebuild.
+- 2026-08-23 — Case-study reels now use live theme-responsive pixel fields; HyperFrames video references/tests are being retired, and ADR-0020 records the decision.
 
 - 2026-08-23 — Playwright's Firefox cannot launch on this machine, and the site
   is not the reason. Two attempts at a full five-project run against the

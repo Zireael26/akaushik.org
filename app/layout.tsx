@@ -20,6 +20,7 @@ import './styles/sections/work.css';
 import './styles/sections/services.css';
 import './styles/sections/writing.css';
 import './styles/sections/work-detail.css';
+import './styles/sections/reel.css';
 import './styles/sections/writing-detail.css';
 import './styles/sections/docs.css';
 import './styles/sections/status.css';

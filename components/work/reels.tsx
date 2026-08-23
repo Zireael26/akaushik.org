@@ -1,154 +1,25 @@
-import type { ReactNode } from 'react';
-import { MotionVideo } from '@/components/media/MotionVideo';
+import { ReelField } from './reel-field';
+import type { FieldPreset } from '@/lib/pixel/field';
 
 /**
- * Case-study reels — one per work slug, two variants:
- *   - `variant="card"`: 600×400, 5s loop, used by the home Work cards.
- *   - `variant="hero"`: 1600×900, 10s loop, used by the case-study hero band.
+ * Case-study reels — one per work slug, two variants (ADR-0020):
  *
- * Most reels render the original SVG as the static floor AND a <video> of the
- * HyperFrames render on top. The `<video>` is hidden when either:
- *   - `prefers-reduced-motion: reduce`, or
- *   - `[data-motion="off"]` (set by the tweaks panel)
- * …so motion-disabled users never see (or pay bytes for) the animated clip.
- * Server-only for the SVG floor; the video gate is client via MotionVideo
- * (`components/media/MotionVideo.tsx`) — no CSS-only `[hidden]` dependency
- * and no old `placeholder-reel` parchment classes.
+ * - `variant="card"`: `preset="tile"` — the home Work index is a matter-row
+ *   stack now, so this size only survives on small surfaces.
+ * - `variant="hero"`: `preset="band"` — the wide, short band at the top of a
+ *   case-study detail page (`CaseStudyPage.tsx`, `CaseStudyStub.tsx`).
  *
- * The MP4s live at `public/video/work/<slug>[-hero].mp4` and are authored
- * under `scripts/hyperframes/`. ClusterBid intentionally ships only its SVG,
- * so it emits no media URL that could fail. See ADR-0008 for the video pipeline.
+ * Each reel renders the slug's own product source through the pixel field,
+ * so the art repaints from theme tokens in light and dark mode instead of
+ * shipping baked pixels on a fixed background. There is no video here any
+ * more and no motion gate either: the field engine reads
+ * `prefers-reduced-motion()` per frame and holds still on its own, which is
+ * also what makes the reduced-motion e2e contract hold — a still field, not
+ * an unrequested download.
  *
- * No hard-coded hex — every colour is a CSS variable from
- * app/styles/tokens.css (`--line`, `--ink*`, `--px-cobalt` etc) so the SVG
- * re-themes with the page. The parchment-era `var(--accent*)` / `var(--ink-05)`
- * variables are gone with globals.css's Tailwind bridge.
+ * The name and the props are unchanged for the three call sites; see
+ * ADR-0008 for the superseded HyperFrames pipeline this used to render.
  */
-
-type ReelVariant = 'card' | 'hero';
-
-function NeevReel() {
-  return (
-    <svg viewBox="0 0 600 400" className="px-reel-fallback" aria-hidden="true">
-      <defs>
-        <pattern
-          id="stripes-neev"
-          width="10"
-          height="10"
-          patternUnits="userSpaceOnUse"
-          patternTransform="rotate(45)"
-        >
-          <line x1="0" y1="0" x2="0" y2="10" stroke="var(--line)" strokeWidth="4" />
-        </pattern>
-      </defs>
-      <rect width="600" height="400" fill="var(--bg)" />
-      <rect width="600" height="400" fill="url(#stripes-neev)" />
-      <g>
-        <circle cx="180" cy="200" r="38" fill="var(--px-cobalt)" />
-        <circle cx="360" cy="130" r="22" fill="var(--px-cobalt)" opacity="0.85" />
-        <circle cx="420" cy="280" r="26" fill="var(--px-cobalt)" opacity="0.85" />
-        <path
-          d="M180 200 L360 130 M180 200 L420 280 M360 130 L420 280"
-          stroke="var(--px-cobalt)"
-          strokeOpacity="0.6"
-          strokeWidth="1.2"
-          fill="none"
-        />
-      </g>
-    </svg>
-  );
-}
-
-function VeriCiteReel() {
-  return (
-    <svg viewBox="0 0 600 400" className="px-reel-fallback" aria-hidden="true">
-      <rect width="600" height="400" fill="var(--bg)" />
-      <g stroke="var(--line)" strokeWidth="0.8" fill="none">
-        <path d="M0 120 H600 M0 200 H600 M0 280 H600" />
-      </g>
-      <g>
-        <rect x="60" y="80" width="140" height="80" fill="var(--line)" />
-        <rect x="230" y="160" width="140" height="80" fill="var(--px-cobalt)" opacity="0.35" />
-        <rect x="400" y="240" width="140" height="80" fill="var(--line)" />
-      </g>
-    </svg>
-  );
-}
-
-function BluehostReel() {
-  return (
-    <svg viewBox="0 0 600 400" className="px-reel-fallback" aria-hidden="true">
-      <rect width="600" height="400" fill="var(--bg)" />
-      <g>
-        <path
-          d="M40 340 C 120 220, 200 260, 280 180 S 440 140, 560 100"
-          stroke="var(--px-cobalt)"
-          strokeWidth="2.4"
-          fill="none"
-        />
-        <path
-          d="M40 360 C 120 320, 200 330, 280 280 S 440 260, 560 220"
-          stroke="var(--ink40)"
-          strokeWidth="1.2"
-          fill="none"
-          strokeDasharray="3 4"
-        />
-      </g>
-      <g fill="var(--px-cobalt)">
-        <circle cx="40" cy="340" r="4" />
-        <circle cx="280" cy="180" r="4" />
-        <circle cx="560" cy="100" r="4" />
-      </g>
-    </svg>
-  );
-}
-
-function CuratReel() {
-  return (
-    <svg viewBox="0 0 600 400" className="px-reel-fallback" aria-hidden="true">
-      <rect width="600" height="400" fill="var(--bg)" />
-      <g>
-        <rect x="40" y="60" width="520" height="40" fill="var(--line)" />
-        <rect x="40" y="120" width="360" height="28" fill="var(--line)" />
-        <rect x="40" y="160" width="420" height="28" fill="var(--line)" />
-        <rect x="40" y="200" width="300" height="28" fill="var(--line)" />
-        <rect x="40" y="240" width="480" height="28" fill="var(--line)" />
-        <rect x="40" y="280" width="380" height="28" fill="var(--line)" />
-      </g>
-    </svg>
-  );
-}
-
-function ClusterBidReel() {
-  return (
-    <svg
-      viewBox="0 0 600 400"
-      className="px-reel-fallback"
-      data-reel-slug="clusterbid"
-      aria-hidden="true"
-    >
-      <rect width="600" height="400" fill="var(--bg)" />
-      <g stroke="var(--line)" strokeWidth="1" fill="none">
-        <path d="M0 80 H600 M0 160 H600 M0 240 H600 M0 320 H600" />
-        <path d="M100 0 V400 M200 0 V400 M300 0 V400 M400 0 V400 M500 0 V400" />
-      </g>
-      <g fill="var(--line)" stroke="var(--ink40)" strokeWidth="1.2">
-        <rect x="48" y="76" width="132" height="64" rx="8" />
-        <rect x="234" y="48" width="132" height="64" rx="8" />
-        <rect x="420" y="76" width="132" height="64" rx="8" />
-        <rect x="48" y="260" width="132" height="64" rx="8" />
-        <rect x="234" y="288" width="132" height="64" rx="8" />
-        <rect x="420" y="260" width="132" height="64" rx="8" />
-      </g>
-      <g stroke="var(--px-cobalt)" strokeOpacity="0.6" strokeWidth="2" fill="none">
-        <path d="M180 108 H234 M366 80 H420 M114 140 V260 M486 140 V260 M180 292 H234 M366 320 H420" />
-        <path d="M300 112 V288" strokeDasharray="6 7" />
-      </g>
-      <circle cx="300" cy="200" r="48" fill="var(--px-cobalt)" opacity="0.3" />
-      <circle cx="300" cy="200" r="18" fill="var(--px-cobalt)" />
-    </svg>
-  );
-}
 
 export type ReelSlug = 'neev' | 'vericite' | 'bluehost-agents' | 'curat-money' | 'clusterbid';
 
@@ -166,53 +37,27 @@ export function isReelSlug(slug: string): slug is ReelSlug {
   return (REEL_SLUGS as readonly string[]).includes(slug);
 }
 
-export const REELS: Record<ReelSlug, () => ReactNode> = {
-  neev: NeevReel,
-  vericite: VeriCiteReel,
-  'bluehost-agents': BluehostReel,
-  'curat-money': CuratReel,
-  clusterbid: ClusterBidReel,
+type ReelVariant = 'card' | 'hero';
+
+/** Preset per variant. The hero band is a wide, short strip above the case
+ * study; the card size is a squatter tile. Both read best on `band`, whose
+ * cell/gain/noise tuning is built for exactly this aspect. */
+const VARIANT_PRESET: Record<ReelVariant, FieldPreset> = {
+  card: 'tile',
+  hero: 'band',
 };
 
 /**
- * Resolve the MP4 + poster path for a slug/variant. Hero variants append
- * `-hero`; paths are relative to `/public`.
+ * Reel — the case-study's own product source, mounted as a pixel field at
+ * the variant's preset. Same interface the HyperFrames-era component had;
+ * different pixels behind it.
  */
-function reelAssetPath(slug: ReelSlug, variant: ReelVariant): { mp4: string; poster: string } {
-  const suffix = variant === 'hero' ? '-hero' : '';
-  return {
-    mp4: `/video/work/${slug}${suffix}.mp4`,
-    poster: `/video/work/${slug}${suffix}.webp`,
-  };
-}
-
-/**
- * Reel — renders the SVG floor + (when motion is allowed) the HyperFrames
- * video on top. The video is gated by `MotionVideo` (client) which checks
- * `prefers-reduced-motion` and `[data-motion]` so motion-disabled users
- * never request the MP4 bytes.
- */
-export function Reel({ slug, variant = 'card' }: { slug: ReelSlug; variant?: ReelVariant }) {
-  const Fallback = REELS[slug];
-  if (slug === 'clusterbid') return <Fallback />;
-
-  const { mp4, poster } = reelAssetPath(slug, variant);
-  // width/height are the intrinsic aspect — the parent figure sizes it via CSS.
-  const w = variant === 'hero' ? 1600 : 600;
-  const h = variant === 'hero' ? 900 : 400;
-
+export function Reel({ slug, variant = 'hero' }: { slug: ReelSlug; variant?: ReelVariant }) {
   return (
-    <>
-      <Fallback />
-      <MotionVideo
-        className="px-reel-video"
-        mp4={mp4}
-        poster={poster}
-        width={w}
-        height={h}
-        slug={slug}
-        variant={variant}
-      />
-    </>
+    // A div rather than a figure: the call sites already wrap the reel in
+    // their own media figure, and nesting two adds no semantics.
+    <div className="px-reel" aria-hidden="true">
+      <ReelField slug={slug} preset={VARIANT_PRESET[variant]} />
+    </div>
   );
 }
