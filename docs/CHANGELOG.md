@@ -61,6 +61,30 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Added
 
+- 2026-08-23 — Began moving the daily GitHub-stats refresh off GitHub Actions
+  and onto the site's own Cloudflare Worker. `public/data/stats.json` had sat at
+  its 2026-08-13 snapshot because `.github/workflows/stats.yml` has no
+  `GH_STATS_TOKEN` to run with, so every daily trigger failed at the
+  require-secret gate while the page kept quoting a ten-day-old total as if it
+  were measured today. The new path adds cron triggers and a `STATS_KV` binding
+  to `wrangler.jsonc`, a `scheduled` handler in `worker/index.ts`, and the pure
+  `lib/stats-source.ts` owning fetch, normalize, staleness and fallback for both
+  the cron and the site. `lib/stats.ts` reads KV first via
+  `getCloudflareContext().env`, falling back to the checked-in file only as a visibly-degraded path:
+  a snapshot older than ~36h renders a "data stale" label and a provenance line
+  reading "Last good N days ago", so an old number is never presented as
+  current. Request-time reads go through OpenNext's `getCloudflareContext().env`
+  — not `globalThis.STATS_KV`, which is never assigned in a module Worker.
+  The Actions workflow is retained until the Worker path is proven.
+  Ambient `ScheduledController` and `ExecutionContext` live in
+  `worker/env.d.ts` so a fresh clone typechecks before `wrangler types`.
+  Tests cover normalize, staleness, parse fail-closed, the cron handler
+  against fake fetch and fake KV, the OpenNext env adapter, and degraded-state
+  labelling. The GitHub harness matches `/repos/:name` and `/repos/:name/commits`.
+  OpenSource is async; the component suite awaits the tree before
+  `renderToStaticMarkup`. Still needs one operator command,
+  `wrangler secret put GH_STATS_TOKEN`, deliberately not automated.
+
 - 2026-08-23 — Began the original arcade field: a fixed asymmetric 25×17 board
   and deterministic maze-chase state machine with buffered keyboard movement,
   three distinct routing strategies, score, lives, collision/respawn, win/loss
