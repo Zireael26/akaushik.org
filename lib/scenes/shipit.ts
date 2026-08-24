@@ -29,11 +29,20 @@ import {
   startGame,
   stepDiscrete,
   stepGame,
+  type Actor,
   type Direction,
+  type Ghost,
   type ShipItGame,
   type ShipItSnapshot,
 } from '../shipit/game';
-import { BOARD_HEIGHT, BOARD_SIZE, BOARD_WIDTH, indexX, indexY, isWalkable } from '../shipit/layout';
+import {
+  BOARD_HEIGHT,
+  BOARD_SIZE,
+  BOARD_WIDTH,
+  indexX,
+  indexY,
+  isWalkable,
+} from '../shipit/layout';
 import { PALETTE, canvasBg, deepBlue, h, inkAlpha, navy, prefersReducedMotion } from '../pixel';
 import { isDark, onThemeChange } from '../pixel-theme';
 
@@ -131,11 +140,7 @@ function drawBug(
   const unit = Math.max(1, Math.round(cell / (mask.span + 2)));
   const originX = Math.round(px - (mask.span * unit) / 2);
   const originY = Math.round(py - (mask.span * unit) / 2);
-  ctx.fillStyle = frightened
-    ? flashInk !== null
-      ? flashInk
-      : deepBlue(dark)
-    : PALETTE.red;
+  ctx.fillStyle = frightened ? (flashInk !== null ? flashInk : deepBlue(dark)) : PALETTE.red;
   for (let row = 0; row < mask.bits.length; row++) {
     const bits = mask.bits[row]!;
     for (let col = 0; col < mask.span; col++) {
@@ -199,6 +204,85 @@ function drawCommit(
   ctx.fillStyle = bg;
   ctx.fillRect(Math.round(cx - tick / 2), Math.round(cy - radius - tick), tick, tick * 2);
   ctx.fillRect(Math.round(cx + radius / 2), Math.round(cy + radius / 2 - tick / 2), tick * 2, tick);
+}
+
+/**
+ * Opt-in diagnostic surface for the movement e2e contract. It exists only
+ * when a test init script sets `window.__shipitProbeWanted` before mount;
+ * normal visitors never allocate it, and it reads live engine state without
+ * touching the draw or step paths. Every operation either writes actor
+ * fields directly (placement, desired direction) or resets release timers,
+ * so tests can stage exact positions the way unit tests do.
+ */
+function installProbeIfWanted(game: ShipItGame): (() => void) | null {
+  const w = window as typeof window & {
+    __shipitProbeWanted?: boolean;
+    __shipitProbe?: {
+      placePlayer(tileX: number, tileY: number, facing: Direction, desired: Direction | null): void;
+      parkGhost(kind: string, tileX: number, tileY: number, facing?: Direction): void;
+      setDesired(direction: Direction | null): void;
+      holdHouse(): void;
+      advance(deltaMs: number): void;
+      read(): {
+        phase: ShipItSnapshot['phase'];
+        player: { x: number; y: number; facing: Direction; desired: Direction | null };
+        ghosts: Record<
+          string,
+          { x: number; y: number; facing: Direction; desired: Direction | null }
+        >;
+      };
+    };
+  };
+  if (!w.__shipitProbeWanted || w.__shipitProbe) return null;
+  const centre = (tileX: number, tileY: number): { x: number; y: number } => ({
+    x: tileX * TILE + 8,
+    y: tileY * TILE + 8,
+  });
+  const probe = {
+    placePlayer(tileX: number, tileY: number, facing: Direction, desired: Direction | null): void {
+      if (game.phase === 'idle') startGame(game);
+      Object.assign(game.player, centre(tileX, tileY), {
+        facing,
+        desired,
+      } satisfies Partial<Actor>);
+    },
+    parkGhost(kind: string, tileX: number, tileY: number, facing: Direction = LEFT): void {
+      const ghost = game.ghosts.find((candidate) => candidate.kind === kind);
+      if (!ghost) return;
+      Object.assign(ghost, centre(tileX, tileY), {
+        state: 'active',
+        facing,
+        desired: null,
+        frightenedTimerMs: 0,
+      } satisfies Partial<Ghost>);
+    },
+    setDesired(direction: Direction | null): void {
+      game.player.desired = direction;
+    },
+    holdHouse() {
+      game.houseIdleTimerMs = 0;
+      for (const ghost of game.ghosts) ghost.dotsEatenSinceRelease = 0;
+    },
+    advance(deltaMs: number): void {
+      stepGame(game, deltaMs);
+    },
+    read() {
+      return {
+        phase: game.phase,
+        player: { ...game.player },
+        ghosts: Object.fromEntries(
+          game.ghosts.map((ghost) => [
+            ghost.kind,
+            { x: ghost.x, y: ghost.y, facing: ghost.facing, desired: ghost.desired },
+          ]),
+        ),
+      };
+    },
+  };
+  w.__shipitProbe = probe;
+  return () => {
+    if (w.__shipitProbe === probe) delete w.__shipitProbe;
+  };
 }
 
 export function mountShipIt(canvas: HTMLCanvasElement, options: ShipItOptions = {}): ShipItHandle {
@@ -312,7 +396,6 @@ export function mountShipIt(canvas: HTMLCanvasElement, options: ShipItOptions = 
       blinkVisible,
       playerInk,
     );
-
   }
 
   function notifySnapshot(force = false): void {
@@ -455,6 +538,12 @@ export function mountShipIt(canvas: HTMLCanvasElement, options: ShipItOptions = 
     },
     { signal },
   );
+  const resizeObserver = new ResizeObserver(() => {
+    size();
+    draw();
+  });
+  resizeObserver.observe(canvas);
+
   motionQuery.addEventListener('change', syncMotion, { signal });
 
   const motionObserver = new MutationObserver(syncMotion);
@@ -468,6 +557,7 @@ export function mountShipIt(canvas: HTMLCanvasElement, options: ShipItOptions = 
   });
 
   size();
+  const disposeProbe = installProbeIfWanted(game);
   updateTheme(isDark());
   draw();
   notifySnapshot(true);
@@ -512,8 +602,10 @@ export function mountShipIt(canvas: HTMLCanvasElement, options: ShipItOptions = 
     },
     dispose(): void {
       if (disposed) return;
+      if (disposeProbe) disposeProbe();
       disposed = true;
       controller.abort();
+      resizeObserver.disconnect();
       motionObserver.disconnect();
       unsubscribeTheme();
       cancelLoop();
@@ -522,4 +614,3 @@ export function mountShipIt(canvas: HTMLCanvasElement, options: ShipItOptions = 
     },
   };
 }
-

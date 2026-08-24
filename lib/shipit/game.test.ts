@@ -7,6 +7,7 @@ import {
   FRIGHT_FLASHES,
   FRIGHT_MS,
   FRIGHT_SCORES,
+  GHOST_SPEED,
   LEFT,
   RIGHT,
   UP,
@@ -23,14 +24,7 @@ import {
   tileOf,
   type ShipItGame,
 } from './game';
-import {
-  BOARD_WIDTH,
-  PLAYER_SPAWN,
-  TUNNEL_Y,
-  indexX,
-  indexY,
-  toIndex,
-} from './layout';
+import { BOARD_WIDTH, PLAYER_SPAWN, TUNNEL_Y, indexX, indexY, toIndex } from './layout';
 
 const TILE = 16;
 
@@ -198,7 +192,7 @@ describe('shipit game — R5 tunnel', () => {
     direct.state = 'active';
     Object.assign(direct, tileCenter(3, TUNNEL_Y));
     direct.facing = RIGHT;
-    const pxPerMs = 75.757574 * 0.4 / 1000;
+    const pxPerMs = (75.757574 * 0.4) / 1000;
     const before = direct.x;
     stepGame(game, 100);
     expect(direct.x - before).toBeCloseTo(pxPerMs * 100, 0);
@@ -236,6 +230,11 @@ describe('shipit game — R6 speeds', () => {
 describe('shipit game — R7/R8 mode timer and reversal', () => {
   it('walks scatter→chase on the level-1 schedule and pauses in fright', () => {
     const game = runningGame();
+    // Correct targeting lets the bugs legitimately hunt an idle player, and
+    // the resulting respawn pause would desync the mode clock this test
+    // measures. Park the player on a house-floor tile: ghosts without eyes
+    // may not enter the house, so nothing can collide for the whole run.
+    placePlayerAt(game, 14, 14);
     expect(snapshotGame(game).mode).toBe('scatter');
     stepGame(game, 7_000 + 500);
     expect(snapshotGame(game).mode).toBe('chase');
@@ -269,6 +268,51 @@ describe('shipit game — R10 targeting wiring in play', () => {
     direct.facing = LEFT;
     stepGame(game, 120);
     expect(direct.x < 20 * TILE + TILE / 2 || direct.y !== 8 * TILE + TILE / 2).toBe(true);
+  });
+});
+
+describe('shipit game — ghost junction targeting (centre decision)', () => {
+  it('applies the target-facing decision at the exact centre and exits perpendicular', () => {
+    const game = runningGame();
+    const direct = game.ghosts[0];
+    // Junction (6,8): a T approached from the west — straight is wall (7,8),
+    // up and down are open. Scatter sends direct toward corner (1,1), so the
+    // centre decision must be UP (dist² 61) over DOWN (dist² 89).
+    Object.assign(direct, tileCenter(6, 8));
+    direct.state = 'active';
+    direct.facing = LEFT;
+    direct.desired = null;
+    for (let i = 0; i < 30; i++) stepGame(game, 16);
+    // Left the junction row upward along the lane centre, en route to (1,1)
+    // but not yet at the (6,6) centre.
+    expect(direct.facing).toBe(UP);
+    expect(direct.x).toBe(6 * TILE + TILE / 2);
+    expect(direct.y).toBeLessThan(8 * TILE);
+    expect(direct.y).toBeGreaterThan(6 * TILE + TILE / 2);
+  });
+
+  it('keeps a ghost lane-centred until it reaches the centre, then decides', () => {
+    const game = runningGame();
+    const direct = game.ghosts[0];
+    // Same T, staged exactly one 100 ms frame short of the centre: the
+    // approach frame must not turn early, and the next frame — starting
+    // resting on the centre — must take the scatter decision.
+    const frameTravel = (GHOST_SPEED * 100) / 1000;
+    Object.assign(direct, tileCenter(6, 8));
+    direct.state = 'active';
+    direct.facing = LEFT;
+    direct.desired = null;
+    direct.x += frameTravel;
+
+    stepGame(game, 100);
+    expect(direct.facing).toBe(LEFT);
+    expect(direct.y).toBe(8 * TILE + TILE / 2);
+    expect(direct.x).toBeCloseTo(6 * TILE + TILE / 2, 6);
+
+    stepGame(game, 100);
+    expect(direct.facing).toBe(UP);
+    expect(direct.x).toBe(6 * TILE + TILE / 2);
+    expect(direct.y).toBeLessThan(8 * TILE + TILE / 2);
   });
 });
 
@@ -312,10 +356,13 @@ describe('shipit game — R13/R14 fright, flashes, combo, eyes', () => {
     stepGame(game, 1);
   }
 });
-
 describe('shipit game — R15 house release', () => {
   it('releases ambush immediately, flank after 30 dots, shy after 60 or 4s idle', () => {
     const game = runningGame();
+    // Same idle-player hazard as the schedule test: with targeting live, the
+    // released bugs legitimately hunt the player parked at spawn and a death
+    // would freeze the idle clock. House floor is unreachable for them.
+    placePlayerAt(game, 14, 14);
     const [, ambush, flank, shy] = game.ghosts;
     expect(ambush.state).toBe('house');
     expect(flank.state).toBe('house');
@@ -407,4 +454,3 @@ describe('shipit game — determinism', () => {
     expect(runOnce()).toEqual(runOnce());
   });
 });
-

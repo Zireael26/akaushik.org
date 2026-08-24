@@ -70,7 +70,14 @@ const TILE = 16;
 
 /** Level-1 mode schedule in ms; the last chase runs forever (R7). */
 export const MODE_SCHEDULE_MS: readonly number[] = [
-  7_000, 20_000, 7_000, 20_000, 5_000, 20_000, 5_000, Number.POSITIVE_INFINITY,
+  7_000,
+  20_000,
+  7_000,
+  20_000,
+  5_000,
+  20_000,
+  5_000,
+  Number.POSITIVE_INFINITY,
 ];
 export const FRIGHT_MS = 6_000;
 export const FRIGHT_FLASHES = 5;
@@ -169,8 +176,7 @@ export function tileOf(actor: Actor): number {
 
 function atCenter(actor: Actor): boolean {
   return (
-    Math.abs((actor.x % TILE) - HALF_TILE) < 1e-6 &&
-    Math.abs((actor.y % TILE) - HALF_TILE) < 1e-6
+    Math.abs((actor.x % TILE) - HALF_TILE) < 1e-6 && Math.abs((actor.y % TILE) - HALF_TILE) < 1e-6
   );
 }
 
@@ -268,12 +274,7 @@ function canGo(tile: number, direction: Direction, allowDoor: boolean): boolean 
 }
 
 /** Legal exits from a tile, excluding house doors unless allowed through. */
-function exitsFrom(
-  game: ShipItGame,
-  ghost: Ghost,
-  tile: number,
-  allowReverse: boolean,
-): Exit[] {
+function exitsFrom(game: ShipItGame, ghost: Ghost, tile: number, allowReverse: boolean): Exit[] {
   const exits: Exit[] = [];
   for (const direction of [UP, LEFT, DOWN, RIGHT]) {
     if (!canGo(tile, direction, ghost.state === 'eyes')) continue;
@@ -310,7 +311,12 @@ export function targetFor(game: ShipItGame, ghost: Ghost): number {
     : chaseTargetFor(game, ghost);
 }
 
-function wanderExit(game: ShipItGame, ghost: Ghost, tile: number, allowReverse: boolean): Exit | null {
+function wanderExit(
+  game: ShipItGame,
+  ghost: Ghost,
+  tile: number,
+  allowReverse: boolean,
+): Exit | null {
   const exits = exitsFrom(game, ghost, tile, allowReverse);
   if (exits.length === 0) return null;
   game.rngState = nextRandom(game.rngState ^ (tile + 1));
@@ -378,7 +384,9 @@ function advance(game: ShipItGame, actor: Actor, distance: number, allowDoor: bo
     const sign = actor.facing === RIGHT || actor.facing === DOWN ? 1 : -1;
     const offsetInTile = ((positionAlong % TILE) + TILE) % TILE;
     const distanceToCentre =
-      sign > 0 ? (HALF_TILE - offsetInTile + TILE) % TILE || TILE : (offsetInTile - HALF_TILE + TILE) % TILE || TILE;
+      sign > 0
+        ? (HALF_TILE - offsetInTile + TILE) % TILE || TILE
+        : (offsetInTile - HALF_TILE + TILE) % TILE || TILE;
 
     const stepToCentre = Math.min(remaining, distanceToCentre);
     if (alongX) actor.x += sign * stepToCentre;
@@ -437,7 +445,9 @@ function updateGhost(game: ShipItGame, ghost: Ghost, deltaMs: number): void {
     if (ghost.y > door.y) {
       ghost.y = Math.max(door.y, ghost.y - GHOST_SPEED * (deltaMs / 1000));
     } else {
-      ghost.x += Math.sign(door.x - ghost.x) * Math.min(Math.abs(door.x - ghost.x), GHOST_SPEED * (deltaMs / 1000));
+      ghost.x +=
+        Math.sign(door.x - ghost.x) *
+        Math.min(Math.abs(door.x - ghost.x), GHOST_SPEED * (deltaMs / 1000));
       if (Math.abs(ghost.x - door.x) < 0.5) {
         ghost.x = door.x;
         if (ghost.y <= targetY + 0.5) {
@@ -464,10 +474,13 @@ function updateGhost(game: ShipItGame, ghost: Ghost, deltaMs: number): void {
     }
   }
 
-  // Eyes navigate home through the door; everything else respects it.
-  const decisionAtCentresOnly = decideGhost(game, ghost);
+  // Decisions are made only at exact centres — decideGhost returns null
+  // between them — so applying the decision to the facing here cannot break
+  // lane alignment, and advance() carries the ghost out along the chosen
+  // exit. Eyes navigate home through the door; everything else respects it.
+  const decisionAtCentre = decideGhost(game, ghost);
+  if (decisionAtCentre !== null) ghost.facing = decisionAtCentre;
   advance(game, ghost, ghostSpeedPx(game, ghost) * (deltaMs / 1000), ghost.state === 'eyes');
-  void decisionAtCentresOnly;
 }
 
 function collide(game: ShipItGame): void {
@@ -531,7 +544,7 @@ function updateModes(game: ShipItGame, deltaMs: number): void {
   for (const ghost of game.ghosts) {
     if (ghost.state !== 'active' && ghost.state !== 'frightened') continue;
     ghost.facing = opposite(ghost.facing);
-    if (ghost.state === 'active') ghost.state = 'frightened', ghost.frightenedTimerMs = 0;
+    if (ghost.state === 'active') ((ghost.state = 'frightened'), (ghost.frightenedTimerMs = 0));
   }
 }
 
@@ -591,7 +604,13 @@ function stepLive(game: ShipItGame, deltaMs: number): boolean {
 
   // Player: desired-direction movement with cornering window (R3/R4).
   const eating = game.pellets[tileOf(game.player)] !== 0;
-  const speed = (game.globalFrightTimerMs > 0 ? PLAYER_SPEED_FRIGHT : eating ? PLAYER_SPEED_EATING : PLAYER_SPEED) * (deltaMs / 1000);
+  const speed =
+    (game.globalFrightTimerMs > 0
+      ? PLAYER_SPEED_FRIGHT
+      : eating
+        ? PLAYER_SPEED_EATING
+        : PLAYER_SPEED) *
+    (deltaMs / 1000);
   advancePlayer(game, speed);
 
   for (const ghost of game.ghosts) updateGhost(game, ghost, deltaMs);

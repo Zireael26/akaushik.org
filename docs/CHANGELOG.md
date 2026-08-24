@@ -70,6 +70,15 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Fixed
 
+- 2026-08-24 — Ship It bugs now apply the targeting decision they compute at
+  each tile centre. The engine previously discarded that result, so bugs ran
+  straight until a wall despite the four correct pure targeting functions.
+  The browser contract now stages and observes corner-stuck holds, player-only
+  early corner cuts, centre-only bug turns, tunnel wrapping and slowdown,
+  complete dispose/remount, and a readable zero-loop reduced-motion state
+  across the Chromium and WebKit desktop/mobile matrix. Canvas resizing is
+  observed directly, and controls stay disabled until the scene handle mounts.
+
 - 2026-08-23 — The CI accessibility gate stopped failing on a page that is
   fine. The axe CLI measured the moment each route was ready, without waiting
   for animation, so a scan landing mid-hero-fade read the h1, sub and note at a
@@ -78,11 +87,11 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
   Measured against the deployed site with the same rule set:
 
-  | when axe looks | result |
-  |---|---|
+  | when axe looks                | result                        |
+  | ----------------------------- | ----------------------------- |
   | `domcontentloaded`, no settle | 1 violation, ratios 1.07–1.10 |
-  | `load`, no settle | 1 violation, ratio 2.74 |
-  | `networkidle` + 1500ms | **0 violations** |
+  | `load`, no settle             | 1 violation, ratio 2.74       |
+  | `networkidle` + 1500ms        | **0 violations**              |
 
   It blocked two unrelated pull requests before anyone read the numbers, and
   re-running the identical commit passed — the signature of a race, not a

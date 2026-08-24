@@ -52,6 +52,7 @@ export function ShipItGame() {
   const [snapshot, setSnapshot] = useState<ShipItSnapshot>(INITIAL_SNAPSHOT);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [announcement, setAnnouncement] = useState('');
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -62,8 +63,10 @@ export function ShipItGame() {
     });
     handleRef.current = handle;
     setSoundEnabled(handle.isSoundEnabled());
+    setMounted(true);
 
     return () => {
+      setMounted(false);
       if (handleRef.current === handle) handleRef.current = null;
       handle.dispose();
     };
@@ -120,21 +123,26 @@ export function ShipItGame() {
         aria-describedby="shipit-objective shipit-controls-note shipit-legend"
         tabIndex={0}
       >
-        A maze of code characters. You are a blinking block caret eating them. Four bugs chase
-        you: the Beetle follows your tile, the Arrow aims four ahead, the Cross mirrors its
-        leader across your position, and the Notch chases only from far away. Pushing a commit
-        frightens them briefly. Arrow keys, W A S D, swipe, or the direction buttons move you.
+        A maze of code characters. You are a blinking block caret eating them. Four bugs chase you:
+        the Beetle follows your tile, the Arrow aims four ahead, the Cross mirrors its leader across
+        your position, and the Notch chases only from far away. Pushing a commit frightens them
+        briefly. Arrow keys, W A S D, swipe, or the direction buttons move you.
       </canvas>
 
       <div className="px-shipit-controls" aria-label="Ship It controls">
         <div className="px-shipit-actions">
           {snapshot.phase === 'idle' ? (
-            <button type="button" className="px-shipit-action" onClick={start}>
+            <button type="button" className="px-shipit-action" onClick={start} disabled={!mounted}>
               Start shipping
             </button>
           ) : null}
           {snapshot.phase === 'won' || snapshot.phase === 'lost' ? (
-            <button type="button" className="px-shipit-action" onClick={restart}>
+            <button
+              type="button"
+              className="px-shipit-action"
+              onClick={restart}
+              disabled={!mounted}
+            >
               Restart run
             </button>
           ) : null}
@@ -144,16 +152,41 @@ export function ShipItGame() {
             aria-label="Toggle game sound"
             aria-pressed={soundEnabled}
             onClick={toggleSound}
+            disabled={!mounted}
           >
             Sound {soundEnabled ? 'on' : 'off'}
           </button>
         </div>
 
         <div className="px-shipit-directions" aria-label="Direction buttons">
-          <DirectionControl direction={UP} label="Up" symbol="↑" className="is-up" onInput={input} />
-          <DirectionControl direction={LEFT} label="Left" symbol="←" className="is-left" onInput={input} />
-          <DirectionControl direction={DOWN} label="Down" symbol="↓" className="is-down" onInput={input} />
-          <DirectionControl direction={RIGHT} label="Right" symbol="→" className="is-right" onInput={input} />
+          <DirectionControl
+            direction={UP}
+            label="Up"
+            symbol="↑"
+            className="is-up"
+            onInput={input}
+          />
+          <DirectionControl
+            direction={LEFT}
+            label="Left"
+            symbol="←"
+            className="is-left"
+            onInput={input}
+          />
+          <DirectionControl
+            direction={DOWN}
+            label="Down"
+            symbol="↓"
+            className="is-down"
+            onInput={input}
+          />
+          <DirectionControl
+            direction={RIGHT}
+            label="Right"
+            symbol="→"
+            className="is-right"
+            onInput={input}
+          />
         </div>
       </div>
 
