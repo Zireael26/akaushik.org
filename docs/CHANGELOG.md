@@ -4,6 +4,22 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ## [Unreleased]
 
+### Fixed
+
+- 2026-08-24 — The GitHub stats cron would have failed on its first run in
+  production, and nothing local could have told us. GitHub rejects an API
+  request that carries no `User-Agent`: measured, `curl -A ''
+  https://api.github.com/rate_limit` returns **403** and the identical call with
+  a UA returns **200**. `lib/stats-source.ts` set `authorization` and `accept`
+  and no UA. Every local path masked it — curl sends a default, Node's `fetch`
+  sends `node` — so the unit suite, `pnpm dev` and the Node twin were all green
+  over a call that 403s under `workerd`, which sends none. The deployed cron
+  would have thrown on its first refresh and left the site on its stale banner
+  indefinitely, which is at least honest but is not the feature. All four call
+  sites now send a UA, including the unauthenticated public-visibility probe,
+  and a test asserts the header on every outbound request — it fails with
+  "no User-Agent on https://api.github.com/user" when the header is removed.
+
 ### Added
 
 - 2026-08-23 — Began moving the daily GitHub-stats refresh off GitHub Actions

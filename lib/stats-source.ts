@@ -90,6 +90,17 @@ const CONTRIBUTION_QUERY = `query($login:String!, $from:DateTime!, $to:DateTime!
 const GITHUB_API = 'https://api.github.com';
 
 /**
+ * GitHub rejects an API request with no `User-Agent` — measured 2026-08-24:
+ * `curl -A '' https://api.github.com/rate_limit` is 403, the same call with a
+ * UA is 200. This is easy to miss because nothing local reproduces it: curl
+ * sends one by default and Node's fetch sends `node`, so every test and every
+ * `pnpm dev` run passes. `workerd` sends none, so the deployed cron would have
+ * 403'd on its first refresh and kept the site on its stale banner forever.
+ * Every call in this file must carry this header.
+ */
+const GITHUB_UA = 'akaushik.org-stats (+https://akaushik.org)';
+
+/**
  * The slice of a Workers KV namespace the stats path uses. Structural on
  * purpose: the real binding fits without a cast, and tests pass plain objects.
  */
@@ -135,7 +146,7 @@ export type StatsFetchDeps = {
 async function repoIsPublic(repo: string, doFetch: typeof fetch): Promise<boolean> {
   try {
     const res = await doFetch(`${GITHUB_API}/repos/${repo}`, {
-      headers: { accept: 'application/vnd.github+json' },
+      headers: { accept: 'application/vnd.github+json', 'user-agent': GITHUB_UA },
     });
     if (res.status === 200) return true;
     if (res.status === 404) return false;
@@ -160,7 +171,11 @@ async function repoCommitStats(
   doFetch: typeof fetch,
   from: Date,
 ): Promise<Pick<StatsRepo, 'commits12mo' | 'lastCommit'>> {
-  const headers = { authorization: `bearer ${token}`, accept: 'application/vnd.github+json' };
+  const headers = {
+    authorization: `bearer ${token}`,
+    accept: 'application/vnd.github+json',
+    'user-agent': GITHUB_UA,
+  };
   const url = `${GITHUB_API}/repos/${repo}/commits?author=${GITHUB_USERNAME}&since=${from.toISOString()}&per_page=1`;
   const res = await doFetch(url, { headers });
   if (!res.ok) {
@@ -198,7 +213,11 @@ export async function fetchStatsFromGitHub(
   const doFetch = deps.fetchImpl ?? fetch;
   const now = deps.now ?? new Date();
   const from = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-  const headers = { authorization: `bearer ${token}`, accept: 'application/vnd.github+json' };
+  const headers = {
+    authorization: `bearer ${token}`,
+    accept: 'application/vnd.github+json',
+    'user-agent': GITHUB_UA,
+  };
 
   // Whether the token can see private contributions decides the
   // `includesPrivate` claim, and the claim must match the token actually used
