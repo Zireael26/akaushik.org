@@ -85,8 +85,14 @@ export function nextReads(
     }));
 }
 
+/** Unlisted posts are prerendered like any other: they are hidden from the
+    indexes, not from the web, and their `.md` alternate and OG card already
+    include them. Dropping `includeUnlisted` here left the HTML page as the one
+    member of that triple rendered per request instead of served as an asset. */
 export function generateStaticParams() {
-  return getAllPosts('writing').map((post) => ({ slug: post.slug }));
+  return getAllPosts('writing', { includeUnlisted: true }).map((post) => ({
+    slug: post.slug,
+  }));
 }
 
 export async function generateMetadata({
