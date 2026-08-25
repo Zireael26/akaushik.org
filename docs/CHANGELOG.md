@@ -101,6 +101,36 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   `renderToStaticMarkup`. Still needs one operator command,
   `wrangler secret put GH_STATS_TOKEN`, deliberately not automated.
 
+- 2026-08-23 — Shipped "Ship It" end to end, replacing the arcade section in
+  place. `lib/shipit/audio.ts` ports the oscillator kit to a new storage key
+  with six original cues (pellet tick, energizer push, eat-bug, death, win,
+  loss) — square and triangle voices only, no samples. `lib/scenes/shipit.ts`
+  mounts the engine on one canvas: one rAF, one AbortController, theme and
+  both motion vetoes subscribed, DPR capped at 2, allocation-free draw. The
+  player is a blinking block caret whose leading edge splits into two prongs
+  and rejoins as it eats; the four bugs are geometrically distinct pixel masks
+  (beetle, arrow, cross, notch), pellets are semicolon glyph pairs, and
+  energizers are pulsing commit nodes. `ShipItGame.tsx` and `ShipIt.tsx` wire
+  the accessible island and `#shipit` section; `shipit.css` imports before
+  `_mobile.css`. Every arcade section module is deleted and its callers
+  migrated — no alias remains for this game's old name. The reduced-motion
+  e2e contract now exercises `#shipit` discrete play under both vetoes. The
+  combo-score test inlines its spawn helpers against the exported layout API.
+
+- 2026-08-23 — Began "Ship It", the maze-chase rebuild that replaces the
+  arcade field. `lib/shipit/` adds the pure rule core: `layout.ts` for the
+  28x31 board under the original's structural grammar but with our own wall
+  drawing, `targeting.ts` for the four chase personalities (direct, ambush
+  including the documented up-direction overflow, flank, and shy), and
+  `game.ts` for the state machine — corner-stuck input latching so a blocked
+  actor holds its desired direction instead of bouncing back, cornering that
+  only the player gets, scatter/chase timing with forced reversal on mode
+  change, fright, and ghost-house release. Rules are implemented from the
+  documented mechanics, which are not copyrightable; no original maze drawing,
+  character art or audio is reproduced. The rule-core suite is green: 58
+  focused tests across layout, targeting and game, including Cruise Elroy and
+  the discrete reduced-motion step. No rendering layer or section wiring yet.
+
 - 2026-08-23 — Began the original arcade field: a fixed asymmetric 25×17 board
   and deterministic maze-chase state machine with buffered keyboard movement,
   three distinct routing strategies, score, lives, collision/respawn, win/loss
@@ -135,6 +165,34 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Fixed
 
+- 2026-08-24 — Ship It bugs now apply the targeting decision they compute at
+  each tile centre. The engine previously discarded that result, so bugs ran
+  straight until a wall despite the four correct pure targeting functions.
+  The browser contract now stages and observes corner-stuck holds, player-only
+  early corner cuts, centre-only bug turns, tunnel wrapping and slowdown,
+  complete dispose/remount, and a readable zero-loop reduced-motion state
+  across the Chromium and WebKit desktop/mobile matrix. Canvas resizing is
+  observed directly, and controls stay disabled until the scene handle mounts.
+  A second pass closed four engine defects the browser contracts exposed.
+  Eyes now re-enter the bug house through the door — the forced DOWN at the
+  spawn tile was being discarded by a movement step that flipped the door bit,
+  so eyes froze on the house side of it forever; once an eye reaches a house
+  tile centre it hands off to the existing leaving path (desired null, facing
+  UP) and rejoins as active. Eating an energizer no longer frightens or
+  reverses eyes mid-flight. House release is at most one housed bug per frame,
+  gated on its own dot counter (ambush 0, flank 30, shy 60) or the shared 4s
+  idle, replacing a clause that released the first housed bug every frame
+  regardless of gates. A discrete reduced-motion input that kills now burns
+  RESPAWN_MS synchronously in bounded slices, so the death event and life
+  decrement stand while play resumes running instead of soft-locking on a
+  rAF loop its veto stopped. The vacuous house-release/flash unit tests were
+  replaced with deterministic threshold, one-per-frame and idle tests, plus
+  eyes re-entry, energizer immunity and discrete-death recovery cases — all
+  fail against the previous engine — and the reduced-motion browser contract
+  reads exact engine state through the opt-in probe: a blocked UP input leaves
+  the player's vertical lane coordinate and facing unchanged while one
+  discrete simulation step redraws.
+
 - 2026-08-23 — The CI accessibility gate stopped failing on a page that is
   fine. The axe CLI measured the moment each route was ready, without waiting
   for animation, so a scan landing mid-hero-fade read the h1, sub and note at a
@@ -143,11 +201,11 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
   Measured against the deployed site with the same rule set:
 
-  | when axe looks | result |
-  |---|---|
+  | when axe looks                | result                        |
+  | ----------------------------- | ----------------------------- |
   | `domcontentloaded`, no settle | 1 violation, ratios 1.07–1.10 |
-  | `load`, no settle | 1 violation, ratio 2.74 |
-  | `networkidle` + 1500ms | **0 violations** |
+  | `load`, no settle             | 1 violation, ratio 2.74       |
+  | `networkidle` + 1500ms        | **0 violations**              |
 
   It blocked two unrelated pull requests before anyone read the numbers, and
   re-running the identical commit passed — the signature of a race, not a
