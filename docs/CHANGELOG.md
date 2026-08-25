@@ -40,6 +40,18 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Fixed
 
+- 2026-08-24 — The writing breakout track actually existed now. The D3
+  follow-up had landed `--prose-breakout` as a max-width, which does nothing
+  to a block whose width is auto: every figure, pre and pull quote still
+  measured the full 75ch prose column (698px at a 2294px viewport), while the
+  changelog above claimed a wider track. rehype-pretty-code also wraps each
+  language-tagged fence in a figure with 40px of UA inline margin, so the
+  bare-pre selector never touched the box that was doing the constraining.
+  Non-prose blocks now break out by symmetric negative margins equal to the
+  article gutters — prose column plus both gutters, saturating exactly at the
+  900px article shell — so code figures measure wider than the body on wide
+  screens and nothing can overflow at 375px.
+
 - 2026-08-23 — The CI accessibility gate stopped failing on a page that is
   fine. The axe CLI measured the moment each route was ready, without waiting
   for animation, so a scan landing mid-hero-fade read the h1, sub and note at a

@@ -240,16 +240,36 @@
   margin-top: clamp(28px, 4vh, 40px);
 }
 
-/* Non-prose blocks break out to the wider track, centred on the prose
-   column so the breakout is symmetric. --prose-breakout is defined in
-   tokens.css beside --prose-max. */
-.px-article-body pre,
-.px-article-body table,
-.px-article-body img,
-.px-article-body blockquote {
-  max-width: var(--prose-breakout);
-  margin-left: calc((75ch - var(--prose-breakout)) / 2);
-  margin-right: calc((75ch - var(--prose-breakout)) / 2);
+/* Non-prose blocks break out to a wider track: the prose column plus both
+   article gutters (--wrap-pad per side), applied as symmetric negative
+   margins so each block stays centred on its column position. Because the
+   article shell's own padding equals --wrap-pad per side, the track saturates
+   at the shell edge exactly when the gutters run out, so no viewport can
+   overflow.
+
+   Three traps from the first, inert attempt are recorded here:
+   1. A max-width alone does nothing to an auto-width block — the box still
+      fits the 75ch column, and ch-nominal margins underflowed below ~730px.
+      Blocks that do not size against a widened available box (width:100%
+      tables, replaced images) take --prose-breakout as an explicit width.
+   2. rehype-pretty-code wraps every language-tagged fence in
+      figure[data-rehype-pretty-code-figure], whose UA stylesheet carries
+      `figure { margin: 1em 40px }`; targeting only bare pre missed the
+      constraining wrapper.
+   3. Each element rule below therefore owns its whole margin box — a shared
+      low-specificity rule loses to these very shorthands in the cascade.
+      The one exception is a pre nested in a code figure: the guard rule
+      re-seats it inside the figure box instead of breaking out twice.
+   --prose-breakout is defined in tokens.css beside --prose-max. */
+.px-article-body figure[data-rehype-pretty-code-figure] {
+  /* Replaces the UA figure margin outright, so a highlighted block keeps the
+     same vertical rhythm as a bare fence while riding the breakout track. */
+  margin: 18px calc(var(--wrap-pad) * -1) 0;
+}
+
+.px-article-body figure[data-rehype-pretty-code-figure] pre {
+  margin-left: 0;
+  margin-right: 0;
 }
 
 .px-article-body > :first-child {
@@ -329,7 +349,8 @@
 }
 
 .px-article-body blockquote {
-  margin: 18px 0 0;
+  /* Pull quote rides the breakout track. */
+  margin: 18px calc(var(--wrap-pad) * -1) 0;
   padding: 12px 18px;
   border-left: 2px solid var(--line);
   background: color-mix(in oklab, var(--line) 28%, transparent);
@@ -350,14 +371,18 @@
 
 .px-article-body img {
   display: block;
-  max-width: 100%;
+  /* Clamped to the breakout track rather than the column; an image narrower
+     than the track sits at its left edge. */
+  max-width: var(--prose-breakout);
   height: auto;
-  margin: 20px 0 0;
+  margin: 20px calc(var(--wrap-pad) * -1) 0;
   border: 1px solid var(--line);
 }
 
 .px-article-body pre {
-  margin: 18px 0 0;
+  /* Bare (untagged) fences ride the breakout track directly; the figure-pre
+     guard above re-seats highlighted ones inside their figure. */
+  margin: 18px calc(var(--wrap-pad) * -1) 0;
   padding: 16px 18px;
   overflow-x: auto;
   font-family: var(--font-mono);
@@ -380,8 +405,10 @@
 }
 
 .px-article-body table {
-  width: 100%;
-  margin: 18px 0 0;
+  /* Sized against the breakout track: width:100% would measure the prose
+     column and leave the table short of the track's right edge. */
+  width: var(--prose-breakout);
+  margin: 18px calc(var(--wrap-pad) * -1) 0;
   border-collapse: collapse;
   font-size: 14px;
   line-height: 1.6;
