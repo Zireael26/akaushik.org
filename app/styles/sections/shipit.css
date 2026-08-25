@@ -1,0 +1,308 @@
+/* shipit — the maze-chase section: a cursor eats code, four bugs give chase. */
+
+.px-shipit-game {
+  min-width: 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.px-shipit-status {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.px-shipit-status > div {
+  min-width: 0;
+  padding: 12px 14px 13px 0;
+}
+
+.px-shipit-status dt {
+  margin: 0 0 5px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink40);
+}
+
+.px-shipit-status dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.px-shipit-canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 28 / 31;
+  background: var(--bg);
+  touch-action: none;
+}
+
+.px-shipit-canvas:focus-visible {
+  outline: 2px solid var(--px-red);
+  outline-offset: 4px;
+}
+
+.px-shipit-controls {
+  display: flex;
+  gap: 18px;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+}
+
+.px-shipit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.px-shipit-action,
+.px-shipit-direction {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font: 500 11px/1 var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.px-shipit-action {
+  padding: 0 14px;
+}
+
+.px-shipit-action:hover,
+.px-shipit-action:focus-visible,
+.px-shipit-direction:hover,
+.px-shipit-direction:focus-visible,
+.px-shipit-action[aria-pressed='true'] {
+  border-color: var(--ink);
+  outline: none;
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.px-shipit-directions {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: repeat(3, 44px);
+  grid-template-rows: repeat(2, 44px);
+  gap: 4px;
+}
+
+.px-shipit-direction {
+  padding: 0;
+  font-size: 18px;
+  letter-spacing: 0;
+}
+
+.px-shipit-direction.is-up {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.px-shipit-direction.is-left {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.px-shipit-direction.is-down {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.px-shipit-direction.is-right {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.px-shipit-note {
+  margin: 16px 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.65;
+  color: var(--ink40);
+}
+
+.px-shipit-legend {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 20px;
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.px-shipit-legend p {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  min-width: 0;
+  margin: 0;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink70);
+}
+
+.px-shipit-legend strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.px-shipit-mark {
+  position: relative;
+  display: inline-block;
+  flex: 0 0 14px;
+  width: 14px;
+  height: 14px;
+  color: var(--ink);
+}
+
+/* The caret mark: two bars joined by a leading edge — the in-game sprite. */
+.px-shipit-mark.is-player {
+  background:
+    linear-gradient(to right, currentcolor, currentcolor) left top / 10px 3px no-repeat,
+    linear-gradient(to right, currentcolor, currentcolor) left bottom / 10px 3px no-repeat,
+    linear-gradient(to right, currentcolor, currentcolor) right top / 4px 14px no-repeat;
+}
+
+/* Beetle: round body with a centre seam. */
+.px-shipit-mark.is-direct {
+  color: var(--px-red-ink);
+}
+
+.px-shipit-mark.is-direct::before {
+  position: absolute;
+  inset: 1px;
+  border: 3px solid currentcolor;
+  border-radius: 50%;
+  content: '';
+}
+
+.px-shipit-mark.is-direct::after {
+  position: absolute;
+  top: 2px;
+  left: 6px;
+  width: 2px;
+  height: 10px;
+  background: currentcolor;
+  content: '';
+}
+
+/* Arrow: a triangle shield pointing up. */
+.px-shipit-mark.is-ambush {
+  color: var(--px-deepblue);
+}
+
+.px-shipit-mark.is-ambush::before {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-right: 7px solid transparent;
+  border-bottom: 12px solid currentcolor;
+  border-left: 7px solid transparent;
+  transform: translateX(-50%);
+  content: '';
+}
+
+/* Cross: X-shaped wings. */
+.px-shipit-mark.is-flank {
+  color: var(--px-red-ink);
+}
+
+.px-shipit-mark.is-flank::before,
+.px-shipit-mark.is-flank::after {
+  position: absolute;
+  top: 5px;
+  left: -1px;
+  width: 16px;
+  height: 3px;
+  background: currentcolor;
+  content: '';
+}
+
+.px-shipit-mark.is-flank::before {
+  transform: rotate(45deg);
+}
+
+.px-shipit-mark.is-flank::after {
+  transform: rotate(-45deg);
+}
+
+/* Notch: an oval with a wedge bitten out of its tail. */
+.px-shipit-mark.is-shy {
+  color: var(--px-deepblue);
+}
+
+.px-shipit-mark.is-shy::before {
+  position: absolute;
+  inset: 2px 0;
+  border-radius: 50%;
+  background: currentcolor;
+  content: '';
+}
+
+.px-shipit-mark.is-shy::after {
+  position: absolute;
+  top: 5px;
+  right: -2px;
+  width: 6px;
+  height: 4px;
+  background: var(--bg);
+  content: '';
+}
+
+/* Commit: the pulsing energizer node. */
+.px-shipit-mark.is-commit {
+  color: var(--px-red-ink);
+}
+
+.px-shipit-mark.is-commit::before {
+  position: absolute;
+  inset: 1px;
+  border: 3px solid currentcolor;
+  border-radius: 50%;
+  content: '';
+}
+
+@media (max-width: 640px) {
+  .px-shipit-status {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .px-shipit-status > div:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .px-shipit-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .px-shipit-directions {
+    align-self: center;
+  }
+
+  .px-shipit-legend {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .px-shipit-note,
+  .px-shipit-status dt {
+    font-size: 12px;
+  }
+}

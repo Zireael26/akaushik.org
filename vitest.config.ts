@@ -42,7 +42,6 @@ export default defineConfig({
         'lib/**/*.test.ts',
         'lib/about-copy.ts',
         'lib/services.ts',
-        'lib/stats.ts',
         'lib/mdx-options.ts',
 
         // Generated. `lib/mdx/generated/**` is emitted by

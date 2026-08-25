@@ -222,6 +222,27 @@
 .px-work-detail-year {
   color: var(--ink60);
 }
+.px-work-detail-title {
+  margin: clamp(18px, 3vh, 28px) 0 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(30px, 4vw, 54px);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  text-wrap: pretty;
+  color: var(--ink);
+}
+
+.px-work-detail-dek {
+  margin: clamp(16px, 2.5vh, 24px) 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: clamp(16px, 1.5vw, 19px);
+  line-height: 1.65;
+  color: var(--ink70);
+  text-wrap: pretty;
+}
 
 .px-work-detail-spec {
   margin-top: 18px;
@@ -248,37 +269,9 @@
   margin-top: 0;
 }
 
-/* H1 comes from the MDX body itself (`# Neev` → <h1>). The detail header
-   above it is meta, not a title, so there is no duplicated H1. */
-.px-work-body h1 {
-  margin: 0;
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-size: clamp(30px, 4vw, 54px);
-  line-height: 1.12;
-  letter-spacing: -0.02em;
-  text-wrap: pretty;
-  color: var(--ink);
-}
+/* Title and dek live on the header now. A leftover H1 in a body would be a
+   generator bug, not a second title. */
 
-/* Dek is the `> ` blockquote directly under the H1 in every case-study MDX,
-   mirroring design.md's writing dek. Style it as the lede, not a quote. */
-.px-work-body h1 + blockquote {
-  margin: clamp(16px, 2.5vh, 24px) 0 0;
-  padding: 0;
-  border: 0;
-  font-size: clamp(16px, 1.5vw, 19px);
-  line-height: 1.65;
-  color: var(--ink70);
-  text-wrap: pretty;
-}
-
-.px-work-body h1 + blockquote p {
-  margin: 0;
-  font-size: inherit;
-  line-height: inherit;
-  color: inherit;
-}
 
 .px-work-body h2 {
   margin: clamp(32px, 5vh, 48px) 0 0;

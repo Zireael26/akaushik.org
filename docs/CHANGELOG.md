@@ -4,7 +4,132 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ## [Unreleased]
 
+### Fixed
+
+- 2026-08-24 — The GitHub stats cron would have failed on its first run in
+  production, and nothing local could have told us. GitHub rejects an API
+  request that carries no `User-Agent`: measured, `curl -A ''
+  https://api.github.com/rate_limit` returns **403** and the identical call with
+  a UA returns **200**. `lib/stats-source.ts` set `authorization` and `accept`
+  and no UA. Every local path masked it — curl sends a default, Node's `fetch`
+  sends `node` — so the unit suite, `pnpm dev` and the Node twin were all green
+  over a call that 403s under `workerd`, which sends none. The deployed cron
+  would have thrown on its first refresh and left the site on its stale banner
+  indefinitely, which is at least honest but is not the feature. All four call
+  sites now send a UA, including the unauthenticated public-visibility probe,
+  and a test asserts the header on every outbound request — it fails with
+  "no User-Agent on https://api.github.com/user" when the header is removed.
+
+### Changed
+
+- 2026-08-23 — The cursor snap lands on its target and fills it. Two defects
+  from the operator's second rejection, both fixed at the root:
+
+  **D1 — the glyph sat at the tile's corner while the tile lit up.** The snap
+  anchor was `rect.right + 6, rect.top - 12` — the top-right corner of the
+  hovered element — so `easeCursorPosition` dutifully carried the drawn glyph
+  to exactly the wrong place. The anchor is now the element's own centre, and
+  the existing 0.2/frame ease does the rest: the glyph travels to the middle
+  of the target and reads as attached, then releases back to pointer-following
+  on leave. The native cursor used to be hidden document-wide via an
+  `html.px-cursor-active` class for as long as the overlay was enabled; it is
+  now hidden only on the element currently hit, via a
+  `[data-pixel-cursor-hide]` attribute the engine sets and clears per frame.
+  No state remains where both arrows are visible over a target, and no page
+  outside a hovered element ever loses its native cursor.
+
+  **D2 — the active treatment read as a thin ring, not a fill.** The old bloom
+  was a 0.45-unit stroke plus a ~2–4% stipple. The snapped state is now a
+  genuinely filled disc carrying the step's accent (`cobalt` / `amber` /
+  `red` / `ink`), blooming from the centre over the ±0.07 progress ramp and
+  retracting along the same path, with the icon punched out of it — the solid
+  sphere with a knocked-out glyph the reference site shows. Because the field
+  engine samples only alpha into one colour channel per frame, contrast is
+  decided by which tint carries the fill: accents resolve to their text-safe
+  siblings (the canvas mirror of `--px-*-ink`, new `INK_SAFE`/`inkSafe()` in
+  `lib/pixel.ts`). Measured knockout ratios against the page ground, all ≥
+  4.5:1: cobalt 5.23 light / 4.65 dark; amber 4.67 / 9.28; red 4.79 / 4.63;
+  ink (navy substitution) 15.77 / 15.87. The icon geometry moved to one shared
+  recorded-path source so the resting stroke and the snap punch can never
+  drift apart.
+
+  Density oracle: a filled disc mathematically cannot honour the 35% window
+  cap — between radii ~2.5 and ~6.5 cells any solid disc peaks near 50% in its
+  central window regardless of glyph. Per the handoff's escape clause, the
+  oracle now runs two justified regimes instead of exempting tiles wholesale:
+  rest stays under the house 35% bar, and the whole bloom answers to a
+  geometric ceiling (the fill may never exceed the disc it belongs to) plus a
+  structural guarantee that the knockout clears real area. Reduced motion
+  snaps to the end state with no ramp; coarse pointers get no cursor engine at
+  all and keep keyboard focus driving the same active state; the overlay
+  remains `pointer-events: none`.
+
+- 2026-08-23 — Services is no longer three timed packages. The section is
+  three doors into one system — Greenfield, Hardening, Adoption — with a
+  shared autonomy row and a closing pointer at the public ADRs, changelog,
+  and `/llms-full.txt`. The week ranges are gone: they were unsourced in
+  this repo and in the Trellis instance. Rows are Entry / First moves / You
+  hold / Fit. `lib/services.ts` is still the single copy source for the
+  page and the agent corpus. The hire-me skill no longer promises a
+  duration field. Intro, doors and rules share one 45rem track so the
+  hairlines end with the copy (80ch-on-text-only left rules at 1328px
+  against 675px of type; a 70ch shared track closed the gap at 652px).
+
 ### Added
+
+- 2026-08-23 — Began moving the daily GitHub-stats refresh off GitHub Actions
+  and onto the site's own Cloudflare Worker. `public/data/stats.json` had sat at
+  its 2026-08-13 snapshot because `.github/workflows/stats.yml` has no
+  `GH_STATS_TOKEN` to run with, so every daily trigger failed at the
+  require-secret gate while the page kept quoting a ten-day-old total as if it
+  were measured today. The new path adds cron triggers and a `STATS_KV` binding
+  to `wrangler.jsonc`, a `scheduled` handler in `worker/index.ts`, and the pure
+  `lib/stats-source.ts` owning fetch, normalize, staleness and fallback for both
+  the cron and the site. `lib/stats.ts` reads KV first via
+  `getCloudflareContext().env`, falling back to the checked-in file only as a visibly-degraded path:
+  a snapshot older than ~36h renders a "data stale" label and a provenance line
+  reading "Last good N days ago", so an old number is never presented as
+  current. Request-time reads go through OpenNext's `getCloudflareContext().env`
+  — not `globalThis.STATS_KV`, which is never assigned in a module Worker.
+  The Actions workflow is retained until the Worker path is proven.
+  Ambient `ScheduledController` and `ExecutionContext` live in
+  `worker/env.d.ts` so a fresh clone typechecks before `wrangler types`.
+  Tests cover normalize, staleness, parse fail-closed, the cron handler
+  against fake fetch and fake KV, the OpenNext env adapter, and degraded-state
+  labelling. The GitHub harness matches `/repos/:name` and `/repos/:name/commits`.
+  OpenSource is async; the component suite awaits the tree before
+  `renderToStaticMarkup`. Still needs one operator command,
+  `wrangler secret put GH_STATS_TOKEN`, deliberately not automated.
+
+- 2026-08-23 — Shipped "Ship It" end to end, replacing the arcade section in
+  place. `lib/shipit/audio.ts` ports the oscillator kit to a new storage key
+  with six original cues (pellet tick, energizer push, eat-bug, death, win,
+  loss) — square and triangle voices only, no samples. `lib/scenes/shipit.ts`
+  mounts the engine on one canvas: one rAF, one AbortController, theme and
+  both motion vetoes subscribed, DPR capped at 2, allocation-free draw. The
+  player is a blinking block caret whose leading edge splits into two prongs
+  and rejoins as it eats; the four bugs are geometrically distinct pixel masks
+  (beetle, arrow, cross, notch), pellets are semicolon glyph pairs, and
+  energizers are pulsing commit nodes. `ShipItGame.tsx` and `ShipIt.tsx` wire
+  the accessible island and `#shipit` section; `shipit.css` imports before
+  `_mobile.css`. Every arcade section module is deleted and its callers
+  migrated — no alias remains for this game's old name. The reduced-motion
+  e2e contract now exercises `#shipit` discrete play under both vetoes. The
+  combo-score test inlines its spawn helpers against the exported layout API.
+
+- 2026-08-23 — Began "Ship It", the maze-chase rebuild that replaces the
+  arcade field. `lib/shipit/` adds the pure rule core: `layout.ts` for the
+  28x31 board under the original's structural grammar but with our own wall
+  drawing, `targeting.ts` for the four chase personalities (direct, ambush
+  including the documented up-direction overflow, flank, and shy), and
+  `game.ts` for the state machine — corner-stuck input latching so a blocked
+  actor holds its desired direction instead of bouncing back, cornering that
+  only the player gets, scatter/chase timing with forced reversal on mode
+  change, fright, and ghost-house release. Rules are implemented from the
+  documented mechanics, which are not copyrightable; no original maze drawing,
+  character art or audio is reproduced. The rule-core suite is green: 58
+  focused tests across layout, targeting and game, including Cruise Elroy and
+  the discrete reduced-motion step. No rendering layer or section wiring yet.
 
 - 2026-08-23 — Began the original arcade field: a fixed asymmetric 25×17 board
   and deterministic maze-chase state machine with buffered keyboard movement,
@@ -40,6 +165,46 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Fixed
 
+- 2026-08-24 — Ship It bugs now apply the targeting decision they compute at
+  each tile centre. The engine previously discarded that result, so bugs ran
+  straight until a wall despite the four correct pure targeting functions.
+  The browser contract now stages and observes corner-stuck holds, player-only
+  early corner cuts, centre-only bug turns, tunnel wrapping and slowdown,
+  complete dispose/remount, and a readable zero-loop reduced-motion state
+  across the Chromium and WebKit desktop/mobile matrix. Canvas resizing is
+  observed directly, and controls stay disabled until the scene handle mounts.
+  A second pass closed four engine defects the browser contracts exposed.
+  Eyes now re-enter the bug house through the door — the forced DOWN at the
+  spawn tile was being discarded by a movement step that flipped the door bit,
+  so eyes froze on the house side of it forever; once an eye reaches a house
+  tile centre it hands off to the existing leaving path (desired null, facing
+  UP) and rejoins as active. Eating an energizer no longer frightens or
+  reverses eyes mid-flight. House release is at most one housed bug per frame,
+  gated on its own dot counter (ambush 0, flank 30, shy 60) or the shared 4s
+  idle, replacing a clause that released the first housed bug every frame
+  regardless of gates. A discrete reduced-motion input that kills now burns
+  RESPAWN_MS synchronously in bounded slices, so the death event and life
+  decrement stand while play resumes running instead of soft-locking on a
+  rAF loop its veto stopped. The vacuous house-release/flash unit tests were
+  replaced with deterministic threshold, one-per-frame and idle tests, plus
+  eyes re-entry, energizer immunity and discrete-death recovery cases — all
+  fail against the previous engine — and the reduced-motion browser contract
+  reads exact engine state through the opt-in probe: a blocked UP input leaves
+  the player's vertical lane coordinate and facing unchanged while one
+  discrete simulation step redraws.
+
+- 2026-08-24 — The writing breakout track actually existed now. The D3
+  follow-up had landed `--prose-breakout` as a max-width, which does nothing
+  to a block whose width is auto: every figure, pre and pull quote still
+  measured the full 75ch prose column (698px at a 2294px viewport), while the
+  changelog above claimed a wider track. rehype-pretty-code also wraps each
+  language-tagged fence in a figure with 40px of UA inline margin, so the
+  bare-pre selector never touched the box that was doing the constraining.
+  Non-prose blocks now break out by symmetric negative margins equal to the
+  article gutters — prose column plus both gutters, saturating exactly at the
+  900px article shell — so code figures measure wider than the body on wide
+  screens and nothing can overflow at 375px.
+
 - 2026-08-23 — The CI accessibility gate stopped failing on a page that is
   fine. The axe CLI measured the moment each route was ready, without waiting
   for animation, so a scan landing mid-hero-fade read the h1, sub and note at a
@@ -48,11 +213,11 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
   Measured against the deployed site with the same rule set:
 
-  | when axe looks | result |
-  |---|---|
+  | when axe looks                | result                        |
+  | ----------------------------- | ----------------------------- |
   | `domcontentloaded`, no settle | 1 violation, ratios 1.07–1.10 |
-  | `load`, no settle | 1 violation, ratio 2.74 |
-  | `networkidle` + 1500ms | **0 violations** |
+  | `load`, no settle             | 1 violation, ratio 2.74       |
+  | `networkidle` + 1500ms        | **0 violations**              |
 
   It blocked two unrelated pull requests before anyone read the numbers, and
   re-running the identical commit passed — the signature of a race, not a
@@ -91,6 +256,20 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   noted inside it.
 
 ### Changed
+- 2026-08-24 — Writing and case-study reading surface. Writing posts drop the
+  HyperFrames loops (eight files under `public/video/writing/`, plus
+  `hyperframes-loop.tsx` and `MotionVideo.tsx`, which had no remaining caller).
+  The article art is a `RouteField` hero band under the byline, not a letterbox
+  strip above the title. Body prose is 75ch with a wider breakout track for
+  figures, code, tables and pull quotes. Case studies render title and dek from
+  frontmatter; `build-mdx-modules.ts` strips the authored H1 + blockquote so the
+  dek cannot fall through to a grey unpadded quote. ADR-0020 now covers writing;
+  ADR-0011 is superseded. Reduced-motion e2e asserts a writing post ships no
+  media bytes. Home-page D5: every section is transparent over one `--bg`;
+  there was no second white to separate, so no band was added.
+
+
+
 
 - 2026-08-23 — Started a voice pass over the case studies, which never had one.
 
@@ -545,6 +724,14 @@ permitted`, then `RenderCompositorSWGL failed mapping default framebuffer`.
   answer correctly, code fences carry their `--shiki-light` / `--shiki-dark`
   tokens, the nonce reaches every script tag, both Markdown patterns negotiate,
   and a preview host is refused by both the header and `robots.txt`.
+
+- 2026-08-25 — Fixed two defects in the method-tile snap that a cross-family audit of `feat/cursor-snap` raised and a second reviewer failed to refute. Both are measured, not asserted.
+
+  The snap disc now opens at the icon's own footprint (`tileBloomRadiusScale`: 0.40 → 0.46 of the field's short side) instead of ramping from zero. During the snap pass the icon exists only as a knockout in the disc, so a disc smaller than the icon renders nothing at all — and the icon's half-extent is 0.387 of the short side while the old radius was 0.46·p, which means the disc did not reach the mark until p ≈ 0.84, the last two frames of a fourteen-frame ramp. The tile went blank the moment a pointer arrived. Rasterizing the first snap frame puts a number on it: 0 lit cells against 36 for the same tile at rest. `products.test.ts` now asserts no point in the ramp lights fewer cells than the resting icon; restoring the 0.46·p ramp fails it with exactly that pair. The existing "nothing paints outside the disc" ceiling still holds and now reads its radius from `tileBloomRadiusScale` rather than a duplicated literal, so the bound cannot drift away from the disc it bounds.
+
+  The spec tile's decision dot is filled again. Folding all four tile icons into one shared stroked path — done so the knockout could replay the exact geometry of the visible stroke — swept up the dot, which had always been `arc` + `fill`. Stroked at that line width it became a 0.084s ring around a 0.036s hole. `tileGlyphPath` takes `{ specDot: false }` for the resting stroke and keeps the dot for the eraser, which wants the ring's outer extent, not the fill's.
+
+- 2026-08-25 — Restored `includeUnlisted: true` on `/writing/[slug]`'s `generateStaticParams`. The route's own CHANGELOG entry below claims "generated static params for all 13 non-draft posts", and the sibling routes that make up the same artifact — `opengraph-image.tsx` and `md/route.ts` — both still passed the flag; only the HTML page had dropped it during the pixel rebuild. The measurable effect was in the build output: `.next/server/app/writing/detection-is-not-continuity/` held `md.body` and `opengraph-image.body` but no page, so the one unlisted post was the single article rendered per request instead of served as a prerendered asset. Unlisted means absent from the indexes, not absent from the web. `app/writing/[slug]/page.test.ts` now asserts the slug is in `generateStaticParams()`; inverting the flag fails it.
 
 - 2026-08-23 — Changed `/writing` and `/writing/[slug]` to complete the pixel-language Blog / SEO transplant without changing an authored MDX file (spec 004 T26, SC4/SC8). The index reads `getAllPostsWithReadingTime('writing')`, sorts newest-first, and renders the 12 listed posts: `_test-draft.mdx` is excluded by the content helper and `detection-is-not-continuity` remains direct-link-only because its authored frontmatter is `unlisted: true`. The index now uses the shared `SectionHead` for its page-level statement and mono label, keeps the decorative `PixelBand`, and reuses the established writing-row treatment rather than adding another list primitive. Topic-like colour still rotates on the sourced reading-time tag because `WritingFrontmatter` has no topic field and inventing a taxonomy would be a content change.
 

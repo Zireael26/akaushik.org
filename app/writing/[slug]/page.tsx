@@ -15,63 +15,50 @@ import { getReadingTime } from '@/lib/reading-time';
 import { getMdxModule } from '@/lib/mdx/generated';
 import { articleGraph, breadcrumbGraph, jsonLdString } from '@/lib/structured-data';
 import { JsonLdScript } from '@/components/seo/JsonLdScript';
-import { HyperframesLoop, type WritingLoopSlug } from '@/components/media/hyperframes-loop';
 import { RouteField } from '@/components/pixel/RouteField';
 import { MatterRow, RuledRow } from '@/components/pixel/RuledRow';
 import { ARTICLE_COPY, type FaqRow } from './article-copy';
-
-const WRITING_LOOPS: Partial<Record<string, WritingLoopSlug>> = {
-  'building-this-portfolio': 'building-this-portfolio',
-  'micrograd-makemore': 'micrograd-makemore',
-  'ai-for-msme': 'ai-for-msme',
-  'fastembed-to-tei': 'fastembed-to-tei',
-};
 
 /** Byline date, e.g. "11 May 2026" — the reference article's shape. Parsed in
     UTC like formatMonthYear so a bare ISO date cannot regress west of UTC. */
 const BYLINE_DATE = new Intl.DateTimeFormat('en-GB', {
   day: 'numeric',
-  month: 'short',
+  month: 'long',
   year: 'numeric',
   timeZone: 'UTC',
 });
 
 function formatBylineDate(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return BYLINE_DATE.format(d);
+  const parsed = new Date(`${iso}T00:00:00Z`);
+  return Number.isNaN(parsed.getTime()) ? iso : BYLINE_DATE.format(parsed);
 }
 
 /**
  * Article + FAQPage as one @graph value. The Article node is articleGraph's
- * (stable @id ...#article, cross-linked to the sitewide Person/Organization),
- * with its top-level @context dropped into the graph envelope; the FAQPage
- * node carries stable @id URIs of its own (...#faq, ...#faq-N) so the two
- * shapes reference the same page without a second competing graph.
+ * output unchanged; the FAQPage is appended only when grounded copy exists.
  */
 export function articleGraphWithFaq(
   slug: string,
   fm: WritingFrontmatter,
   faq: FaqRow[],
 ): Record<string, unknown> {
-  const article = articleGraph(slug, fm);
-  const url = canonical(`/writing/${slug}`);
-  return {
-    '@context': 'https://schema.org',
-    '@graph': [
-      Object.fromEntries(Object.entries(article).filter(([key]) => key !== '@context')),
-      {
-        '@type': 'FAQPage',
-        '@id': `${url}#faq`,
-        mainEntity: faq.map((row, i) => ({
-          '@type': 'Question',
-          '@id': `${url}#faq-${i + 1}`,
-          name: row.q,
-          acceptedAnswer: { '@type': 'Answer', text: row.a },
-        })),
-      },
-    ],
-  };
+  // articleGraph returns a flat Article node, not a wrapper — the @context is
+  // lifted to the top so the nested nodes do not each repeat it.
+  const { '@context': _context, ...article } = articleGraph(slug, fm) as Record<string, unknown>;
+  const graph: Record<string, unknown>[] = [article];
+  if (faq.length > 0) {
+    graph.push({
+      '@type': 'FAQPage',
+      '@id': canonical(`/writing/${slug}#faq`),
+      mainEntity: faq.map((row, i) => ({
+        '@type': 'Question',
+        '@id': canonical(`/writing/${slug}#faq-${i + 1}`),
+        name: row.q,
+        acceptedAnswer: { '@type': 'Answer', text: row.a },
+      })),
+    });
+  }
+  return { '@context': 'https://schema.org', '@graph': graph };
 }
 
 /** Read-next rows follow the complete published chronology so an unlisted
@@ -98,6 +85,10 @@ export function nextReads(
     }));
 }
 
+/** Unlisted posts are prerendered like any other: they are hidden from the
+    indexes, not from the web, and their `.md` alternate and OG card already
+    include them. Dropping `includeUnlisted` here left the HTML page as the one
+    member of that triple rendered per request instead of served as an asset. */
 export function generateStaticParams() {
   return getAllPosts('writing', { includeUnlisted: true }).map((post) => ({
     slug: post.slug,
@@ -142,7 +133,6 @@ export default async function WritingPost({ params }: { params: Promise<{ slug: 
   const fm = post.frontmatter as WritingFrontmatter;
   if (isDraftHidden(fm)) notFound();
   const readingTime = fm.readingTime ?? getReadingTime(post.content);
-  const loopSlug = WRITING_LOOPS[slug];
 
   // Grounded per-post copy. When a post has none, the short-answer box and the
   // FAQ block are omitted and the JSON-LD stays a plain Article graph — no
@@ -170,8 +160,6 @@ export default async function WritingPost({ params }: { params: Promise<{ slug: 
 
       <article className="px-article">
         <header>
-          <RouteField slug={slug} art={fm.art} />
-
           <nav className="px-article-crumb" aria-label="Breadcrumb">
             <Link href="/writing">Writing</Link>
           </nav>
@@ -190,6 +178,12 @@ export default async function WritingPost({ params }: { params: Promise<{ slug: 
           </div>
         </header>
 
+        {/* The art sits under the title block, not above it: the operator read
+            the old top-of-page strip as chrome that pushed the whole article
+            down. Under the byline it is the article's own illustration, and
+            the full-width band reads as deliberate rather than squeezed. */}
+        <RouteField slug={slug} art={fm.art} variant="hero" />
+
         {shortAnswer.length > 0 ? (
           <section className="px-article-short" aria-labelledby={`short-answer-${slug}`}>
             <div className="px-article-kicker" id={`short-answer-${slug}`}>
@@ -206,10 +200,6 @@ export default async function WritingPost({ params }: { params: Promise<{ slug: 
               </RuledRow>
             ))}
           </section>
-        ) : null}
-
-        {loopSlug ? (
-          <HyperframesLoop kind="writing" slug={loopSlug} className="px-article-loop" />
         ) : null}
 
         <div className="px-article-body">

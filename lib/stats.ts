@@ -1,50 +1,36 @@
-import statsJson from '@/public/data/stats.json';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { resolveStats, type StatsKVReader, type StatsView } from './stats-source';
 
-export type StatsRepo = {
-  name: string;
-  label: string;
-  url: string;
-  /**
-   * Whether an anonymous visitor can open `url`.
-   *
-   * Optional because `stats.json` predates the field, and absent must mean
-   * "do not link" rather than "link and hope". The fetch script runs with a
-   * `repo`-scoped token, so it reports real commit counts for private
-   * repositories — the URL it builds from the same name is a 404 for everyone
-   * reading the site.
-   */
-  public?: boolean;
-  commits12mo: number | null;
-  lastCommit: string | null;
-};
+export type { Stats, StatsRepo, StatsView } from './stats-source';
 
-export type Stats = {
-  generatedAt: string;
-  username: string;
-  window: string;
-  includesPrivate: boolean;
-  totalContributions: number;
-  weeks: number[];
-  repos: StatsRepo[];
-};
+/**
+ * The stats snapshot behind "In the open".
+ *
+ * The numbers used to come straight off the checked-in
+ * `public/data/stats.json`, which only moved when a GitHub Actions run landed
+ * — and that workflow has been failing for lack of a token, so the page quoted
+ * a ten-day-old total as if it were measured today. Now the snapshot is read
+ * from the `STATS_KV` namespace that the Worker cron refreshes daily, and the
+ * checked-in file is served only when KV holds nothing usable.
+ *
+ * Cloudflare module Workers put bindings on the handler `env`, not on
+ * `globalThis`. OpenNext exposes that env through `getCloudflareContext()`.
+ * `globalThis.STATS_KV` is never assigned at runtime; reading it would leave
+ * the section on the checked-in file forever.
+ *
+ * The fallback is never silent. The returned `StatsView` carries a `degraded`
+ * flag and a `reason` saying whether the numbers are live, stale (older than
+ * ~36h), or from the checked-in file because KV had nothing readable.
+ */
+export async function readWorkerStatsKv(): Promise<StatsKVReader | null> {
+  try {
+    const { env } = await getCloudflareContext({ async: true });
+    return env.STATS_KV ?? null;
+  } catch {
+    return null;
+  }
+}
 
-export function getStats(): Stats {
-  const {
-    generatedAt,
-    username,
-    window,
-    includesPrivate,
-    totalContributions,
-    weeks,
-    repos,
-  } = statsJson as Stats;
-  return {
-    generatedAt,
-    username,
-    window,
-    includesPrivate,
-    totalContributions,
-    weeks,
-    repos,
-  };
+export async function getStats(): Promise<StatsView> {
+  return resolveStats(await readWorkerStatsKv());
 }

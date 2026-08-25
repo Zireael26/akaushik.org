@@ -27,7 +27,7 @@ import './styles/sections/status.css';
 import './styles/sections/open.css';
 import './styles/sections/footer.css';
 import './styles/sections/cursor.css';
-import './styles/sections/arcade.css';
+import './styles/sections/shipit.css';
 // Last: small-screen overrides that must beat the section files above.
 // See the file header for why the order is load-bearing.
 import './styles/sections/_mobile.css';

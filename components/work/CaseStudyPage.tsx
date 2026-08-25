@@ -26,6 +26,8 @@ export function CaseStudyPage({
           {fm.tag ? <span className="px-work-detail-tag">{fm.tag}</span> : null}
           {fm.year ? <span className="px-work-detail-year">{fm.year}</span> : null}
         </div>
+        <h1 className="px-work-detail-title">{fm.title}</h1>
+        <p className="px-work-detail-dek">{fm.dek}</p>
         <div className="px-work-detail-spec">
           {fm.role ? <RuledRow tag="Role">{fm.role}</RuledRow> : null}
           {fm.stack?.length ? <RuledRow tag="Stack">{fm.stack.join(' · ')}</RuledRow> : null}
@@ -53,6 +55,13 @@ export function CaseStudyPage({
  * than per request: Cloudflare Workers refuse both halves of runtime
  * compilation — `new Function` and instantiating Shiki's WebAssembly grammar
  * engine — so `next-mdx-remote` cannot run there at all.
+ *
+ * The generator applies `stripTitleChrome` to case studies exactly as it does
+ * to writing: the authored leading H1 + blockquote dek mirror the frontmatter,
+ * and the header above renders them, so the body starts at the first H2. This
+ * is what retired the dek's fall-through into generic blockquote styling —
+ * the grey-bar dek — rather than papering over it with a second CSS special
+ * case beside the real one.
  *
  * A missing module means a slug reached this component without a compiled
  * body, which the route's own `notFound()` should have caught. Render nothing

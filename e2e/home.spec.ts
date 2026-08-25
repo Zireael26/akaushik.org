@@ -10,8 +10,8 @@ test.describe('Home page', () => {
     await expect(page.locator('section.px-hero-block')).toBeVisible();
 
     // The pixel home keeps the baseline sections, plus authored Experience and
-    // Arcade additions. Presence is asserted individually so future additive
-    // sections do not turn this into a brittle exact-count test.
+    // Ship It. Presence is asserted individually so future additive sections
+    // do not turn this into a brittle exact-count test.
     const sectionIds = [
       '#profile',
       '#work',
@@ -20,7 +20,7 @@ test.describe('Home page', () => {
       '#method',
       '#open',
       '#contact',
-      '#arcade',
+      '#shipit',
     ];
 
     // Individual presence checks, not an exact count — preserves baseline granularity and avoids failing
@@ -175,7 +175,15 @@ test.describe('Home page', () => {
     // removed. `three` went with the Wanderer, and framer-motion, gsap and
     // lucide-react were dropped on 2026-05-19 (see CLAUDE.md).
     const body = page.locator('body');
-    for (const gone of ['Three.js', 'Framer Motion', 'framer-motion', 'GSAP', 'lucide', 'shadcn', 'r3f']) {
+    for (const gone of [
+      'Three.js',
+      'Framer Motion',
+      'framer-motion',
+      'GSAP',
+      'lucide',
+      'shadcn',
+      'r3f',
+    ]) {
       await expect(body, `home page still names the removed ${gone}`).not.toContainText(gone);
     }
   });
