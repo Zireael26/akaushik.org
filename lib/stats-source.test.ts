@@ -165,6 +165,23 @@ describe('fetchStatsFromGitHub', () => {
     expect(withRepoScope.includesPrivate).toBe(true);
   });
 
+  // Measured 2026-08-24: `curl -A '' https://api.github.com/rate_limit` returns
+  // 403, the same call with a UA returns 200. GitHub requires a User-Agent on
+  // every API request. Nothing local reproduces the failure — curl and Node's
+  // fetch both supply a default — but `workerd` supplies none, so a missing
+  // header here means the deployed cron 403s on its first refresh while every
+  // test stays green. This asserts the header on EVERY outbound call, the
+  // unauthenticated public-visibility probe included.
+  it('sends a User-Agent on every GitHub request, or the deployed cron 403s', async () => {
+    const { fetchImpl, calls } = githubHarness();
+    await fetchStatsFromGitHub('t', { fetchImpl, now: NOW });
+    expect(calls.length).toBeGreaterThan(0);
+    for (const call of calls) {
+      const ua = new Headers(call.init?.headers).get('user-agent');
+      expect(ua, `no User-Agent on ${call.url}`).toBeTruthy();
+    }
+  });
+
   it('keeps null-safe repo fields when a private repo 404s (gotchas 2026-05-02)', async () => {
     const neev = STATS_REPOS[0]!.repo;
     const { fetchImpl } = githubHarness({ repoStatuses: { [neev]: 404 } });
