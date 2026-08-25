@@ -1,6 +1,6 @@
 import { Children, isValidElement, type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import WritingPost, { generateMetadata, nextReads } from './page';
+import WritingPost, { generateMetadata, generateStaticParams, nextReads } from './page';
 
 // Guards the per-page OpenGraph fix: under Next's shallow metadata merge,
 // omitting `openGraph` here means every writing post inherited the homepage's
@@ -164,5 +164,16 @@ describe('writing/[slug] article structured data', () => {
       'https://akaushik.org/writing/ai-for-msme#faq-2',
       'https://akaushik.org/writing/ai-for-msme#faq-3',
     ]);
+  });
+});
+
+describe('writing/[slug] static params', () => {
+  // The unlisted post is hidden from the indexes, not from the web. Its `.md`
+  // alternate and its OG card are both generated with `includeUnlisted: true`,
+  // so leaving it out here made the HTML page the one member of that triple
+  // that fell through to a per-request render.
+  it('prerenders the unlisted post alongside the listed ones', () => {
+    const slugs = generateStaticParams().map((p) => p.slug);
+    expect(slugs).toContain('detection-is-not-continuity');
   });
 });
