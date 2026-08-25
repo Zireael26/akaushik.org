@@ -142,8 +142,8 @@ test.describe('Ship It movement contract (instrumented)', () => {
    * R3 corner-stuck on the real mounted page.
    *
    * Requirement sensitivity — the inversion each assertion catches:
-   * - "bounce off the wall" (the arcade defect): x oscillates away from the
-   *   stop centre, so the byte-equal reads at mid-hold and tail fail.
+   * - "bounce off the wall" (the wall-bounce defect): x oscillates away from
+   *   the stop centre, so the byte-equal reads at mid-hold and tail fail.
    * - auto-reverse on impact: facing flips to LEFT; the facing assertions fail.
    * - a hold that creeps: x/y drift past the stop centre; the byte-equal
    *   reads fail even though the caret looks "roughly" stopped.

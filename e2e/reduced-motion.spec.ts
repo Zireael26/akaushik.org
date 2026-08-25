@@ -24,6 +24,42 @@ test.describe.configure({ timeout: 60_000 });
 
 const SETTLE_MS = 1200;
 
+const SHIPIT_CANVAS_NAME =
+  'Ship It maze — a blinking cursor eats code characters while four bugs give chase';
+
+type ShipItDirection = 'up' | 'left' | 'down' | 'right';
+type ShipItProbeActor = {
+  x: number;
+  y: number;
+  facing: ShipItDirection;
+  desired: ShipItDirection | null;
+};
+type ShipItProbeState = {
+  phase: string;
+  player: ShipItProbeActor;
+  ghosts: Record<string, ShipItProbeActor>;
+};
+type ShipItProbeWindow = Window & {
+  __shipitProbeWanted?: boolean;
+  __shipitProbe?: {
+    read(): ShipItProbeState;
+  };
+};
+
+/** Runs before any app code; the scene allocates the probe only when it sees the flag. */
+async function optInToShipItProbe(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const testWindow = window as ShipItProbeWindow;
+    testWindow.__shipitProbeWanted = true;
+  });
+}
+
+const readPlayer = (page: Page): Promise<ShipItProbeActor> =>
+  page.evaluate(() => {
+    const player = (window as ShipItProbeWindow).__shipitProbe?.read().player ?? null;
+    if (!player) throw new Error('the ship-it probe is not installed');
+    return player;
+  });
 /** Two samples of a canvas, a beat apart. */
 async function sampleTwice(page: Page, selector: string): Promise<[string, string]> {
   const canvas = page.locator(selector).first();
@@ -39,10 +75,7 @@ async function sampleTwice(page: Page, selector: string): Promise<[string, strin
 }
 
 function shipitStatus(page: Page, label: string) {
-  return page
-    .locator('#shipit .px-shipit-status > div')
-    .filter({ hasText: label })
-    .locator('dd');
+  return page.locator('#shipit .px-shipit-status > div').filter({ hasText: label }).locator('dd');
 }
 
 test.describe('prefers-reduced-motion', () => {
@@ -83,10 +116,7 @@ test.describe('prefers-reduced-motion', () => {
     await page.goto('/work/neev');
     await page.waitForTimeout(SETTLE_MS);
 
-    expect(
-      mediaRequests,
-      `unexpected media requests: ${mediaRequests.join(', ')}`,
-    ).toHaveLength(0);
+    expect(mediaRequests, `unexpected media requests: ${mediaRequests.join(', ')}`).toHaveLength(0);
   });
 
   test('a case-study reel field holds still under reduced motion', async ({ page }) => {
@@ -112,46 +142,79 @@ test.describe('prefers-reduced-motion', () => {
 
   test('ship it advances one fixed step under the OS preference', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
+    await optInToShipItProbe(page);
     await page.goto('/#shipit');
 
     const section = page.locator('#shipit');
-    const canvas = page.getByRole('img', {
-      name: 'Ship It maze — a blinking cursor eats code characters while four bugs give chase',
-    });
-    await section.getByRole('button', { name: 'Start shipping' }).click();
-    const initialPixels = await canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL());
-
-    // Facing the wall above the spawn, UP is held but nothing moves.
-    await page.keyboard.press('ArrowUp');
+    const canvas = page.getByRole('img', { name: SHIPIT_CANVAS_NAME });
     await expect
-      .poll(() => canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL()))
-      .toBe(initialPixels);
-    await expect(shipitStatus(page, 'Score')).toHaveText('0');
-
-    await page.keyboard.press('ArrowRight');
-    const firstStepPixels = await canvas.evaluate((element: HTMLCanvasElement) =>
+      .poll(() => page.evaluate(() => Boolean((window as ShipItProbeWindow).__shipitProbe)))
+      .toBe(true);
+    await section.getByRole('button', { name: 'Start shipping' }).click();
+    await expect(shipitStatus(page, 'State')).toHaveText('Shipping');
+    const before = await readPlayer(page);
+    const initialPixels = await canvas.evaluate((element: HTMLCanvasElement) =>
       element.toDataURL(),
     );
-    expect(firstStepPixels).not.toBe(initialPixels);
+    // Facing the wall above the spawn, UP is blocked: the vertical lane
+    // coordinate and facing remain unchanged, while x may advance along the
+    // existing facing.
+    await page.keyboard.press('ArrowUp');
+    const afterUp = await readPlayer(page);
+    expect(afterUp.y).toBe(before.y);
+    expect(afterUp.facing).toBe(before.facing);
+    // But every valid discrete input advances the whole simulation exactly
+    // once — ghosts redraw even though the cursor stayed put and Score never
+    // ticks.
+    const upStepPixels = await canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL());
+    expect(upStepPixels).not.toBe(initialPixels);
+    await expect(shipitStatus(page, 'Score')).toHaveText('0');
     // Exactly one fixed step: half a second later nothing has moved again.
     await page.waitForTimeout(500);
-    const settledPixels = await canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL());
-    expect(settledPixels).toBe(firstStepPixels);
+    expect(await canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL())).toBe(
+      upStepPixels,
+    );
+
+    // The legal direction still moves the caret along its lane.
+    await page.keyboard.press('ArrowRight');
+    const afterRight = await readPlayer(page);
+    expect(afterRight.x).toBeGreaterThan(afterUp.x);
+    expect(afterRight.y).toBe(afterUp.y);
+    const rightStepPixels = await canvas.evaluate((element: HTMLCanvasElement) =>
+      element.toDataURL(),
+    );
+    expect(rightStepPixels).not.toBe(upStepPixels);
+    // Exactly one fixed step: half a second later nothing has moved again.
+    await page.waitForTimeout(500);
+    expect(await canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL())).toBe(
+      rightStepPixels,
+    );
   });
 
   test('the site motion veto gives ship it the same discrete contract', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await optInToShipItProbe(page);
     await page.goto('/#shipit');
     await page.evaluate(() => document.documentElement.setAttribute('data-motion', 'off'));
 
     const section = page.locator('#shipit');
+    await expect
+      .poll(() => page.evaluate(() => Boolean((window as ShipItProbeWindow).__shipitProbe)))
+      .toBe(true);
     await section.getByRole('button', { name: 'Start shipping' }).click();
-    const before = Number(await shipitStatus(page, 'Score').textContent());
+    await expect(shipitStatus(page, 'State')).toHaveText('Shipping');
+
+    const before = await readPlayer(page);
     await page.keyboard.press('ArrowRight');
-    const afterOne = Number(await shipitStatus(page, 'Score').textContent());
-    expect(afterOne).toBeGreaterThanOrEqual(before);
+    const afterOne = await readPlayer(page);
+    // Exactly one fixed step: the caret moves once along its lane.
+    expect(afterOne.x).toBeGreaterThan(before.x);
+    expect(afterOne.y).toBe(before.y);
     await page.waitForTimeout(500);
-    expect(Number(await shipitStatus(page, 'Score').textContent())).toBe(afterOne);
+    const settled = await readPlayer(page);
+    // And half a second later the full player state is byte-identical: no
+    // hidden clock kept moving anything under the veto.
+    expect(settled).toEqual(afterOne);
 
     await page.evaluate(() => document.documentElement.setAttribute('data-motion', 'on'));
   });

@@ -4,11 +4,12 @@ import {
   DOWN,
   ELROY_DOTS_1,
   ELROY_DOTS_2,
-  FRIGHT_FLASHES,
   FRIGHT_MS,
   FRIGHT_SCORES,
+  GAME_EVENT_DEATH,
   GHOST_SPEED,
   LEFT,
+  RESPAWN_MS,
   RIGHT,
   UP,
   createShipItGame,
@@ -24,7 +25,16 @@ import {
   tileOf,
   type ShipItGame,
 } from './game';
-import { BOARD_WIDTH, PLAYER_SPAWN, TUNNEL_Y, indexX, indexY, toIndex } from './layout';
+import {
+  BOARD_WIDTH,
+  DIRECT_SPAWN,
+  HOUSE_DOOR_INDEX,
+  PLAYER_SPAWN,
+  TUNNEL_Y,
+  indexX,
+  indexY,
+  toIndex,
+} from './layout';
 
 const TILE = 16;
 
@@ -247,11 +257,21 @@ describe('shipit game — R7/R8 mode timer and reversal', () => {
 
   it('reverses active ghosts exactly on mode change', () => {
     const game = runningGame();
+    // Park the player on the house floor so the hunt cannot end in a death
+    // whose actor reset silently resets the mode clock mid-assertion.
+    placePlayerAt(game, 14, 14);
     const direct = game.ghosts[0];
     direct.state = 'active';
-    Object.assign(direct, tileCenter(7, 8));
+    // Mid-tile on the open row-8 corridor, farther from either neighbouring
+    // centre than one 1 ms movement (~0.06 px): the forced flip cannot be
+    // masked by a junction decision landing on the same frame.
+    Object.assign(direct, { x: 150, y: 8 * TILE + TILE / 2 });
     direct.facing = RIGHT;
-    stepGame(game, 7_000 + 100);
+    direct.desired = null;
+    game.modeTimerMs = 1;
+    expect(direct.facing).toBe(RIGHT);
+    stepGame(game, 1);
+    expect(game.mode).toBe('chase');
     expect(direct.facing).toBe(LEFT);
   });
 });
@@ -319,18 +339,24 @@ describe('shipit game — ghost junction targeting (centre decision)', () => {
 describe('shipit game — R13/R14 fright, flashes, combo, eyes', () => {
   it('runs fright 6s with five end flashes visible in the snapshot', () => {
     const game = runningGame();
-    game.globalFrightTimerMs = 0;
-    placePlayerAt(game, 1, 5);
-    // Eat an energizer at (1,3): walk up into it.
+    parkGhosts(game);
+    // Park on the real energizer at (1,3); the next frame eats it.
+    placePlayerAt(game, 1, 3);
     game.player.facing = UP;
     game.player.desired = null;
-    stepGame(game, 2_000);
-    const snap = snapshotGame(game);
-    if (snap.frightActive) {
-      expect(snap.frightFlashesLeft).toBeLessThanOrEqual(FRIGHT_FLASHES);
-      expect(FRIGHT_MS).toBe(6_000);
-      expect(FRIGHT_FLASHES).toBe(5);
-    }
+    stepGame(game, 1);
+    let snap = snapshotGame(game);
+    expect(snap.frightActive).toBe(true);
+    expect(snap.frightFlashesLeft).toBe(5);
+    stepGame(game, 1_200);
+    snap = snapshotGame(game);
+    expect(snap.frightActive).toBe(true);
+    expect(snap.frightFlashesLeft).toBe(4);
+    // 1 + 1200 + 4800 ms consumes the whole 6 s window.
+    stepGame(game, 4_800);
+    snap = snapshotGame(game);
+    expect(snap.frightActive).toBe(false);
+    expect(snap.frightFlashesLeft).toBe(0);
   });
 
   it('scores frightened ghosts 200/400/800/1600 within one energizer', () => {
@@ -357,34 +383,171 @@ describe('shipit game — R13/R14 fright, flashes, combo, eyes', () => {
   }
 });
 describe('shipit game — R15 house release', () => {
-  it('releases ambush immediately, flank after 30 dots, shy after 60 or 4s idle', () => {
+  it('releases ambush immediately, flank at 30 dots, shy at 60 dots', () => {
     const game = runningGame();
-    // Same idle-player hazard as the schedule test: with targeting live, the
-    // released bugs legitimately hunt the player parked at spawn and a death
-    // would freeze the idle clock. House floor is unreachable for them.
+    // Park the player on the house floor: released bugs legitimately hunt an
+    // idle player, and a death would reset the counters mid-assertion. The
+    // house floor is unreachable for anything that can collide.
     placePlayerAt(game, 14, 14);
     const [, ambush, flank, shy] = game.ghosts;
     expect(ambush.state).toBe('house');
     expect(flank.state).toBe('house');
     expect(shy.state).toBe('house');
 
-    // Feed dot counters without ending the level.
-    for (let eaten = 0; eaten < 31; eaten++) {
-      game.houseIdleTimerMs = 0;
-      for (const ghost of [ambush, flank, shy]) ghost.dotsEatenSinceRelease++;
-      stepGame(game, 16);
-    }
-    expect(flank.dotsEatenSinceRelease).toBeGreaterThanOrEqual(30);
+    // First frame: ambush's counter (0) is due — it leaves alone.
+    stepGame(game, 16);
+    expect(ambush.state).not.toBe('house');
+    expect(flank.state).toBe('house');
+    expect(shy.state).toBe('house');
 
-    // Global idle timer alone releases whoever remains after ~4s without dots.
+    // Flank one dot short of its counter stays housed; at 30 it leaves.
+    flank.dotsEatenSinceRelease = HOUSE_DOT_COUNTERS_FOR_TEST.flank - 1;
     game.houseIdleTimerMs = 0;
-    stepGame(game, 4_100);
-    expect(game.houseIdleTimerMs).toBeGreaterThanOrEqual(4_000);
-    expect(HOUSE_IDLE_RELEASE_MS_FOR_TEST).toBe(4_000);
+    stepGame(game, 16);
+    expect(flank.state).toBe('house');
+    flank.dotsEatenSinceRelease = HOUSE_DOT_COUNTERS_FOR_TEST.flank;
+    game.houseIdleTimerMs = 0;
+    stepGame(game, 16);
+    expect(flank.state).toBe('leaving');
+    expect(shy.state).toBe('house');
+
+    // Shy against its own threshold: 59 holds, 60 goes.
+    shy.dotsEatenSinceRelease = HOUSE_DOT_COUNTERS_FOR_TEST.shy - 1;
+    game.houseIdleTimerMs = 0;
+    stepGame(game, 16);
+    expect(shy.state).toBe('house');
+    shy.dotsEatenSinceRelease = HOUSE_DOT_COUNTERS_FOR_TEST.shy;
+    game.houseIdleTimerMs = 0;
+    stepGame(game, 16);
+    expect(shy.state).toBe('leaving');
   });
 
-  const HOUSE_IDLE_RELEASE_MS_FOR_TEST = 4_000;
+  it('releases at most one housed bug per frame even when every gate is open', () => {
+    const game = runningGame();
+    placePlayerAt(game, 14, 14);
+    const [, ambush, flank, shy] = game.ghosts;
+    stepGame(game, 16); // ambush out via its always-due counter
+    // Arm flank's counter AND the shared idle so both remaining bugs are due
+    // on the very same frame.
+    flank.dotsEatenSinceRelease = HOUSE_DOT_COUNTERS_FOR_TEST.flank;
+    shy.dotsEatenSinceRelease = HOUSE_DOT_COUNTERS_FOR_TEST.shy;
+    game.houseIdleTimerMs = HOUSE_IDLE_RELEASE_MS_FOR_TEST - 1;
+    stepGame(game, 16);
+    expect(game.houseIdleTimerMs).toBeGreaterThanOrEqual(HOUSE_IDLE_RELEASE_MS_FOR_TEST);
+    expect(flank.state).toBe('leaving');
+    expect(shy.state).toBe('house'); // one release per frame
+    stepGame(game, 16);
+    expect(shy.state).toBe('leaving');
+  });
+
+  it('the shared 4s idle alone releases whoever remains housed', () => {
+    const game = runningGame();
+    placePlayerAt(game, 14, 14);
+    const [, ambush, flank, shy] = game.ghosts;
+    stepGame(game, 16); // ambush out via its always-due counter
+    flank.dotsEatenSinceRelease = 0;
+    shy.dotsEatenSinceRelease = 0;
+
+    // Just under the idle gate nobody new leaves, however many frames pass.
+    game.houseIdleTimerMs = 0;
+    for (let frame = 0; frame < 240; frame++) {
+      game.houseIdleTimerMs = Math.min(game.houseIdleTimerMs, HOUSE_IDLE_RELEASE_MS_FOR_TEST - 17);
+      stepGame(game, 16);
+      expect(flank.state).toBe('house');
+      expect(shy.state).toBe('house');
+    }
+    // Past 4s without a dot both go — in order, on separate frames.
+    game.houseIdleTimerMs = 0;
+    stepGame(game, 4_100);
+    expect(game.houseIdleTimerMs).toBeGreaterThanOrEqual(HOUSE_IDLE_RELEASE_MS_FOR_TEST);
+    expect(flank.state).not.toBe('house');
+    expect(shy.state).not.toBe('house');
+  });
 });
+
+const HOUSE_DOT_COUNTERS_FOR_TEST = { ambush: 0, flank: 30, shy: 60 } as const;
+const HOUSE_IDLE_RELEASE_MS_FOR_TEST = 4_000;
+
+describe('shipit game — eyes re-entry and energizer immunity', () => {
+  function stageEye(game: ShipItGame, tileX: number, tileY: number, facing: number): Ghost {
+    const ambush = game.ghosts[1]!;
+    Object.assign(ambush, tileCenter(tileX, tileY), {
+      state: 'eyes' as const,
+      facing,
+      desired: null,
+      frightenedTimerMs: 0,
+    });
+    return ambush;
+  }
+
+  it('forces eyes resting on DIRECT_SPAWN down through the door until they re-emerge', () => {
+    const game = runningGame();
+    placePlayerAt(game, 14, 14);
+    const eye = stageEye(game, indexX(DIRECT_SPAWN), indexY(DIRECT_SPAWN), LEFT);
+    stepGame(game, 16);
+    // The dive decision fired and the descent actually started.
+    expect(eye.facing).toBe(DOWN);
+    expect(eye.y).toBeGreaterThan(indexY(DIRECT_SPAWN) * TILE + TILE / 2);
+    expect(eye.x).toBe(indexX(DIRECT_SPAWN) * TILE + TILE / 2);
+    // The dive completes: the old engine froze eyes on the house side of the
+    // door forever. Step past the descent — no bug may still be eyes.
+    for (let i = 0; i < 40; i++) stepGame(game, 16);
+    expect(eye.state).not.toBe('eyes');
+  });
+
+  it('an eye arriving facing UP still dives: forced DOWN overrides reversal exclusion', () => {
+    const game = runningGame();
+    placePlayerAt(game, 14, 14);
+    const eye = stageEye(game, indexX(DIRECT_SPAWN), indexY(DIRECT_SPAWN), UP);
+    // UP is the reversal of the dive; the forced DOWN must win anyway.
+    stepGame(game, 16);
+    expect(eye.facing).toBe(DOWN);
+    expect(eye.y).toBeGreaterThan(indexY(DIRECT_SPAWN) * TILE + TILE / 2);
+  });
+
+  it('an eye through the door rejoins as active above it, facing LEFT', () => {
+    const game = runningGame();
+    placePlayerAt(game, 14, 14);
+    const door = centerOfForTest(HOUSE_DOOR_INDEX);
+    const aboveDoor = centerOfForTest(DIRECT_SPAWN);
+    const eye = stageEye(game, indexX(DIRECT_SPAWN), indexY(DIRECT_SPAWN), DOWN);
+    let elapsed = 0;
+    while (eye.state !== 'active' && elapsed < 5_000) {
+      stepGame(game, 10);
+      elapsed += 10;
+    }
+    // The exact emergence spot only holds at the transition frame itself.
+    expect(elapsed).toBeLessThan(5_000);
+    expect(eye.x).toBe(door.x);
+    expect(eye.y).toBe(aboveDoor.y);
+    expect(eye.facing).toBe(LEFT);
+    expect(eye.desired).toBeNull();
+    // Re-emerged means live again, not parked.
+    stepGame(game, 100);
+    expect(eye.state).toBe('active');
+  });
+
+  it('an energizer frightens no bug that is eyes', () => {
+    const game = runningGame();
+    const eye = stageEye(game, 15, 11, LEFT);
+    // Park the player on the live energizer at (1,3): the next frame eats it.
+    placePlayerAt(game, 1, 3);
+    game.player.facing = LEFT;
+    stepGame(game, 16);
+    expect(game.globalFrightTimerMs).toBe(FRIGHT_MS);
+    // The flying eye kept its state, heading and home target.
+    expect(eye.state).toBe('eyes');
+    expect(eye.facing).toBe(LEFT);
+    expect(targetFor(game, eye)).toBe(DIRECT_SPAWN);
+    drainGameEvents(game);
+  });
+});
+
+function centerOfForTest(tile: number): { x: number; y: number } {
+  return { x: indexX(tile) * TILE + TILE / 2, y: indexY(tile) * TILE + TILE / 2 };
+}
+
+type Ghost = ShipItGame['ghosts'][number];
 
 describe('shipit game — R16 Cruise Elroy', () => {
   it('speeds Direct up at 20 and 10 remaining and keeps chasing in scatter', () => {
@@ -436,6 +599,69 @@ describe('shipit game — R19 phases and restart', () => {
     expect(stepDiscrete(game)).toBe(true);
     expect(game.player.x).toBeGreaterThan(before);
   });
+
+  it('a discrete step that kills recovers the respawn synchronously, without a frame clock', () => {
+    const game = runningGame();
+    // The player walks right out of spawn; ambush is parked ten pixels ahead
+    // facing home. One 120ms discrete step closes the gap and costs a life.
+    placePlayerAt(game, 14, 17);
+    game.player.facing = RIGHT;
+    game.player.desired = null;
+    const ambush = game.ghosts[1]!;
+    Object.assign(
+      ambush,
+      { x: 14 * TILE + TILE / 2 + 10, y: 17 * TILE + TILE / 2 },
+      {
+        state: 'active' as const,
+        facing: LEFT,
+        desired: null,
+        frightenedTimerMs: 0,
+      },
+    );
+
+    queueDirection(game, RIGHT);
+    expect(stepDiscrete(game)).toBe(true);
+    expect(game.lives).toBe(2);
+    expect(drainGameEvents(game).flags & GAME_EVENT_DEATH).toBe(GAME_EVENT_DEATH);
+    // No rAF exists under reduced motion, so the respawn must be over
+    // already — the phase may not strand on 'respawn' waiting for a clock.
+    expect(game.phase).toBe('running');
+    // The death reset ran: player home, housed bugs housed again.
+    expect(game.player.x).toBe(tileCenter(indexX(PLAYER_SPAWN), indexY(PLAYER_SPAWN)).x);
+    expect(game.player.y).toBe(tileCenter(indexX(PLAYER_SPAWN), indexY(PLAYER_SPAWN)).y);
+    expect(game.player.facing).toBe(LEFT);
+    expect(game.ghosts[0]!.state).toBe('active');
+    expect(ambush.state).toBe('house');
+    // Fresh input is accepted immediately — no soft-lock.
+    queueDirection(game, RIGHT);
+    expect(stepDiscrete(game)).toBe(true);
+  });
+
+  it('a discrete death consumes its queued input and leaves nothing pending', () => {
+    const game = runningGame();
+    placePlayerAt(game, 14, 17);
+    game.player.facing = RIGHT;
+    game.player.desired = null;
+    Object.assign(
+      game.ghosts[1]!,
+      { x: 14 * TILE + TILE / 2 + 10, y: 17 * TILE + TILE / 2 },
+      {
+        state: 'active' as const,
+        facing: LEFT,
+        desired: null,
+        frightenedTimerMs: 0,
+      },
+    );
+    queueDirection(game, RIGHT);
+    stepDiscrete(game);
+    // The synchronous burn completed the respawn: the phase may not strand
+    // waiting for the rAF loop the motion veto stopped.
+    expect(game.phase).toBe('running');
+    drainGameEvents(game);
+    // The queued input was consumed by the killing step — with nothing newly
+    // queued, a second discrete call is inert rather than double-stepping.
+    expect(stepDiscrete(game)).toBe(false);
+  });
 });
 
 describe('shipit game — determinism', () => {
@@ -452,5 +678,64 @@ describe('shipit game — determinism', () => {
       return trace;
     };
     expect(runOnce()).toEqual(runOnce());
+  });
+});
+
+describe('shipit game — mid-frame junction decisions', () => {
+  it('an eye whose flight crosses DIRECT_SPAWN mid-frame dives through the door', () => {
+    const game = runningGame();
+    placePlayerAt(game, 14, 14);
+    // Staged on the (12,11) centre west of the spawn column, heading RIGHT:
+    // ordinary 16 ms slices carry an eye ~1.94 px apiece, so the flight
+    // reaches the DIRECT_SPAWN centre mid-slice — with a non-zero sub-frame
+    // remainder — and the dive decision must fire inside advance() itself.
+    // An engine that decides only at frame start flies straight past the
+    // house and never comes home.
+    const eye = game.ghosts[1]!;
+    Object.assign(eye, tileCenter(12, 11), {
+      state: 'eyes' as const,
+      facing: RIGHT,
+      desired: null,
+      frightenedTimerMs: 0,
+    });
+    let elapsed = 0;
+    while (eye.state !== 'active' && elapsed < 6_000) {
+      stepGame(game, 16);
+      elapsed += 16;
+    }
+    expect(elapsed).toBeLessThan(6_000);
+    // Re-emerged above the door — reachable only by diving through it.
+    const door = centerOfForTest(HOUSE_DOOR_INDEX);
+    const aboveDoor = centerOfForTest(DIRECT_SPAWN);
+    expect(eye.x).toBe(door.x);
+    expect(eye.y).toBe(aboveDoor.y);
+    expect(eye.facing).toBe(LEFT);
+    expect(eye.desired).toBeNull();
+  });
+
+  it('an active bug decides at a centre crossed mid-frame, not only at frame start', () => {
+    const game = runningGame();
+    placePlayerAt(game, 3, 27);
+    game.player.facing = UP;
+    game.player.desired = null;
+    const direct = game.ghosts[0]!;
+    // The T at (6,8), approached from the west. One 120 ms slice travels
+    // ~6.8 px, so resting 1 px east of the centre puts the crossing
+    // mid-frame: the next frame's start decision sees no intersection, then
+    // the movement crosses the centre with ~5.8 px remaining and must take
+    // the scatter exit UP before spending what is left of the frame in the
+    // vertical lane.
+    Object.assign(direct, tileCenter(6, 8));
+    direct.state = 'active';
+    direct.facing = LEFT;
+    direct.desired = null;
+    direct.x += 1;
+    expect(((direct.x % TILE) + TILE) % TILE).not.toBe(TILE / 2);
+
+    stepGame(game, 120);
+    expect(direct.facing).toBe(UP);
+    expect(direct.x).toBe(6 * TILE + TILE / 2);
+    expect(direct.y).toBeLessThan(8 * TILE + TILE / 2);
+    expect(direct.y).toBeGreaterThanOrEqual(7 * TILE);
   });
 });

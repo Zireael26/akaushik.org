@@ -90,6 +90,8 @@ const HOUSE_DOT_COUNTERS: Readonly<Record<Exclude<BugKind, 'direct'>, number>> =
 });
 export const RESPAWN_MS = 1_500;
 const MAX_FRAME_MS = 100;
+/** Fixed simulation slice one reduced-motion input advances (R23). */
+const DISCRETE_STEP_MS = 120;
 
 export type GamePhase = 'idle' | 'running' | 'respawn' | 'won' | 'lost';
 export type GhostMode = 'scatter' | 'chase';
@@ -373,8 +375,21 @@ function wrapTunnel(actor: Actor): void {
   else if (actor.x >= BOARD_WIDTH * TILE) actor.x -= BOARD_WIDTH * TILE;
 }
 
-/** Advance one actor along its facing by `distance` px, honouring walls. */
-function advance(game: ShipItGame, actor: Actor, distance: number, allowDoor: boolean): void {
+/**
+ * Advance one actor along its facing by `distance` px, honouring walls.
+ * `decisionGhost`, when given, is consulted via decideGhost() at every tile
+ * centre the movement crosses while distance remains: one frame routinely
+ * spans several centres, so a bug that decided only at frame start would
+ * blow straight through every junction it crossed mid-frame. A null decision
+ * keeps the current facing; the player path passes no decision ghost.
+ */
+function advance(
+  game: ShipItGame,
+  actor: Actor,
+  distance: number,
+  allowDoor: boolean,
+  decisionGhost?: Ghost,
+): void {
   let remaining = distance;
   while (remaining > 1e-6) {
     const tile = tileOf(actor);
@@ -400,17 +415,23 @@ function advance(game: ShipItGame, actor: Actor, distance: number, allowDoor: bo
     if (atCenter(actor)) {
       const tileNow = tileOf(actor);
       const desired = actor.desired;
+      // Door passage follows the caller's allowDoor bit — only eyes carry
+      // one; turnAllowed separately gates taking a new direction here.
       const turnAllowed = allowDoor || !isHouseTile(tileNow);
       if (
         turnAllowed &&
         desired !== null &&
         desired !== actor.facing &&
-        canGo(tileNow, desired, !turnAllowed)
+        canGo(tileNow, desired, allowDoor)
       ) {
         actor.facing = desired;
         continue;
       }
-      if (canGo(tileNow, actor.facing, !turnAllowed)) continue;
+      if (turnAllowed && decisionGhost !== undefined) {
+        const decided = decideGhost(game, decisionGhost);
+        if (decided !== null && decided !== actor.facing) actor.facing = decided;
+      }
+      if (canGo(tileNow, actor.facing, allowDoor)) continue;
       // Blocked: stop and hold (R3). No bounce, no auto-reverse.
       remaining = 0;
       break;
@@ -426,8 +447,10 @@ function releaseGhosts(game: ShipItGame, deltaMs: number): void {
     if (ghost.state !== 'house') continue;
     const counterDue = ghost.dotsEatenSinceRelease >= HOUSE_DOT_COUNTERS[kind];
     const idleDue = game.houseIdleTimerMs >= HOUSE_IDLE_RELEASE_MS;
-    if (counterDue || idleDue || releasedThisFrame === false) {
-      // One release per frame keeps exit order stable.
+    if ((counterDue || idleDue) && !releasedThisFrame) {
+      // At most one housed bug leaves per frame, and only when its own gate
+      // is open: the first housed bug whose dot counter (0/30/60) or the
+      // shared 4s idle is due; everyone behind it waits for a later frame.
       ghost.state = 'leaving';
       releasedThisFrame = true;
     }
@@ -477,10 +500,21 @@ function updateGhost(game: ShipItGame, ghost: Ghost, deltaMs: number): void {
   // Decisions are made only at exact centres — decideGhost returns null
   // between them — so applying the decision to the facing here cannot break
   // lane alignment, and advance() carries the ghost out along the chosen
-  // exit. Eyes navigate home through the door; everything else respects it.
+  // exit. Passing the ghost as the decision ghost makes a centre crossed
+  // mid-frame decide exactly like one rested on. Eyes navigate home through
+  // the door; everything else respects it.
   const decisionAtCentre = decideGhost(game, ghost);
   if (decisionAtCentre !== null) ghost.facing = decisionAtCentre;
-  advance(game, ghost, ghostSpeedPx(game, ghost) * (deltaMs / 1000), ghost.state === 'eyes');
+  advance(game, ghost, ghostSpeedPx(game, ghost) * (deltaMs / 1000), ghost.state === 'eyes', ghost);
+  if (ghost.state === 'eyes' && isHouseTile(tileOf(ghost))) {
+    // Crossing into any house tile means home — a floating-point step can
+    // cross a centre with remaining distance, so entering the tile is the
+    // test, not resting exactly on its centre. Hand the bug to the leaving
+    // path so it re-emerges above the door and rejoins the chase as active.
+    ghost.state = 'leaving';
+    ghost.facing = UP;
+    ghost.desired = null;
+  }
 }
 
 function collide(game: ShipItGame): void {
@@ -561,7 +595,8 @@ function eatAt(game: ShipItGame, tile: number): void {
     game.globalFrightTimerMs = FRIGHT_MS;
     game.frightChain = 0;
     for (const ghost of game.ghosts) {
-      if (ghost.state === 'house' || ghost.state === 'leaving') continue;
+      // Eyes are immune: a bug flying home must not be re-frightened.
+      if (ghost.state === 'house' || ghost.state === 'leaving' || ghost.state === 'eyes') continue;
       ghost.facing = opposite(ghost.facing);
       ghost.state = 'frightened';
       ghost.frightenedTimerMs = FRIGHT_MS;
@@ -746,7 +781,13 @@ export function stepDiscrete(game: ShipItGame): boolean {
   if (game.phase !== 'running') return false;
   if (!game.discretePending) return false;
   game.discretePending = false;
-  return stepGame(game, 120);
+  const stepped = stepGame(game, DISCRETE_STEP_MS);
+  // The input cost a life: burn the respawn clock synchronously so the
+  // reduced-motion path never waits on the rAF loop its veto stopped.
+  if ((game.phase as GamePhase) === 'respawn') {
+    stepGame(game, RESPAWN_MS);
+  }
+  return stepped;
 }
 
 /** Arrow keys and WASD map to directions; everything else is ignored. */

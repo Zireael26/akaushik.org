@@ -78,6 +78,25 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
   complete dispose/remount, and a readable zero-loop reduced-motion state
   across the Chromium and WebKit desktop/mobile matrix. Canvas resizing is
   observed directly, and controls stay disabled until the scene handle mounts.
+  A second pass closed four engine defects the browser contracts exposed.
+  Eyes now re-enter the bug house through the door — the forced DOWN at the
+  spawn tile was being discarded by a movement step that flipped the door bit,
+  so eyes froze on the house side of it forever; once an eye reaches a house
+  tile centre it hands off to the existing leaving path (desired null, facing
+  UP) and rejoins as active. Eating an energizer no longer frightens or
+  reverses eyes mid-flight. House release is at most one housed bug per frame,
+  gated on its own dot counter (ambush 0, flank 30, shy 60) or the shared 4s
+  idle, replacing a clause that released the first housed bug every frame
+  regardless of gates. A discrete reduced-motion input that kills now burns
+  RESPAWN_MS synchronously in bounded slices, so the death event and life
+  decrement stand while play resumes running instead of soft-locking on a
+  rAF loop its veto stopped. The vacuous house-release/flash unit tests were
+  replaced with deterministic threshold, one-per-frame and idle tests, plus
+  eyes re-entry, energizer immunity and discrete-death recovery cases — all
+  fail against the previous engine — and the reduced-motion browser contract
+  reads exact engine state through the opt-in probe: a blocked UP input leaves
+  the player's vertical lane coordinate and facing unchanged while one
+  discrete simulation step redraws.
 
 - 2026-08-23 — The CI accessibility gate stopped failing on a page that is
   fine. The axe CLI measured the moment each route was ready, without waiting
