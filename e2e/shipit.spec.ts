@@ -127,11 +127,18 @@ test.describe('Ship It', () => {
     const buttons = page.locator('#shipit .px-shipit-action, #shipit .px-shipit-direction');
     const count = await buttons.count();
     expect(count).toBeGreaterThan(0);
+    // WCAG 2.5.5 is 44 *CSS* pixels, which is what shipit.css declares. A bare
+    // `>= 44` on boundingBox is a stricter test than the rule: Firefox rounds
+    // the box through device pixels and reports 43.99993896484375 for a
+    // `min-height: 44px` control, so the assertion failed on a 6e-5 px
+    // quantization artifact while the control was exactly the required size.
+    // Half a device pixel of slack keeps a real 43px control failing.
+    const TOUCH_TARGET_MIN = 44 - 0.5;
     for (let i = 0; i < count; i++) {
       const box = await buttons.nth(i).boundingBox();
       expect(box, `control ${i}`).not.toBeNull();
-      expect(box!.height).toBeGreaterThanOrEqual(44);
-      expect(box!.width).toBeGreaterThanOrEqual(44);
+      expect(box!.height, `control ${i} height`).toBeGreaterThanOrEqual(TOUCH_TARGET_MIN);
+      expect(box!.width, `control ${i} width`).toBeGreaterThanOrEqual(TOUCH_TARGET_MIN);
     }
   });
 
