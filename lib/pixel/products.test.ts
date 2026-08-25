@@ -14,7 +14,7 @@ import {
 } from './products';
 import { seedFrom } from './sources';
 import { createStubContext, type StubContext } from './stub-context';
-import { STAGE_ORDER, tileStage } from './stages';
+import { STAGE_ORDER, tileBloomRadiusScale, tileStage } from './stages';
 
 type GridProfile = {
   label: string;
@@ -983,6 +983,51 @@ describe('method tile raster density oracle', () => {
     }
   });
 
+  it('fills the spec tile decision dot rather than ringing it', () => {
+    // Routing every tile icon through one stroked path turned the dot into an
+    // annulus: at this line width a stroked r=0.06s circle is a 0.084s ring
+    // around a 0.036s hole. The diamond is a stroke; the dot never was.
+    const stub = render(tileStage('spec'), 113, 35, 0, 0, 0);
+    const s = Math.min(113, 35) * 0.88;
+    const dotIndex = stub.calls.findIndex(
+      (call) =>
+        call.fn === 'arc' &&
+        call.args[0] === s * 0.5 &&
+        call.args[1] === s * 0.5 &&
+        call.args[2] === 0.06 * s,
+    );
+    expect(dotIndex, 'no centre dot arc in the spec tile glyph').toBeGreaterThan(-1);
+    const after = stub.calls.slice(dotIndex + 1).map((call) => call.fn);
+    const paint = after.find((fn) => fn === 'fill' || fn === 'stroke');
+    expect(paint, 'the spec tile centre dot is painted as a stroke, not a fill').toBe('fill');
+  });
+
+  it('never makes the mark fainter than at rest, at any point in the ramp', () => {
+    // The snap pass draws the icon only as a hole in the disc, so a disc that
+    // has not yet reached the icon shows nothing. With the disc ramping from
+    // zero the tile went blank the instant a pointer arrived and stayed blank
+    // for most of the ramp — a hover that erases the thing being hovered.
+    for (const { label, cols, rows } of METHOD_TILE_PROFILES) {
+      for (const [index, kind] of STAGE_ORDER.entries()) {
+        const source = tileStage(kind);
+        const seed = index * 137;
+        const litAt = (progress: number): number =>
+          rasterizeCallLog(render(source, cols, rows, seed, 0, progress), cols, rows).reduce(
+            (sum, cell) => sum + cell,
+            0,
+          );
+        const rest = litAt(0);
+        for (const progress of METHOD_TILE_PROGRESS) {
+          if (progress === 0) continue;
+          expect(
+            litAt(progress),
+            `${kind} snap ${progress} at ${label} lights fewer cells than its own resting icon`,
+          ).toBeGreaterThanOrEqual(rest);
+        }
+      }
+    }
+  });
+
   it('keeps the snapped disc from becoming an unbroken slab via the icon knockout', () => {
     for (const { label, cols, rows } of METHOD_TILE_PROFILES) {
       for (const [index, kind] of STAGE_ORDER.entries()) {
@@ -992,11 +1037,15 @@ describe('method tile raster density oracle', () => {
           if (progress === 0) continue;
           const lit = rasterizeCallLog(render(source, cols, rows, seed, 0, progress), cols, rows);
           const totalLit = lit.reduce((sum, cell) => sum + cell, 0);
-          // The disc's geometric ceiling: full bloom covers at most
-          // π·(0.46·min(cols,rows))² plus edge sampling; the icon punch and
-          // hash culling only reduce it. If this ever fails, something is
-          // painting outside the disc — the one way a fill becomes a slab.
-          const maxRadius = Math.min(cols, rows) * 0.46 * progress;
+          // The disc's geometric ceiling: the bloom covers at most
+          // π·(tileBloomRadiusScale(p)·min(cols,rows))² plus edge sampling; the
+          // icon punch and hash culling only reduce it. If this ever fails,
+          // something is painting outside the disc — the one way a fill becomes
+          // a slab. The scale comes from the source rather than a literal so
+          // the ceiling cannot silently drift away from the disc it bounds; it
+          // opens at the icon's footprint, because a disc smaller than the icon
+          // renders a mark that is drawn only as a hole in it invisible.
+          const maxRadius = Math.min(cols, rows) * tileBloomRadiusScale(progress);
           const ceiling = Math.PI * maxRadius * maxRadius + 4 * maxRadius;
           expect(
             totalLit,

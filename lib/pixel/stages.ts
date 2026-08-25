@@ -170,7 +170,15 @@ const readTileGlyph: UnitGlyph = (o, s) => {
 const specTileGlyph: UnitGlyph = (o, s) => {
   o.lineWidth = Math.min(1, s * 0.048);
   o.lineJoin = 'miter';
-  strokeGlyph(o, tileGlyphPath('spec', s));
+  // The diamond is stroked; the decision dot is filled. Folding both into one
+  // shared path made the dot a stroked ring — outer radius 0.084s around a
+  // 0.036s hole at this line width — where it had always been a solid mark.
+  // The eraser still takes the dot from `tileGlyphPath`, because a knockout
+  // wants the ring's full extent, not the fill's.
+  strokeGlyph(o, tileGlyphPath('spec', s, { specDot: false }));
+  o.beginPath();
+  o.arc(s * 0.5, s * 0.5, TILE_SPEC_DOT_R * s, 0, FULL_TURN);
+  o.fill();
 };
 
 const buildTileGlyph: UnitGlyph = (o, s) => {
@@ -202,6 +210,28 @@ const FULL_TURN = Math.PI * 2;
  * The stipple keeps it spherical on the cell grid without turning any 8×8
  * window into a slab.
  */
+/**
+ * The disc's radius as a fraction of the field's short side.
+ *
+ * It opens at the icon's own footprint rather than at zero. The icon is only
+ * ever drawn as a hole in this disc, so a disc smaller than the icon shows
+ * nothing at all: with a 0..0.46 ramp the mark was blank until p reached
+ * ~0.84 — thirteen of a fourteen-frame ramp — and then appeared. Starting at
+ * TILE_BLOOM_MIN_R, just past the icon's 0.387 half-extent, makes the very
+ * first snap frame legible: the mark inverts from ink-on-ground to
+ * negative-space-in-accent, which is what a snap should read as, and the disc
+ * grows out from there.
+ */
+export function tileBloomRadiusScale(progress: number): number {
+  const p = Math.max(0, Math.min(1, progress));
+  return TILE_BLOOM_MIN_R + (TILE_BLOOM_MAX_R - TILE_BLOOM_MIN_R) * p;
+}
+
+/** Just clears the icon's 0.387 half-extent on the field's short side. */
+const TILE_BLOOM_MIN_R = 0.4;
+/** Full bloom, unchanged. */
+const TILE_BLOOM_MAX_R = 0.46;
+
 function drawTileBloom(
   o: CanvasRenderingContext2D,
   cols: number,
@@ -221,7 +251,7 @@ function drawTileBloom(
   o.save();
   o.shadowBlur = 0;
   o.beginPath();
-  o.arc(cols * 0.5, rows * 0.5, Math.min(cols, rows) * 0.46 * p, 0, FULL_TURN);
+  o.arc(cols * 0.5, rows * 0.5, Math.min(cols, rows) * tileBloomRadiusScale(p), 0, FULL_TURN);
   o.fill();
   o.restore();
 }
@@ -276,7 +306,11 @@ function strokeGlyph(o: CanvasRenderingContext2D, path: ReturnType<typeof glyphP
 }
 
 /** The tile icon as a recorded path in unit space scaled to `s`. */
-function tileGlyphPath(kind: StageKind, s: number): ReturnType<typeof glyphPath> {
+function tileGlyphPath(
+  kind: StageKind,
+  s: number,
+  options?: { specDot?: boolean },
+): ReturnType<typeof glyphPath> {
   const path = glyphPath();
   const line = (ax: number, ay: number, bx: number, by: number): void => {
     path.moveTo(ax * s, ay * s);
@@ -296,8 +330,10 @@ function tileGlyphPath(kind: StageKind, s: number): ReturnType<typeof glyphPath>
       path.lineTo(0.5 * s, 0.86 * s);
       path.lineTo(0.16 * s, 0.5 * s);
       path.closePath();
-      path.moveTo((0.5 + TILE_SPEC_DOT_R) * s, 0.5 * s);
-      path.arc(0.5 * s, 0.5 * s, TILE_SPEC_DOT_R * s, 0, FULL_TURN);
+      if (options?.specDot !== false) {
+        path.moveTo((0.5 + TILE_SPEC_DOT_R) * s, 0.5 * s);
+        path.arc(0.5 * s, 0.5 * s, TILE_SPEC_DOT_R * s, 0, FULL_TURN);
+      }
       break;
     }
     case 'build':
