@@ -1,7 +1,7 @@
 ---
 slug: process-gate-policy
 purpose: Pre-commit hook enforcing CHANGELOG / ADR / ROADMAP coupling for code, structural, and EPM changes; bypassed only via SKIP_PROCESS_GATE.
-pinned_to: 903ccde
+pinned_to: 52424a1
 created: 2026-05-15
 last_refreshed: 2026-07-04
 related_primers: []

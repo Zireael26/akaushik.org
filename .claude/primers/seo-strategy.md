@@ -1,7 +1,7 @@
 ---
 slug: seo-strategy
 purpose: SEO + AIO program for akaushik.org — three-goal plan, per-page canonical + JSON-LD wiring, five repository task sources with separate registration, live status doc, human-required handoff queue.
-pinned_to: 12e2ddd
+pinned_to: 0225c5b
 created: 2026-05-18
 last_refreshed: 2026-07-15
 related_primers: [agent-readiness-contract, mdx-content-pipeline, og-image-generation]
@@ -20,8 +20,7 @@ Plan written 2026-05-18 after the canonical-host rename (`developerabhishek.live
 - `docs/seo/2026-05-18-seo-strategy-design.md` — the static plan. Goals, phases, success metrics, risks. Read this before changing program direction.
 - `docs/seo/STATUS.md` — **live status doc**. Phase progress, canonical NAP block, metrics, alerts, drift log, automation health, leads attributed, human handoff queue. Read this every session to know current state without re-exploration.
 - `docs/seo/editorial-calendar.md` — 50-slot publishing calendar (human-seeded 2026-05-19; one fixed-width row per post; `status: pending|drafted|published|dropped`). A registered `seo-weekly-draft` run reads it fresh and records the real draft PR URL in a trailing row annotation.
-- `docs/seo/scheduled-tasks/*.md` — repository source templates for five intended Cowork tasks. Their presence does not prove active registration.
-- `docs/seo/scheduled-tasks/REGISTER.md` — one-time registration source. Each bootstrap re-reads its task file every run, so edit the source file alone for behavior changes; use scheduler controls only for registration, cadence, or enabled/paused state.
+- `docs/seo/scheduled-tasks/` — repository source templates for five intended Cowork tasks plus `REGISTER.md`; source presence does not prove active registration, and registration controls cadence and enabled/paused state.
 - `docs/adr/0011-writing-post-hyperframes-loops.md` — media policy for weekly drafts: loops are the default, process/non-visual posts may take the documented exception, and render work remains an explicit owner handoff.
 - `lib/canonical.ts` — helper exporting `canonical(path)` for per-page `alternates.canonical` metadata.
 - `lib/structured-data.ts` — Schema.org JSON-LD builders for `Person`, `Organization`, `WebSite`, `Article`, case-study `Article`, and content-detail `BreadcrumbList` graphs.
