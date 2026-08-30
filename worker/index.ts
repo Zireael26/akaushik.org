@@ -108,9 +108,7 @@ async function scheduled(
   await runStatsRefresh(env);
 }
 
-const worker = {
+export default {
   fetch: fetchHandler,
   scheduled,
 };
-
-export default worker;
