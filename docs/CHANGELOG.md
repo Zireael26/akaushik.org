@@ -4,7 +4,18 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ## [Unreleased]
 
+### Added
+
+- 2026-09-07: Published the measured Trellis 1.0 restructuring article, with
+  release-validation links, explicit native capability limits, the held-out
+  pilot's zero accuracy gain, and the completed fleet rollout. The post uses
+  the existing RouteField pixel-art hero under ADR-0020 and includes grounded
+  short-answer and FAQ copy.
+
 ### Fixed
+
+- 2026-09-07: Reworded a historical placeholder-link example in a component
+  comment so the active-UI validator does not mistake it for a rendered link.
 
 - 2026-08-24 — The GitHub stats cron would have failed on its first run in
   production, and nothing local could have told us. GitHub rejects an API
