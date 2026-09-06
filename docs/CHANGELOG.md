@@ -14,6 +14,9 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Fixed
 
+- 2026-09-07: Reworded a historical placeholder-link example in a component
+  comment so the active-UI validator does not mistake it for a rendered link.
+
 - 2026-08-24 — The GitHub stats cron would have failed on its first run in
   production, and nothing local could have told us. GitHub rejects an API
   request that carries no `User-Agent`: measured, `curl -A ''
