@@ -1,0 +1,89 @@
+---
+title: "Trellis 1.0: keeping the process when the coding agent changes"
+dek: The stable release made Claude Code, Codex, and Pi share an explicit process contract. The rollout then showed me where installation, native behavior, and my own confidence still diverged.
+date: 2026-09-07
+art: agent-process
+---
+
+# Trellis 1.0: keeping the process when the coding agent changes
+
+> The stable release made Claude Code, Codex, and Pi share an explicit process contract. The rollout then showed me where installation, native behavior, and my own confidence still diverged.
+
+The full test run had finished. Then three project sessions reported missing hooks in newly created worktrees.
+
+I had a stable release, a verified installation, and 2,492 executed test cases with zero failures. I also had agents trying to work in directories where the process they expected was absent. The old release was still reading the local registry in some checkout groups. Its schema did not understand the newly added Pi selection, so automatic worktree attachment refused to continue.
+
+That was a useful interruption to the release story I was about to tell.
+
+In [the first Trellis post](/writing/trellis), I described shared engineering rules across my projects. The [release-candidate post](/writing/trellis-1-0-rc) moved more of those rules into checks. [The last update](/writing/trellis-loop-era) was about bounded loops and delegation. Stable [1.0.0](https://github.com/Zireael26/trellis/releases/tag/v1.0.0) deals with what happens when I change the coding agent, open another worktree, or upgrade the process while application work is still happening.
+
+## The source checkout had to stop being the runtime
+
+Trellis now keeps four things separate. The source repository contains the policy and implementation. An installed release contains the executable payload. A local registry records which projects and worktrees use it. Each attached worktree carries the native surfaces needed by its selected tools.
+
+| Layer | What it owns |
+|---|---|
+| Source repository | Rules, skills, hooks, templates, and release provenance |
+| Immutable installed release | The verified payload that attached projects execute |
+| Local machine state | Launcher configuration, fleet registry, ownership records, and recovery journals |
+| Project worktree | Its own code and manifest, plus locally attached runtime surfaces |
+
+A project can carry `.trellis.json` in Git and still do nothing with Trellis on a fresh machine. Attachment is a separate local action. Likewise, changing a branch in the source repository does not change the runtime under an application agent that is already working.
+
+That separation makes an upgrade inspectable. I can identify the release, the exact checkout and worktree, and the attachment that owns a particular link or generated setting. A refusal can then name the conflicting state. It does not have to guess whether a directory happens to look managed.
+
+It also creates work that a quick-start command can hide. Installing a release does not adopt it into projects. Selecting a newer CLI does not necessarily replace an older launcher script. Adoption preserves recorded ownership and render values; changed templates or a new Pi selection can require a full detach and attach of the checkout group. I had to document those steps properly in the [1.0 migration guide](https://github.com/Zireael26/trellis/blob/main/docs/MIGRATING-1.0.0.md).
+
+## Three native tools, with their differences left visible
+
+The shared contract covers actions and outcomes. A native multi-file edit needs to reach the applicable file checks. A failed edit must remain a failed edit. A worker needs the selected project policy and skills. Task recovery needs enough durable state to resume without inventing a history of successful work.
+
+The adapters translate the native events into those shared checks. Their event systems still differ. A warning after a command has run cannot become a pre-execution denial by giving the warning a stronger name.
+
+The reporting vocabulary therefore matters: enforced, advisory, unsupported, disabled, and unknown. Each says something different about the evidence. The adapter fixture corpus exercises conversions in source. Installation verification checks the attached surfaces. Native observations establish what a real session actually loaded or exercised. Those results stay separate.
+
+I was too broad in the earlier release-candidate post when I described every cell of the process matrix as enforced. The current release is more specific. Pi's hard Stop behavior remains unsupported; its settled and post-action checks are advisory. Automatic Codex compaction was not observed in the native probe, even though separate post-compaction handler tests passed. An already-open session may also need its normal reload before a changed native configuration takes effect.
+
+The [release validation record](https://github.com/Zireael26/trellis/releases/download/v1.0.0/trellis-1.0.0-validation.json) preserves those limits. A successful installation is useful evidence. It has a scope.
+
+## Remembering completed work requires more than a summary
+
+Switching tools used to expose another weakness: the next agent could see a confident summary without enough information to decide whether its verification was still valid.
+
+The portable path now keeps task state and verification evidence separately from conversational history. A receipt records an executed command and its outcome, bound to the relevant worktree, inputs, and verification context. Reuse depends on that identity still matching. A changed input, a failed check, or uncertain dependencies can require execution again.
+
+That is the distinction I care about when an agent resumes. It should be able to recover the unchecked tasks and inspect the evidence for a completed check. It should not have to import another model's hidden reasoning or treat a sentence saying that tests passed as a substitute for the result. The implementation also leaves unsupported recovery events explicit rather than replaying a transcript through an adapter that does not understand it.
+
+This release does not establish a fleet-wide percentage reduction in repeated tests. I did not run the comparison needed to make that claim.
+
+## The learning pilot produced no accuracy gain
+
+The skill-evaluation work had a result I could measure. A candidate was frozen before the held-out tasks were disclosed to the integrating agent. The pilot then ran four shell tasks, three repetitions per condition, with and without the skill. Twenty-four generated repairs received twenty-four separate native judging sessions.
+
+Both conditions passed 48 of 48 assertions across their twelve runs. Every model grade agreed with the trusted execution observations. The pass-rate gain was zero, so the candidate did not qualify for the strict improvement gate and was not promoted.
+
+Mean total tokens, including generation and judging, were about 3,083 with the skill and 2,237 without it. Observed elapsed time was slightly lower with the skill, but that timing included execution and judging on a shared host and provider. It does not establish a causal speed improvement. With both conditions already passing everything in this small cohort, the evaluation could not support the success story I might have wanted from it.
+
+The machinery did complete a real evaluation. Its useful output here was a decision to leave the candidate unpromoted.
+
+## The gate finished; the rollout still had to happen
+
+The final isolated local suite completed 97 stages in 3,454.73 seconds, about 57 minutes and 35 seconds. It executed 2,492 cases with zero failures. Two Darwin permission-observer cases were classified as unsupported. The source hashes were checked again after execution.
+
+The surrounding process gate retained three warnings: the oversized integration change, a historical spec-analysis gap around removal of an obsolete consumer, and a test fixture using SHA1 to reproduce Git blob identities. Each received an explicit review disposition. The raw process exit remained 2. The public projection then received its own privacy, installation, and focused checks; I am not claiming that the complete private-source suite ran again on the public repository.
+
+The live rollout found a different class of problem. Old registry readers rejected Pi while newer readers accepted it. Some new worktrees also contained regular copies of canonical agent files, which correctly conflicted with an attachment trying to own those paths. Package-install preparation could restore a recorded Husky hook path and displace the managed dispatcher.
+
+The fixes used the supported ownership operations. Exact canonical copies were checked against the verified payload and backed up before the normal attachment replaced them with managed links. Authored differences were left alone. Recorded prior hooks were preserved through delegation. Shared checkout groups were handled together, including their registered worktrees. I did not resolve a refusal by deleting registry rows or disabling a check.
+
+At the [final capture](https://github.com/Zireael26/trellis/releases/download/v1.0.0/trellis-1.0.0-fleet-validation.json), all 18 registered project entries were accounted for. Fourteen attached projects, covering 16 checkout groups and 28 worktrees, were on 1.0.0. Every project doctor command exited zero, and a separate final capture checked 5,459 managed artifacts. The four projects that were already unattached or detached stayed that way. Other agents continued their application work during the rollout, so concurrent edits and new worktrees were attributed explicitly instead of being described as byte-unchanged.
+
+## What I got wrong
+
+I had allowed setup documentation to blur operations that the implementation keeps separate. A source configuration mentioning Pi can look persuasive while the attachment command still defaults to Claude Code and Codex. Both READMEs now lead to the explicit selection and migration instructions. The public upgrade guide is actually included in the export.
+
+I also made my rollout verifier too strict in one place. It expected a previously owned parent directory to remain owned or disappear. The supported detach operation deliberately leaves parent directories in place. In the affected project, the directory mode and all eighteen managed child links were unchanged. I kept the failed receipt and recorded that specific correction. Changing the verdict without keeping the original failure would have hidden the mistake in the verifier.
+
+And the test run had made me too comfortable. I still needed the old-release migration, the dirty worktrees, and the native errors arriving from real project sessions to see where the handoff was incomplete. The release tag stayed immutable while the corrected migration guidance and validation record were added to its release page.
+
+The [public repository](https://github.com/Zireael26/trellis) now has the setup paths and architecture diagrams I would want before handing it to someone else. For the next release, an existing-worktree migration belongs beside the clean-install proof before I call it ready for my own projects.
