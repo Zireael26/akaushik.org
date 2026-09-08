@@ -14,6 +14,11 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Fixed
 
+- 2026-09-08: Stats fallback tests compare the returned payload with the
+  checked-in snapshot and place the stale-case clock 48 hours after its
+  timestamp. Daily stats refreshes no longer fail assertions pinned to the
+  August 13 snapshot; fallback identity and stale labelling remain checked.
+
 - 2026-09-07: Reworded a historical placeholder-link example in a component
   comment so the active-UI validator does not mistake it for a rendered link.
 

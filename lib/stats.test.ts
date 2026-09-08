@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import statsSnapshot from '@/public/data/stats.json';
 
 const getCloudflareContext = vi.fn();
 
@@ -68,6 +69,6 @@ describe('getStats', () => {
     getCloudflareContext.mockRejectedValue(new Error('no context'));
     const view = await getStats();
     expect(view.degraded).toBe(true);
-    expect(view.stats.generatedAt).toBe('2026-08-13T05:50:08.537Z');
+    expect(view.stats).toEqual(statsSnapshot);
   });
 });
