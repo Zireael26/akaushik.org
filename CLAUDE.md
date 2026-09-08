@@ -8,9 +8,11 @@ Personal portfolio site. Next.js 16 + React 19 + Tailwind 4 + raw Three.js / Hyp
 
 - `_reference/` - Archived portfolio/reference material.
 - `app/` - Next.js App Router pages, APIs, metadata routes, and work/writing routes.
-- `components/` - Site, section, media, SEO, work, and Three.js scene components.
+- `components/` - Site, section, media, SEO, work, and pixel components.
 - `content/` - MDX case studies and writing.
 - `lib/` - Shared helpers and tested domain utilities.
+- `pages/` - Pages Router endpoints, including `pages/api/mcp.ts`.
+- `worker/` - Worker entrypoint and runtime code, including `worker/index.ts`.
 - `public/` - Images, videos, well-known files, and static data.
 - `docs/` - ADRs, SEO notes, EPMs, RFCs, and readiness snapshots.
 - `e2e/` - Playwright end-to-end specs.
@@ -37,7 +39,7 @@ the more specific one; raise the conflict with me instead of working around it.
 - Next.js 16 with Turbopack (`next dev --turbo`). Some plugins lag behind.
 - React 19 — use the new hooks (`use`, `useOptimistic`) when they fit; don't polyfill.
 - Tailwind 4 — config lives in `postcss.config.mjs` + CSS imports, not `tailwind.config.js`.
-- Hero `AgentGraph` uses raw `three` via `components/scene/AgentGraph.tsx` (ADR-0012). The disabled Wanderer crane also uses raw `three`.
+- Pixel system entrypoints are `app/page.tsx` (home) and `app/layout.tsx` (shared shell); field engines live in `components/pixel/` and `lib/pixel/`, section implementations are under `components/sections/`, and route-specific fields are under `app/api/docs/`, `app/work/`, and `app/writing/` as applicable.
 - No `framer-motion`, no `gsap`, no `lucide-react` in `package.json` — all three were dropped 2026-05-19 (PR-6 of gap-analysis plan, finding D3) because nothing in `app/`, `components/`, or `lib/` imported them. If new motion work needs a library, add it back with an ADR.
 
 ### Commands (pnpm — see `pnpm-lock.yaml`)

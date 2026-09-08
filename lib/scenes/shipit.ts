@@ -336,6 +336,13 @@ export function mountShipIt(canvas: HTMLCanvasElement, options: ShipItOptions = 
     canvas.height = Math.round(cssHeight * dpr);
     canvas.style.height = `${cssHeight}px`;
     context = canvas.getContext('2d');
+    // Assigning canvas.width/height resets the context transform, so the
+    // device-pixel scale has to be reapplied on every resize, here and nowhere
+    // else. Without it the board is drawn in CSS pixels into a device-pixel
+    // buffer: measured on a 2x display, the drawing spanned 789x874 of a
+    // 1580x1750 canvas — 49.9% of each axis, the whole board crammed into the
+    // top-left quarter. Everything below this line is CSS-pixel space.
+    context?.setTransform(dpr, 0, 0, dpr, 0, 0);
     cell = Math.min(cssWidth / BOARD_WIDTH, cssHeight / BOARD_HEIGHT);
     boardOffsetX = (cssWidth - cell * BOARD_WIDTH) * 0.5;
     boardOffsetY = (cssHeight - cell * BOARD_HEIGHT) * 0.5;
@@ -344,6 +351,21 @@ export function mountShipIt(canvas: HTMLCanvasElement, options: ShipItOptions = 
   function draw(): void {
     const ctx = context;
     if (!ctx || cssWidth <= 0 || cssHeight <= 0) return;
+    // Every frame starts from an empty buffer. Nothing here erases what it
+    // drew last frame, so without this the board accumulated: the player's
+    // whole path stayed painted as a solid accent trail across the maze, and
+    // the ghosts' paths with it.
+    //
+    // clearRect, not a background fill: `.px-shipit-canvas` carries
+    // `background: var(--bg)`, so the ground is the theme's and painting over
+    // it here would freeze one theme's colour into the other.
+    ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+    // The board is centred in whatever the aspect-ratio rounding leaves over.
+    // These offsets were computed in size() and then never applied.
+    ctx.save();
+    ctx.translate(boardOffsetX, boardOffsetY);
+
     // Walls: authored mask, hash-textured accents.
     for (let index = 0; index < BOARD_SIZE; index++) {
       const x = indexX(index);
@@ -396,6 +418,8 @@ export function mountShipIt(canvas: HTMLCanvasElement, options: ShipItOptions = 
       blinkVisible,
       playerInk,
     );
+
+    ctx.restore();
   }
 
   function notifySnapshot(force = false): void {

@@ -4,7 +4,18 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ## [Unreleased]
 
+### Added
+
+- 2026-09-07: Published the measured Trellis 1.0 restructuring article, with
+  release-validation links, explicit native capability limits, the held-out
+  pilot's zero accuracy gain, and the completed fleet rollout. The post uses
+  the existing RouteField pixel-art hero under ADR-0020 and includes grounded
+  short-answer and FAQ copy.
+
 ### Fixed
+
+- 2026-09-07: Reworded a historical placeholder-link example in a component
+  comment so the active-UI validator does not mistake it for a rendered link.
 
 - 2026-08-24 — The GitHub stats cron would have failed on its first run in
   production, and nothing local could have told us. GitHub rejects an API
@@ -724,6 +735,16 @@ permitted`, then `RenderCompositorSWGL failed mapping default framebuffer`.
   answer correctly, code fences carry their `--shiki-light` / `--shiki-dark`
   tokens, the nonce reaches every script tag, both Markdown patterns negotiate,
   and a preview host is refused by both the header and `robots.txt`.
+
+- 2026-08-25 — Fixed two rendering defects in Ship It that made the deployed game unplayable to look at. The operator caught both by playing it; the five-stream integration check did not, and neither did the stream's own visual receipts, because both defects are invisible in a single frame at a 1x device pixel ratio — which is exactly what a screenshot of a freshly-mounted canvas is.
+
+  **The board filled a quarter of its canvas.** `size()` assigns `canvas.width`/`canvas.height` in device pixels, which resets the 2D context transform, and nothing reapplied the device-pixel scale. Every draw call uses CSS-pixel coordinates, so on a 2x display the entire board rendered into the top-left quarter of the buffer. Measured before the fix: content spanning 789x874 of a 1580x1750 canvas — 49.9% of each axis, the 1/dpr factor exactly. After: 99.9% of both. `context.setTransform(dpr, 0, 0, dpr, 0, 0)` now lives in `size()`, next to the assignments that clear it.
+
+  **Nothing cleared the frame.** `draw()` had no `clearRect` and no background fill, so every frame painted over the last: the player's entire path stayed on the board as a solid accent trail, and the ghosts' paths with it. Measured over a short run while pellets were being eaten — lit area should fall — it rose 6.6%; after the fix it falls 0.2%. The clear is `clearRect`, not a fill, because `.px-shipit-canvas` carries `background: var(--bg)` and painting the ground here would freeze one theme's colour into the other.
+
+  While in `draw()`, `boardOffsetX`/`boardOffsetY` were being computed in `size()` and then never read; the board is now actually translated by them, which is what centres it in whatever the aspect-ratio rounding leaves over.
+
+  `e2e/shipit.spec.ts` gains a `Ship It canvas integrity` block pinned to `deviceScaleFactor: 2`, asserting the painted extent covers >95% of the backing store on both axes and that a run cannot gain lit area. Each fix was reverted on its own to confirm its test bites: without the transform, "board spans 790 of 1580 device px across"; without the clear, "lit pixels went 400719 -> 411979".
 
 - 2026-08-25 — Fixed two defects in the method-tile snap that a cross-family audit of `feat/cursor-snap` raised and a second reviewer failed to refute. Both are measured, not asserted.
 
