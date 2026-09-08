@@ -1,6 +1,8 @@
 # ADR-0020 — Case-study motion moves from rendered video to canvas fields
 
-**Status:** Accepted, 2026-08-23. Supersedes ADR-0008 in part — the case-study reel half. The writing-post loop pipeline (ADR-0011) is unchanged by this decision and is tracked separately.
+**Status:** Accepted, 2026-08-23. Amended 2026-08-24 to include writing posts.
+Supersedes ADR-0008 in part (the case-study reel half) and ADR-0011 in full
+(the writing-post loop pipeline).
 
 ## Context
 
@@ -20,8 +22,8 @@ Case-study reels render as pixel fields:
 - `variant="hero"` maps to the field engine's `band` preset; `variant="card"` maps to `tile`. Both were chosen against the real rendered surfaces — the detail-page media band and small card contexts.
 - There is no video element and no JS motion gate in the reel path. The field engine already reads `prefers-reduced-motion()` and `html[data-motion]` per frame and holds still; the reduced-motion contract holds as *a still field* rather than *an unrequested download*, asserted in `e2e/reduced-motion.spec.ts` with the same canvas-sampling technique as the hero field.
 - The HyperFrames assets and automation are retired from the case-study path: the compositions, the committed `public/video/work/**` media, and the render scripts become unconsumed once no code references them. Deletion follows the repo's dead-code vote procedure and is not part of this decision record.
+- The writing-post loops (`public/video/writing/`, `components/media/hyperframes-loop.tsx`, ADR-0011) are included in this decision as of 2026-08-24. They failed the same three counts: no dark variant, baked pixels, and a `MotionVideo` gate that now has no remaining caller. Writing posts mount a `RouteField` hero band under the byline instead. The eight writing MP4/webp files, `hyperframes-loop.tsx` and `MotionVideo.tsx` are deleted with this amendment.
 
-The writing-post loops (`public/video/writing/`, `components/media/hyperframes-loop.tsx`, ADR-0011) keep their pipeline until their own replacement decision lands; they share `MotionVideo` with nothing after this change, which makes it the natural next candidate but does not delete it here.
 
 ## Consequences
 

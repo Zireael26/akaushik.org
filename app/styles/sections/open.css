@@ -31,6 +31,30 @@
   color: inherit;
 }
 
+/* The degraded provenance line. Token colours only: --px-amber-ink is the
+   palette's text-safe warning register (4.67:1 light, 9.28:1 dark), and the
+   leading square reuses the raw token as a cell — the section's own visual
+   grammar — so the state reads at a glance even where small mono type does not.
+   Size and tracking stay the meta line's: this is a status, not an alarm. */
+.px-open-meta--degraded {
+  color: var(--px-amber-ink);
+}
+
+.px-open-meta--degraded::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 8px;
+  background: var(--px-amber);
+}
+
+/* The degraded intro paragraph above the rows. Same amber register, no square:
+   one marker per state is enough, and two would start shouting. */
+.px-open-degraded {
+  color: var(--px-amber-ink);
+}
+
 /* ---------- the contribution field ---------- */
 /* Larger than the sparkline it replaces, and interrogable: every week is a real
    focusable column, so the chart works with a keyboard and reads to a screen

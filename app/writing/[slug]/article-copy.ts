@@ -25,6 +25,36 @@ export type ArticleCopy = {
 };
 
 export const ARTICLE_COPY: Record<string, ArticleCopy> = {
+  'trellis-1-0-stable': {
+    shortAnswer: [
+      {
+        lead: 'The installed release is separate from its source checkout.',
+        rest: ' Local ownership records bind each project worktree to the immutable payload it executes.',
+      },
+      {
+        lead: 'Installation and native behavior require different evidence.',
+        rest: ' Enforced, advisory, unsupported, disabled, and unknown outcomes remain distinct across Claude Code, Codex, and Pi.',
+      },
+      {
+        lead: 'The held-out pilot produced no accuracy gain.',
+        rest: ' Both conditions passed 48 of 48 assertions, and the candidate skill was not promoted.',
+      },
+    ],
+    faq: [
+      {
+        q: 'Does Trellis 1.0 enforce every check identically in all three tools?',
+        a: 'No. The adapters share a process contract while preserving native capability limits. Pi hard Stop remains unsupported and its settled and post-action checks are advisory. Installation alone does not prove that an already-open session loaded the configuration.',
+      },
+      {
+        q: 'What did the release verification establish?',
+        a: 'The isolated local suite executed 2,492 cases across 97 stages with zero failures and two explicitly unsupported Darwin cases. The live rollout then verified 14 attached projects across 16 checkout groups and 28 worktrees. Raw process-gate warnings and their review dispositions were retained.',
+      },
+      {
+        q: 'Did the evaluated skill improve task accuracy?',
+        a: 'The small held-out pilot found zero pass-rate improvement: both conditions passed 48 of 48 assertions across twelve runs. The candidate did not meet the strict improvement gate and was left unpromoted.',
+      },
+    ],
+  },
   'ai-for-msme': {
     shortAnswer: [
       {

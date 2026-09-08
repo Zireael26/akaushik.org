@@ -88,7 +88,6 @@ const HOVER_PAD = 30;
 const PROGRESS_STEP = 0.07;
 const PRESS_MS = 150;
 const CARET_HALF_PERIOD_MS = 550;
-const NATIVE_CURSOR_CLASS = 'px-cursor-active';
 
 const KEYCAP_FACE = [
   '.XXXXXXXXX.',
@@ -385,8 +384,20 @@ export function mountCursor(canvas: HTMLCanvasElement): () => void {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
 
-  function setNativeCursorHidden(hidden: boolean): void {
-    document.documentElement.classList.toggle(NATIVE_CURSOR_CLASS, hidden);
+  let hiddenCursorElement: HTMLElement | null = null;
+
+  /**
+   * Scoped native-cursor hiding. The drawn glyph takes over exactly one
+   * element while the pointer sits inside it, so the rest of the page keeps
+   * a working native cursor even mid-hover.
+   */
+  function setNativeCursorHidden(element: HTMLElement | null): void {
+    if (hiddenCursorElement === element) return;
+    if (hiddenCursorElement && hiddenCursorElement.isConnected) {
+      hiddenCursorElement.removeAttribute('data-pixel-cursor-hide');
+    }
+    hiddenCursorElement = element;
+    if (element) element.setAttribute('data-pixel-cursor-hide', '');
   }
 
   function resetHoverStates(): void {
@@ -426,7 +437,7 @@ export function mountCursor(canvas: HTMLCanvasElement): () => void {
     enabled = false;
     if (raf) cancelAnimationFrame(raf);
     raf = 0;
-    setNativeCursorHidden(false);
+    setNativeCursorHidden(null);
     resetHoverStates();
     resetMotionState();
     clearCanvas();
@@ -442,7 +453,7 @@ export function mountCursor(canvas: HTMLCanvasElement): () => void {
 
     enabled = true;
     sizeOverlay();
-    setNativeCursorHidden(pointerInside);
+    setNativeCursorHidden(null);
     raf = requestAnimationFrame(frame);
   }
   function refreshTargets(): void {
@@ -453,8 +464,8 @@ export function mountCursor(canvas: HTMLCanvasElement): () => void {
     wrapElement = document.querySelector<HTMLElement>('[data-wrap]');
   }
 
-  function updateHoverTargets(): { target: Point | null } {
-    let target: (CursorTargetCandidate & { point: Point }) | null = null;
+  function updateHoverTargets(): { target: Point | null; hitElement: HTMLElement | null } {
+    let target: (CursorTargetCandidate & { point: Point; element: HTMLElement }) | null = null;
     for (let index = 0; index < hoverElements.length; index += 1) {
       const element = hoverElements[index];
       if (!element) continue;
@@ -470,7 +481,15 @@ export function mountCursor(canvas: HTMLCanvasElement): () => void {
           mouseY < rect.bottom + HOVER_PAD,
       );
       if (hit) {
-        const candidate = { distance, index, point: { x: rect.right + 6, y: rect.top - 12 } };
+        // The snap anchor is the element's own centre, so the drawn glyph
+        // lands on the tile instead of parked at a corner. DOM order still
+        // breaks ties through isCloserCursorTarget.
+        const candidate = {
+          distance,
+          index,
+          element,
+          point: { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 },
+        };
         if (isCloserCursorTarget(candidate, target)) target = candidate;
       }
 
@@ -504,7 +523,7 @@ export function mountCursor(canvas: HTMLCanvasElement): () => void {
       }
     }
 
-    return { target: target?.point ?? null };
+    return { target: target?.point ?? null, hitElement: target?.element ?? null };
   }
 
   function findArrowTarget(): boolean {
@@ -552,7 +571,7 @@ export function mountCursor(canvas: HTMLCanvasElement): () => void {
     snapPosition = hover.target
       ? easeCursorPosition(snapPosition, hover.target, { x: mouseX, y: mouseY })
       : null;
-    setNativeCursorHidden(pointerInside);
+    setNativeCursorHidden(hover.hitElement);
     if (!pointerInside) {
       previousMode = null;
       return;
@@ -632,7 +651,6 @@ export function mountCursor(canvas: HTMLCanvasElement): () => void {
       pointerInside = true;
       mouseX = event.clientX;
       mouseY = event.clientY;
-      if (enabled) setNativeCursorHidden(true);
     },
     { signal },
   );
@@ -649,7 +667,7 @@ export function mountCursor(canvas: HTMLCanvasElement): () => void {
       pointerInside = false;
       mouseX = -200;
       mouseY = -200;
-      setNativeCursorHidden(false);
+      setNativeCursorHidden(null);
       resetMotionState();
     },
     { signal },
@@ -660,7 +678,7 @@ export function mountCursor(canvas: HTMLCanvasElement): () => void {
       pointerInside = false;
       mouseX = -200;
       mouseY = -200;
-      setNativeCursorHidden(false);
+      setNativeCursorHidden(null);
       resetMotionState();
     },
     { signal },

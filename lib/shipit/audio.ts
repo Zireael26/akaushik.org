@@ -1,8 +1,16 @@
-export const ARCADE_SOUND_STORAGE_KEY = 'abhishek.portfolio.arcade.sound';
+/**
+ * Ship It audio — the #160 oscillator kit, re-cued for the maze-chase.
+ *
+ * Square and triangle voices only, scheduled at runtime from specs; there is
+ * no sample, buffer or fetch. Sound defaults off, remembers intent under the
+ * Ship It storage key, and never constructs an AudioContext before a user
+ * gesture unlocks it.
+ */
+export const SHIPIT_SOUND_STORAGE_KEY = 'abhishek.portfolio.shipit.sound';
 const STORAGE_ON = 'on';
 const STORAGE_OFF = 'off';
 
-export type ArcadeSoundEvent = 'reading' | 'collision' | 'won' | 'lost';
+export type ShipItSoundEvent = 'pellet' | 'energizer' | 'eat' | 'death' | 'won' | 'lost';
 
 type VoiceSpec = Readonly<{
   waveform: OscillatorType;
@@ -14,95 +22,127 @@ type VoiceSpec = Readonly<{
   endFrequency: number;
 }>;
 
-export const ARCADE_SYNTHESIS: Readonly<Record<ArcadeSoundEvent, readonly VoiceSpec[]>> = {
-  reading: [
+/** Original cue vocabulary — short envelopes, no siren loop (spec R29). */
+export const SHIPIT_SYNTHESIS: Readonly<Record<ShipItSoundEvent, readonly VoiceSpec[]>> = {
+  pellet: [
     {
       waveform: 'triangle',
       startOffset: 0,
-      duration: 0.055,
+      duration: 0.05,
       attack: 0.004,
-      peakGain: 0.055,
-      startFrequency: 612,
-      endFrequency: 576,
+      peakGain: 0.05,
+      startFrequency: 588,
+      endFrequency: 554,
     },
   ],
-  collision: [
+  energizer: [
     {
       waveform: 'square',
       startOffset: 0,
-      duration: 0.18,
-      attack: 0.003,
-      peakGain: 0.072,
-      startFrequency: 168,
-      endFrequency: 92,
+      duration: 0.14,
+      attack: 0.004,
+      peakGain: 0.062,
+      startFrequency: 233,
+      endFrequency: 349,
     },
     {
       waveform: 'triangle',
-      startOffset: 0.038,
+      startOffset: 0.06,
+      duration: 0.11,
+      attack: 0.005,
+      peakGain: 0.04,
+      startFrequency: 466,
+      endFrequency: 587,
+    },
+  ],
+  eat: [
+    {
+      waveform: 'square',
+      startOffset: 0,
       duration: 0.09,
+      attack: 0.003,
+      peakGain: 0.068,
+      startFrequency: 392,
+      endFrequency: 523,
+    },
+  ],
+  death: [
+    {
+      waveform: 'square',
+      startOffset: 0,
+      duration: 0.24,
       attack: 0.004,
-      peakGain: 0.035,
-      startFrequency: 286,
-      endFrequency: 238,
+      peakGain: 0.076,
+      startFrequency: 208,
+      endFrequency: 72,
+    },
+    {
+      waveform: 'triangle',
+      startOffset: 0.07,
+      duration: 0.18,
+      attack: 0.006,
+      peakGain: 0.034,
+      startFrequency: 262,
+      endFrequency: 110,
     },
   ],
   won: [
     {
       waveform: 'triangle',
       startOffset: 0,
-      duration: 0.065,
+      duration: 0.07,
       attack: 0.004,
-      peakGain: 0.052,
-      startFrequency: 287,
-      endFrequency: 273,
+      peakGain: 0.054,
+      startFrequency: 294,
+      endFrequency: 277,
     },
     {
       waveform: 'square',
-      startOffset: 0.085,
+      startOffset: 0.09,
       duration: 0.05,
       attack: 0.003,
       peakGain: 0.038,
-      startFrequency: 419,
-      endFrequency: 391,
+      startFrequency: 440,
+      endFrequency: 415,
     },
     {
       waveform: 'triangle',
-      startOffset: 0.215,
-      duration: 0.085,
+      startOffset: 0.2,
+      duration: 0.09,
       attack: 0.004,
       peakGain: 0.058,
-      startFrequency: 343,
-      endFrequency: 319,
+      startFrequency: 349,
+      endFrequency: 330,
     },
   ],
   lost: [
     {
       waveform: 'square',
       startOffset: 0,
-      duration: 0.26,
+      duration: 0.28,
       attack: 0.004,
       peakGain: 0.078,
-      startFrequency: 132,
-      endFrequency: 61,
+      startFrequency: 123,
+      endFrequency: 55,
     },
     {
       waveform: 'triangle',
       startOffset: 0.06,
-      duration: 0.19,
+      duration: 0.2,
       attack: 0.006,
       peakGain: 0.034,
-      startFrequency: 207,
-      endFrequency: 118,
+      startFrequency: 196,
+      endFrequency: 98,
     },
   ],
 };
 
-function readingJitter(variant: number): number {
-  const stable = ((Math.trunc(variant) * 37) % 29 + 29) % 29;
-  return (stable - 14) * 0.7;
+function pelletJitter(variant: number): number {
+  const stable = ((Math.trunc(variant) * 31) % 23 + 23) % 23;
+  return (stable - 11) * 0.9;
 }
 
-export type ArcadeVoice = Readonly<{
+export type ShipItVoice = Readonly<{
   oscillator: OscillatorNode;
   gain: GainNode;
 }>;
@@ -113,7 +153,7 @@ function scheduleVoice(
   spec: VoiceSpec,
   baseTime: number,
   frequencyJitter: number,
-): ArcadeVoice {
+): ShipItVoice {
   const oscillator = context.createOscillator();
   const gain = context.createGain();
   const start = baseTime + spec.startOffset;
@@ -143,16 +183,16 @@ function scheduleVoice(
   return { oscillator, gain };
 }
 
-export function scheduleArcadeSound(
+export function scheduleShipItSound(
   context: BaseAudioContext,
   destination: AudioNode,
-  event: ArcadeSoundEvent,
+  event: ShipItSoundEvent,
   variant = 0,
   when = context.currentTime,
-): ArcadeVoice[] {
-  const specs = ARCADE_SYNTHESIS[event];
-  const voices = new Array<ArcadeVoice>(specs.length);
-  const jitter = event === 'reading' ? readingJitter(variant) : 0;
+): ShipItVoice[] {
+  const specs = SHIPIT_SYNTHESIS[event];
+  const voices = new Array<ShipItVoice>(specs.length);
+  const jitter = event === 'pellet' ? pelletJitter(variant) : 0;
   for (let i = 0; i < specs.length; i++) {
     voices[i] = scheduleVoice(context, destination, specs[i]!, when, jitter);
   }
@@ -161,17 +201,17 @@ export function scheduleArcadeSound(
 
 type StoragePort = Pick<Storage, 'getItem' | 'setItem'>;
 
-type ArcadeAudioOptions = Readonly<{
+type ShipItAudioOptions = Readonly<{
   storage?: StoragePort | null;
   createContext?: () => AudioContext;
 }>;
 
-export type ArcadeAudio = Readonly<{
+export type ShipItAudio = Readonly<{
   isEnabled(): boolean;
   isUnlocked(): boolean;
   setEnabled(enabled: boolean): void;
   unlock(): Promise<boolean>;
-  play(event: ArcadeSoundEvent, variant?: number): boolean;
+  play(event: ShipItSoundEvent, variant?: number): boolean;
   stop(): void;
   dispose(): void;
 }>;
@@ -188,16 +228,16 @@ function browserStorage(): StoragePort | null {
 function storedPreference(storage: StoragePort | null): boolean {
   if (!storage) return false;
   try {
-    return storage.getItem(ARCADE_SOUND_STORAGE_KEY) === STORAGE_ON;
+    return storage.getItem(SHIPIT_SOUND_STORAGE_KEY) === STORAGE_ON;
   } catch {
     return false;
   }
 }
 
-export function createArcadeAudio(options: ArcadeAudioOptions = {}): ArcadeAudio {
+export function createShipItAudio(options: ShipItAudioOptions = {}): ShipItAudio {
   const storage = options.storage === undefined ? browserStorage() : options.storage;
   const createContext = options.createContext ?? (() => new AudioContext());
-  const active = new Set<ArcadeVoice>();
+  const active = new Set<ShipItVoice>();
   let enabled = storedPreference(storage);
   let context: AudioContext | null = null;
   let resumePending = false;
@@ -206,13 +246,13 @@ export function createArcadeAudio(options: ArcadeAudioOptions = {}): ArcadeAudio
   function remember(next: boolean): void {
     if (!storage) return;
     try {
-      storage.setItem(ARCADE_SOUND_STORAGE_KEY, next ? STORAGE_ON : STORAGE_OFF);
+      storage.setItem(SHIPIT_SOUND_STORAGE_KEY, next ? STORAGE_ON : STORAGE_OFF);
     } catch {
       // A denied storage write must not make the control unusable.
     }
   }
 
-  function stopVoice(voice: ArcadeVoice): void {
+  function stopVoice(voice: ShipItVoice): void {
     try {
       voice.oscillator.stop();
     } catch {
@@ -256,7 +296,7 @@ export function createArcadeAudio(options: ArcadeAudioOptions = {}): ArcadeAudio
       }
       return !disposed && context === pending && pending.state === 'running';
     },
-    play(event: ArcadeSoundEvent, variant = 0): boolean {
+    play(event: ShipItSoundEvent, variant = 0): boolean {
       if (
         disposed ||
         !enabled ||
@@ -265,7 +305,7 @@ export function createArcadeAudio(options: ArcadeAudioOptions = {}): ArcadeAudio
       ) {
         return false;
       }
-      const voices = scheduleArcadeSound(context, context.destination, event, variant);
+      const voices = scheduleShipItSound(context, context.destination, event, variant);
       for (const voice of voices) {
         active.add(voice);
         voice.oscillator.addEventListener('ended', () => active.delete(voice), { once: true });

@@ -10,9 +10,12 @@
   pointer-events: none;
 }
 
-/* A descendant may otherwise override the inherited cursor with pointer/text. */
-html.px-cursor-active,
-html.px-cursor-active * {
+/* The drawn glyph takes over exactly one element while the pointer is inside
+   it — scoped via [data-pixel-cursor-hide], set by the cursor engine on the
+   current proximity target. A descendant may otherwise override the inherited
+   cursor with pointer/text, hence !important. */
+[data-pixel-cursor-hide],
+[data-pixel-cursor-hide] * {
   cursor: none !important;
 }
 

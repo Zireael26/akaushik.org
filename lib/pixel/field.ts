@@ -27,7 +27,7 @@
  * 2nd frame, 0.022 stage blend, and the 0.09/1.4/1.05/0.8/0.55/0.3 thresholds
  * in the draw pass.
  */
-import { PALETTE, canvasBg, h, navy, prefersReducedMotion } from '../pixel';
+import { PALETTE, canvasBg, h, inkSafe, navy, prefersReducedMotion } from '../pixel';
 import { isDark, onThemeChange } from '../pixel-theme';
 
 /** TS 6 makes Float32Array generic over its buffer; every grid here is plain-backed. */
@@ -64,8 +64,24 @@ export type FieldSource = (o: CanvasRenderingContext2D, c: SourceContext) => voi
 
 export type FieldPreset = 'hero' | 'band' | 'tile' | 'strip';
 
-/** Optional monochrome treatment. `ink` follows the current theme. */
+/**
+ * Optional monochrome treatment. `ink` follows the current theme; accents
+ * resolve to their text-safe siblings (see INK_SAFE in lib/pixel.ts) because
+ * a snap disc sits *behind* glyphs against the page ground — the same
+ * contrast question as text, not cells beside each other.
+ */
 export type FieldColor = 'ink' | 'cobalt' | 'amber' | 'red' | 'lime';
+
+/**
+ * Resolves a field colour to its paint value for the current theme. A
+ * responding field (`tinted`) is a filled shape behind glyphs against the
+ * page ground — the same contrast question as text — so accents take their
+ * text-safe siblings rather than raw palette luminance.
+ */
+function resolveFieldColor(c: FieldColor, dark: boolean, tinted: boolean): string {
+  if (c === 'ink') return navy(dark);
+  return tinted ? inkSafe(c, dark) : PALETTE[c];
+}
 
 const COLOR_RAMP_LIGHT = [
   navy(false),
@@ -343,9 +359,9 @@ export function mountField(canvas: HTMLCanvasElement, options: FieldOptions): Fi
     ctx.fillStyle = canvasBg(dark);
     ctx.fillRect(0, 0, cols * cell, rows * cell);
     const colors = dark ? COLOR_RAMP_DARK : COLOR_RAMP_LIGHT;
-    const responseColor = sourceProgress > 0 ? activeColor : undefined;
-    const solid = responseColor ?? color;
-    const solidColor = solid ? (solid === 'ink' ? navy(dark) : PALETTE[solid]) : null;
+    const active = sourceProgress > 0 ? activeColor : undefined;
+    const chosen = active ?? color;
+    const solidColor = chosen ? resolveFieldColor(chosen, dark, Boolean(active)) : null;
     const size = Math.max(1, cell - dpr);
 
     for (let y = 0; y < rows; y++) {

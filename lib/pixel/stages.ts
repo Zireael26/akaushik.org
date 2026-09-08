@@ -11,7 +11,6 @@
  * Every glyph draws into a unit box — (0,0) to (1,1) — and its source maps it
  * into the field.
  */
-import { h } from '../pixel';
 import type { FieldSource, SourceContext } from './field';
 
 export type StageKind = 'read' | 'spec' | 'build' | 'harden';
@@ -156,59 +155,46 @@ const GLYPHS: Record<StageKind, UnitGlyph> = {
  * Tile icons deliberately avoid the band's document / branch / wall / gate
  * drawings. They are single-sign vocabulary: scan, decide, rise, secure.
  */
+/**
+ * One shared geometry source per icon: `tileStage` strokes it for the resting
+ * ink glyph, and `eraseTileGlyph` runs the same Path2D wider to punch the
+ * icon out of the snap disc. Two copies would drift; the knockout is exactly
+ * the thing that must match the visible stroke.
+ */
 const readTileGlyph: UnitGlyph = (o, s) => {
   o.lineWidth = Math.min(1, s * 0.048);
-  o.beginPath();
-  o.moveTo(s * 0.24, s * 0.22);
-  o.lineTo(s * 0.24, s * 0.78);
-  o.moveTo(s * 0.38, s * 0.28);
-  o.lineTo(s * 0.78, s * 0.28);
-  o.moveTo(s * 0.38, s * 0.5);
-  o.lineTo(s * 0.66, s * 0.5);
-  o.moveTo(s * 0.38, s * 0.72);
-  o.lineTo(s * 0.74, s * 0.72);
-  o.stroke();
+  o.lineJoin = 'miter';
+  strokeGlyph(o, tileGlyphPath('read', s));
 };
 
 const specTileGlyph: UnitGlyph = (o, s) => {
   o.lineWidth = Math.min(1, s * 0.048);
+  o.lineJoin = 'miter';
+  // The diamond is stroked; the decision dot is filled. Folding both into one
+  // shared path made the dot a stroked ring — outer radius 0.084s around a
+  // 0.036s hole at this line width — where it had always been a solid mark.
+  // The eraser still takes the dot from `tileGlyphPath`, because a knockout
+  // wants the ring's full extent, not the fill's.
+  strokeGlyph(o, tileGlyphPath('spec', s, { specDot: false }));
   o.beginPath();
-  o.moveTo(s * 0.5, s * 0.14);
-  o.lineTo(s * 0.84, s * 0.5);
-  o.lineTo(s * 0.5, s * 0.86);
-  o.lineTo(s * 0.16, s * 0.5);
-  o.closePath();
-  o.stroke();
-  o.beginPath();
-  o.arc(s * 0.5, s * 0.5, s * 0.06, 0, Math.PI * 2);
+  o.arc(s * 0.5, s * 0.5, TILE_SPEC_DOT_R * s, 0, FULL_TURN);
   o.fill();
 };
 
 const buildTileGlyph: UnitGlyph = (o, s) => {
   o.lineWidth = Math.min(1, s * 0.04);
   o.lineJoin = 'miter';
-  o.beginPath();
-  o.moveTo(s * 0.18, s * 0.78);
-  o.lineTo(s * 0.39, s * 0.78);
-  o.lineTo(s * 0.39, s * 0.58);
-  o.lineTo(s * 0.6, s * 0.58);
-  o.lineTo(s * 0.6, s * 0.38);
-  o.lineTo(s * 0.81, s * 0.38);
-  o.stroke();
-  o.beginPath();
-  o.moveTo(s * 0.68, s * 0.25);
-  o.lineTo(s * 0.81, s * 0.38);
-  o.lineTo(s * 0.68, s * 0.51);
-  o.stroke();
+  strokeGlyph(o, tileGlyphPath('build', s));
 };
 
 const hardenTileGlyph: UnitGlyph = (o, s) => {
   o.lineWidth = Math.min(1, s * 0.032);
-  o.beginPath();
-  o.arc(s * 0.5, s * 0.39, s * 0.2, Math.PI, 0);
-  o.stroke();
-  o.strokeRect(s * 0.25, s * 0.39, s * 0.5, s * 0.4);
+  o.lineJoin = 'miter';
+  strokeGlyph(o, tileGlyphPath('harden', s));
 };
+
+/** The spec tile's centre decision dot, as a fraction of the icon size. */
+const TILE_SPEC_DOT_R = 0.06;
 
 const TILE_GLYPHS: Record<StageKind, UnitGlyph> = {
   read: readTileGlyph,
@@ -224,61 +210,195 @@ const FULL_TURN = Math.PI * 2;
  * The stipple keeps it spherical on the cell grid without turning any 8×8
  * window into a slab.
  */
+/**
+ * The disc's radius as a fraction of the field's short side.
+ *
+ * It opens at the icon's own footprint rather than at zero. The icon is only
+ * ever drawn as a hole in this disc, so a disc smaller than the icon shows
+ * nothing at all: with a 0..0.46 ramp the mark was blank until p reached
+ * ~0.84 — thirteen of a fourteen-frame ramp — and then appeared. Starting at
+ * TILE_BLOOM_MIN_R, just past the icon's 0.387 half-extent, makes the very
+ * first snap frame legible: the mark inverts from ink-on-ground to
+ * negative-space-in-accent, which is what a snap should read as, and the disc
+ * grows out from there.
+ */
+export function tileBloomRadiusScale(progress: number): number {
+  const p = Math.max(0, Math.min(1, progress));
+  return TILE_BLOOM_MIN_R + (TILE_BLOOM_MAX_R - TILE_BLOOM_MIN_R) * p;
+}
+
+/** Just clears the icon's 0.387 half-extent on the field's short side. */
+const TILE_BLOOM_MIN_R = 0.4;
+/** Full bloom, unchanged. */
+const TILE_BLOOM_MAX_R = 0.46;
+
 function drawTileBloom(
   o: CanvasRenderingContext2D,
   cols: number,
   rows: number,
   progress: number,
-  seed: number,
 ): void {
   const p = Math.max(0, Math.min(1, progress));
   if (p === 0) return;
 
-  const size = Math.min(cols, rows);
-  const cx = cols * 0.5;
-  const cy = rows * 0.5;
-  const radius = size * 0.42 * p;
-  const lineWidth = 0.45;
-
+  // The fill is a genuinely solid disc — the ask was a real background fill,
+  // not an outline or a stipple. It carries the step's accent through the
+  // engine's single per-frame colour channel: the disc is the only thing
+  // drawn into the alpha buffer this pass, so every lit cell renders in the
+  // accent. The icon itself is punched out of the disc by eraseTileGlyph and
+  // redrawn in ink outside it, which keeps the mark legible on every tone —
+  // including `ink`, where an accent-coloured glyph would sit on itself.
   o.save();
   o.shadowBlur = 0;
-  o.lineWidth = lineWidth;
   o.beginPath();
-  o.arc(cx, cy, radius, 0, FULL_TURN);
-  o.stroke();
+  o.arc(cols * 0.5, rows * 0.5, Math.min(cols, rows) * tileBloomRadiusScale(p), 0, FULL_TURN);
+  o.fill();
+  o.restore();
+}
 
-  const innerRadius = Math.max(0, radius - lineWidth * 1.5);
-  const innerSquared = innerRadius * innerRadius;
-  const startX = Math.max(0, Math.floor(cx - innerRadius));
-  const endX = Math.min(cols, Math.ceil(cx + innerRadius));
-  const startY = Math.max(0, Math.floor(cy - innerRadius));
-  const endY = Math.min(rows, Math.ceil(cy + innerRadius));
+/**
+ * A minimal path stand-in for the two runtimes that lack Path2D (Node's test
+ * runners). It records the calls; `strokePath` replays them into whatever
+ * context it is handed — a real canvas in the browser, a stub in tests.
+ * Browsers always have Path2D; production drawing never depends on this.
+ */
+type PathCall = { fn: string; args: unknown[] };
 
-  for (let y = startY; y < endY; y++) {
-    for (let x = startX; x < endX; x++) {
-      const dx = x + 0.5 - cx;
-      const dy = y + 0.5 - cy;
-      const distanceSquared = dx * dx + dy * dy;
-      if (distanceSquared >= innerSquared) continue;
+interface GlyphPath {
+  moveTo(x: number, y: number): void;
+  lineTo(x: number, y: number): void;
+  closePath(): void;
+  arc(x: number, y: number, r: number, a0: number, a1: number, ccw?: boolean): void;
+  rect(x: number, y: number, w: number, h: number): void;
+}
 
-      const centreWeight = 1 - Math.sqrt(distanceSquared) / Math.max(1, innerRadius);
-      if (h(x + seed * 1.7, y - seed * 2.3) >= 0.02 + centreWeight * 0.025) continue;
-      o.fillRect(x, y, 0.8, 0.8);
+function glyphPath(): GlyphPath & { calls: PathCall[] } {
+  const calls: PathCall[] = [];
+  return {
+    calls,
+    moveTo: (...args) => void calls.push({ fn: 'moveTo', args }),
+    lineTo: (...args) => void calls.push({ fn: 'lineTo', args }),
+    closePath: () => void calls.push({ fn: 'closePath', args: [] }),
+    arc: (...args) => void calls.push({ fn: 'arc', args }),
+    rect: (...args) => void calls.push({ fn: 'rect', args }),
+  } as GlyphPath & { calls: PathCall[] };
+}
+
+/** Replays a recorded glyph path into a 2D context (real or stub). */
+function strokeGlyph(o: CanvasRenderingContext2D, path: ReturnType<typeof glyphPath>): void {
+  o.beginPath();
+  for (const { fn, args } of path.calls) {
+    if (fn === 'moveTo' || fn === 'lineTo') {
+      const [x, y] = args as [number, number];
+      if (fn === 'moveTo') o.moveTo(x, y);
+      else o.lineTo(x, y);
+    } else if (fn === 'closePath') {
+      o.closePath();
+    } else if (fn === 'arc') {
+      const [x, y, r, a0, a1] = args as [number, number, number, number, number];
+      o.arc(x, y, r, a0, a1);
+    } else if (fn === 'rect') {
+      const [x, y, w, h] = args as [number, number, number, number];
+      o.rect(x, y, w, h);
     }
   }
+  o.stroke();
+}
+
+/** The tile icon as a recorded path in unit space scaled to `s`. */
+function tileGlyphPath(
+  kind: StageKind,
+  s: number,
+  options?: { specDot?: boolean },
+): ReturnType<typeof glyphPath> {
+  const path = glyphPath();
+  const line = (ax: number, ay: number, bx: number, by: number): void => {
+    path.moveTo(ax * s, ay * s);
+    path.lineTo(bx * s, by * s);
+  };
+
+  switch (kind) {
+    case 'read':
+      line(0.24, 0.22, 0.24, 0.78);
+      line(0.38, 0.28, 0.78, 0.28);
+      line(0.38, 0.5, 0.66, 0.5);
+      line(0.38, 0.72, 0.74, 0.72);
+      break;
+    case 'spec': {
+      path.moveTo(0.5 * s, 0.14 * s);
+      path.lineTo(0.84 * s, 0.5 * s);
+      path.lineTo(0.5 * s, 0.86 * s);
+      path.lineTo(0.16 * s, 0.5 * s);
+      path.closePath();
+      if (options?.specDot !== false) {
+        path.moveTo((0.5 + TILE_SPEC_DOT_R) * s, 0.5 * s);
+        path.arc(0.5 * s, 0.5 * s, TILE_SPEC_DOT_R * s, 0, FULL_TURN);
+      }
+      break;
+    }
+    case 'build':
+      line(0.18, 0.78, 0.39, 0.78);
+      line(0.39, 0.78, 0.39, 0.58);
+      line(0.39, 0.58, 0.6, 0.58);
+      line(0.6, 0.58, 0.6, 0.38);
+      line(0.6, 0.38, 0.81, 0.38);
+      line(0.68, 0.25, 0.81, 0.38);
+      line(0.81, 0.38, 0.68, 0.51);
+      break;
+    case 'harden':
+      path.moveTo(0.3 * s, 0.39 * s);
+      path.arc(0.5 * s, 0.39 * s, 0.2 * s, Math.PI, 0);
+      path.rect(0.25 * s, 0.39 * s, 0.5 * s, 0.4 * s);
+      break;
+  }
+  return path;
+}
+
+/**
+ * How much wider the eraser runs than the glyph's own stroke, in the same
+ * unit-stroke units. The punch must fully clear the accent from behind the
+ * area the resting glyph occupies, with margin for the cell grid's sampling.
+ */
+const GLYPH_PUNCH_WIDTH_SCALE = 3.7;
+
+/** Erases the icon from the buffer with a wider stroke of the same geometry. */
+function eraseTileGlyph(o: CanvasRenderingContext2D, kind: StageKind, s: number): void {
+  const base =
+    kind === 'read' || kind === 'spec'
+      ? Math.min(1, s * 0.048)
+      : kind === 'build'
+        ? Math.min(1, s * 0.04)
+        : Math.min(1, s * 0.032);
+
+  o.save();
+  o.globalCompositeOperation = 'destination-out';
+  o.lineWidth = base * GLYPH_PUNCH_WIDTH_SCALE;
+  o.lineJoin = 'miter';
+  strokeGlyph(o, tileGlyphPath(kind, s));
   o.restore();
 }
 
 /** One simple icon, centred and fitted to the authoring tile grid. */
 export function tileStage(kind: StageKind): FieldSource {
-  return (o, { cols, rows, progress = 0, seed }) => {
-    drawTileBloom(o, cols, rows, progress, seed);
+  return (o, { cols, rows, progress = 0 }) => {
+    drawTileBloom(o, cols, rows, progress);
 
     const s = Math.min(cols, rows) * 0.88;
     o.save();
     o.shadowBlur = 0;
     o.translate((cols - s) / 2, (rows - s) / 2);
-    TILE_GLYPHS[kind](o, s);
+
+    if (progress > 0) {
+      // Snap pass: the disc carries the accent, so the icon must not paint
+      // into it. The erase alone is the knockout — the engine samples only
+      // alpha, so erased cells fall through to the page ground and every
+      // surviving cell renders in the accent. No ink repaint here: it would
+      // land inside the disc and be drawn in the accent over itself.
+      eraseTileGlyph(o, kind, s);
+    } else {
+      // Resting pass: plain ink icon over the bare field.
+      TILE_GLYPHS[kind](o, s);
+    }
     o.restore();
   };
 }

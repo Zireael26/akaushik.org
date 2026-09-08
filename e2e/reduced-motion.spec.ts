@@ -14,16 +14,54 @@ import { expect, test, type Page } from '@playwright/test';
  * apart, and compare. Still under reduced motion, moving without it.
  *
  * The other half of the contract is still bytes — a motion-disabled visitor
- * should not pay for media they will never see. The case-study reels are
- * pixel fields now (ADR-0020), so that half is structural: a field ships
- * zero media requests for anyone, which the `/work/neev` navigation asserts
- * anyway. What reduced motion changes for a field is that it must hold
- * still — same sampling technique as the hero specs above, on the reel.
+ * should not pay for media they will never see. Case-study reels and writing
+ * posts are pixel fields now (ADR-0020), so that half is structural: a field
+ * ships zero media requests for anyone. `/work/neev` and `/writing/ai-for-msme`
+ * both assert the empty request list. What reduced motion changes for a field
+ * is that it must hold still — same sampling technique as the hero specs, on
+ * the reel and on the writing RouteField.
+
  */
 test.describe.configure({ timeout: 60_000 });
 
 const SETTLE_MS = 1200;
 
+const SHIPIT_CANVAS_NAME =
+  'Ship It maze — a blinking cursor eats code characters while four bugs give chase';
+
+type ShipItDirection = 'up' | 'left' | 'down' | 'right';
+type ShipItProbeActor = {
+  x: number;
+  y: number;
+  facing: ShipItDirection;
+  desired: ShipItDirection | null;
+};
+type ShipItProbeState = {
+  phase: string;
+  player: ShipItProbeActor;
+  ghosts: Record<string, ShipItProbeActor>;
+};
+type ShipItProbeWindow = Window & {
+  __shipitProbeWanted?: boolean;
+  __shipitProbe?: {
+    read(): ShipItProbeState;
+  };
+};
+
+/** Runs before any app code; the scene allocates the probe only when it sees the flag. */
+async function optInToShipItProbe(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const testWindow = window as ShipItProbeWindow;
+    testWindow.__shipitProbeWanted = true;
+  });
+}
+
+const readPlayer = (page: Page): Promise<ShipItProbeActor> =>
+  page.evaluate(() => {
+    const player = (window as ShipItProbeWindow).__shipitProbe?.read().player ?? null;
+    if (!player) throw new Error('the ship-it probe is not installed');
+    return player;
+  });
 /** Two samples of a canvas, a beat apart. */
 async function sampleTwice(page: Page, selector: string): Promise<[string, string]> {
   const canvas = page.locator(selector).first();
@@ -38,11 +76,8 @@ async function sampleTwice(page: Page, selector: string): Promise<[string, strin
   return [a, b];
 }
 
-function arcadeStatus(page: Page, label: string) {
-  return page
-    .locator('#arcade .px-arcade-status > div')
-    .filter({ hasText: label })
-    .locator('dd');
+function shipitStatus(page: Page, label: string) {
+  return page.locator('#shipit .px-shipit-status > div').filter({ hasText: label }).locator('dd');
 }
 
 test.describe('prefers-reduced-motion', () => {
@@ -83,11 +118,25 @@ test.describe('prefers-reduced-motion', () => {
     await page.goto('/work/neev');
     await page.waitForTimeout(SETTLE_MS);
 
+    expect(mediaRequests, `unexpected media requests: ${mediaRequests.join(', ')}`).toHaveLength(0);
+  });
+
+  test('a motion-disabled visitor is sent no media bytes on a writing post', async ({ page }) => {
+    const mediaRequests: string[] = [];
+    page.on('request', (r) => {
+      if (/\.(mp4|webm|webp)(\?|$)/.test(r.url())) mediaRequests.push(r.url());
+    });
+
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/writing/ai-for-msme');
+    await page.waitForTimeout(SETTLE_MS);
+
     expect(
       mediaRequests,
       `unexpected media requests: ${mediaRequests.join(', ')}`,
     ).toHaveLength(0);
   });
+
 
   test('a case-study reel field holds still under reduced motion', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -110,53 +159,82 @@ test.describe('prefers-reduced-motion', () => {
     expect(a).not.toBe(b);
   });
 
-  test('the arcade advances one measured turn under the OS preference', async ({ page }) => {
+  test('ship it advances one fixed step under the OS preference', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/#arcade');
+    await optInToShipItProbe(page);
+    await page.goto('/#shipit');
 
-    const section = page.locator('#arcade');
-    const canvas = page.getByRole('img', { name: 'Interactive asymmetric survey field' });
-    await section.getByRole('button', { name: 'Start survey' }).click();
-    const initialPixels = await canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL());
-
-    await page.keyboard.press('ArrowUp');
-    await expect(arcadeStatus(page, 'Score')).toHaveText('0');
+    const section = page.locator('#shipit');
+    const canvas = page.getByRole('img', { name: SHIPIT_CANVAS_NAME });
     await expect
-      .poll(() => canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL()))
-      .toBe(initialPixels);
-
-    await page.keyboard.press('ArrowRight');
-    await expect(arcadeStatus(page, 'Score')).toHaveText('10');
-    const firstTurnPixels = await canvas.evaluate((element: HTMLCanvasElement) =>
+      .poll(() => page.evaluate(() => Boolean((window as ShipItProbeWindow).__shipitProbe)))
+      .toBe(true);
+    await section.getByRole('button', { name: 'Start shipping' }).click();
+    await expect(shipitStatus(page, 'State')).toHaveText('Shipping');
+    const before = await readPlayer(page);
+    const initialPixels = await canvas.evaluate((element: HTMLCanvasElement) =>
       element.toDataURL(),
     );
-    expect(firstTurnPixels).not.toBe(initialPixels);
+    // Facing the wall above the spawn, UP is blocked: the vertical lane
+    // coordinate and facing remain unchanged, while x may advance along the
+    // existing facing.
+    await page.keyboard.press('ArrowUp');
+    const afterUp = await readPlayer(page);
+    expect(afterUp.y).toBe(before.y);
+    expect(afterUp.facing).toBe(before.facing);
+    // But every valid discrete input advances the whole simulation exactly
+    // once — ghosts redraw even though the cursor stayed put and Score never
+    // ticks.
+    const upStepPixels = await canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL());
+    expect(upStepPixels).not.toBe(initialPixels);
+    await expect(shipitStatus(page, 'Score')).toHaveText('0');
+    // Exactly one fixed step: half a second later nothing has moved again.
     await page.waitForTimeout(500);
-    await expect(arcadeStatus(page, 'Score')).toHaveText('10');
-    await expect
-      .poll(() => canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL()))
-      .toBe(firstTurnPixels);
+    expect(await canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL())).toBe(
+      upStepPixels,
+    );
 
+    // The legal direction still moves the caret along its lane.
     await page.keyboard.press('ArrowRight');
-    await expect(arcadeStatus(page, 'Score')).toHaveText('20');
-    await expect
-      .poll(() => canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL()))
-      .not.toBe(firstTurnPixels);
+    const afterRight = await readPlayer(page);
+    expect(afterRight.x).toBeGreaterThan(afterUp.x);
+    expect(afterRight.y).toBe(afterUp.y);
+    const rightStepPixels = await canvas.evaluate((element: HTMLCanvasElement) =>
+      element.toDataURL(),
+    );
+    expect(rightStepPixels).not.toBe(upStepPixels);
+    // Exactly one fixed step: half a second later nothing has moved again.
+    await page.waitForTimeout(500);
+    expect(await canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL())).toBe(
+      rightStepPixels,
+    );
   });
 
-  test('the site motion veto gives the arcade the same discrete contract', async ({ page }) => {
+  test('the site motion veto gives ship it the same discrete contract', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'no-preference' });
-    await page.goto('/#arcade');
+    await optInToShipItProbe(page);
+    await page.goto('/#shipit');
     await page.evaluate(() => document.documentElement.setAttribute('data-motion', 'off'));
 
-    const section = page.locator('#arcade');
-    await section.getByRole('button', { name: 'Start survey' }).click();
+    const section = page.locator('#shipit');
+    await expect
+      .poll(() => page.evaluate(() => Boolean((window as ShipItProbeWindow).__shipitProbe)))
+      .toBe(true);
+    await section.getByRole('button', { name: 'Start shipping' }).click();
+    await expect(shipitStatus(page, 'State')).toHaveText('Shipping');
+
+    const before = await readPlayer(page);
     await page.keyboard.press('ArrowRight');
-    await expect(arcadeStatus(page, 'Score')).toHaveText('10');
+    const afterOne = await readPlayer(page);
+    // Exactly one fixed step: the caret moves once along its lane.
+    expect(afterOne.x).toBeGreaterThan(before.x);
+    expect(afterOne.y).toBe(before.y);
     await page.waitForTimeout(500);
-    await expect(arcadeStatus(page, 'Score')).toHaveText('10');
+    const settled = await readPlayer(page);
+    // And half a second later the full player state is byte-identical: no
+    // hidden clock kept moving anything under the veto.
+    expect(settled).toEqual(afterOne);
 
     await page.evaluate(() => document.documentElement.setAttribute('data-motion', 'on'));
-    await expect.poll(async () => Number(await arcadeStatus(page, 'Score').textContent())).toBe(40);
   });
 });

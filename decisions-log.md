@@ -4,6 +4,25 @@ Decisions taken on the operator's behalf while running unattended at autonomy
 L4. Newest first. Each entry says what was decided, what the alternatives were,
 and what would have to be true to revisit it.
 
+## Canonical entries (normalized index)
+
+2026-08-23T00:00:00Z [L3] [pattern] Preview host is `beta.akaushik.org`, not `dev.`. Reasoning: See preserved D1 record below for the complete rationale. Alternatives considered: See the preserved D1 record below for the offered `dev.akaushik.org` alternative.
+2026-08-23T00:00:00Z [L3] [architectural] Worker name `akaushik-org-preview`, separate from `akaushik-org`. Reasoning: See preserved D2 record below for the rollback and blast-radius rationale. Alternatives considered: See the preserved D2 record below for the rejected shared-Worker alternative. SURFACED INLINE
+2026-08-23T00:00:00Z [L3] [scope] `production` env declared but not routed. Reasoning: See preserved D3 record below for the preview-only rationale. Alternatives considered: See the preserved D3 record below for the rejected cutover alternative.
+2026-08-23T00:00:00Z [L3] [pattern] No incremental cache binding. Reasoning: See preserved D4 record below for the cache and source-of-truth rationale. Alternatives considered: See the preserved D4 record below for the KV-cache alternative.
+2026-08-23T00:00:00Z [L3] [pattern] Compatibility date `2026-08-15`. Reasoning: See preserved D5 record below for the proven-runtime rationale. Alternatives considered: See the preserved D5 record below for the newer-date alternative.
+2026-08-23T00:00:00Z [L3] [architectural] Ported the agent-readiness contract into a Cloudflare Worker. Reasoning: See preserved D6 record below for the runtime and adapter rationale. Alternatives considered: See the preserved D6 record below for the next.config.ts, duplicated-contract, and deleted-proxy alternatives. SURFACED INLINE
+2026-08-23T00:00:00Z [L3] [pattern] Content is inlined into the bundle instead of read from disk. Reasoning: See preserved D7 record below for the Workers filesystem rationale. Alternatives considered: See the preserved D7 record below for request-time reads and prerendering.
+2026-08-23T00:00:00Z [L3] [pattern] MDX compiles at build time; `next-mdx-remote` is no longer the renderer. Reasoning: See preserved D8 record below for the runtime-compilation rationale. Alternatives considered: See the preserved D8 record below for runtime compilation and unmanaged generated output.
+2026-08-23T00:00:00Z [L3] [interpretation] Cropped the portrait rather than retuning the ramp. Reasoning: See preserved D9 record below for the image-composition rationale. Alternatives considered: See the preserved D9 record below for the rejected ramp-retuning alternative.
+2026-08-23T00:00:00Z [L3] [scope] No Vercel changes tonight. Reasoning: See preserved D10 record below for the operator-presence and rollback rationale. Alternatives considered: See the preserved D10 record below for the rejected Vercel and apex-cutover alternatives.
+2026-08-23T12:00:00Z [L3] [pattern] Cut over with a zone route, not a custom domain. Reasoning: See preserved D11 record below for the DNS and rollback rationale. Alternatives considered: See the preserved D11 record below for the rejected custom-domain alternative.
+2026-08-23T12:00:00Z [L3] [pattern] The `www` redirect had to be written before the cutover, not after. Reasoning: See preserved D12 record below for the two-host and shared-contract rationale. Alternatives considered: See the preserved D12 record below for the rejected delayed redirect and platform-only alternatives.
+2026-08-23T12:00:00Z [L3] [pattern] Wrangler authenticates by OAuth here; the shell token is a decoy. Reasoning: See preserved D13 record below for the authentication failure and environment-shadowing rationale. Alternatives considered: See the preserved D13 record below for the rejected token and unset-variable alternatives.
+2026-08-23T12:00:00Z [L3] [interpretation] Case-study art depicts the product, not the logo. Reasoning: See preserved D14 record below for the operator's product-art rationale. Alternatives considered: See the preserved D14 record below for the rejected logo-rasterisation alternative.
+
+## Preserved historical narrative
+
 ## 2026-08-23 — overnight preview-deploy run
 
 ### D1 · Preview host is `beta.akaushik.org`, not `dev.`

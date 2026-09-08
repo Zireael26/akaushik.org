@@ -26,8 +26,8 @@ export function RuledRow({
  * A "Selected work" row — the large-title, hover-indent variant.
  *
  * `href` is optional: rows that link somewhere real render as anchors, and rows
- * that don't render as plain divs. The prototype used dead `<a href="#">`
- * anchors, which take keyboard focus and go nowhere; that's a real a11y defect
+ * that don't render as plain divs. The prototype used placeholder anchors,
+ * which take keyboard focus and go nowhere; that's a real a11y defect
  * and isn't reproduced.
  */
 export function MatterRow({

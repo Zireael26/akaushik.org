@@ -71,13 +71,15 @@ for (const type of TYPES) {
     const slug = name.replace(/\.mdx$/, '');
     let body = frontmatterStripped(readFileSync(join(dir, name), 'utf8'));
 
-    // The authored writing bodies repeat their title and dek as a leading H1 +
-    // blockquote; the article template renders those from frontmatter, so the
-    // pair is dropped rather than shown twice. This used to happen just before
-    // `MDXRemote`; it happens here now, for the same reason and to the same
-    // effect. Case studies keep their H1 — the detail template does not render
-    // one.
-    if (type === 'writing') body = stripTitleChrome(body);
+    // The authored bodies repeat their title and dek as a leading H1 +
+    // blockquote; both templates render those from frontmatter, so the pair
+    // is dropped rather than shown twice. This used to happen just before
+    // `MDXRemote` for writing only; it happens here now, for the same reason
+    // and to the same effect. Case studies join them (D4): their dek used to
+    // fall through to generic blockquote styling — a grey bar with zero
+    // padding — because the detail template did not render a dek at all. It
+    // renders one now, from frontmatter, so the authored copy must go.
+    body = stripTitleChrome(body);
 
     const compiled = await compile(body, {
       remarkPlugins: REMARK_PLUGINS,

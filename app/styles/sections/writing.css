@@ -14,7 +14,14 @@
    2. `.px-writing-more` has no counterpart in the prototype, whose index is the
       whole list. This section is a teaser, so it needs the link through. It is
       built at the mono-label measurements rather than as a button, because the
-      section already ends on a rule and a filled control would fight it. */
+      section already ends on a rule and a filled control would fight it.
+
+   D5, measured 2026-08-24 at 1440 light: every home section
+   (#profile through #arcade) computes `background-color: rgba(0,0,0,0)`
+   over `body { background: var(--bg) }` (#ffffff). There is no second
+   shade and no 2% wash to pad out or to drop. A band here would invent
+   the join the operator objected to. */
+
 
 .px-writing .px-head-title {
   max-width: 26ch;

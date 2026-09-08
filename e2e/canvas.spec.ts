@@ -100,6 +100,42 @@ test.describe('pixel canvases', () => {
     await expectFieldMounted(page, '.px-article .px-route-field');
   });
 
+  // D3: the prose column keeps its readable measure while non-prose blocks
+  // break out into the article gutters. The first attempt styled only a
+  // max-width, which is inert against an auto-width block, so the geometry
+  // here is what separates the shipped feature from that no-op.
+  test('code breaks out wider than the prose column without overflowing', async ({ page }) => {
+    await page.setViewportSize({ width: 2294, height: 1200 });
+    await page.goto('/writing/native-git-hooks-for-non-node');
+
+    // The post's fences are language-tagged, so every pre sits inside a
+    // rehype-pretty-code figure; assert through the wrapper, not bare pre.
+    const figure = page
+      .locator('.px-article-body figure[data-rehype-pretty-code-figure]')
+      .first();
+    await expect(figure).toBeVisible();
+
+    const widths = await page.evaluate(() => {
+      const body = document.querySelector('.px-article-body')?.getBoundingClientRect();
+      const breakout = document
+        .querySelector('.px-article-body figure[data-rehype-pretty-code-figure]')
+        ?.getBoundingClientRect();
+      const shell = document.querySelector('.px-article')?.getBoundingClientRect();
+      if (!body || !breakout || !shell) throw new Error('missing breakout geometry');
+      return { body: body.width, breakout: breakout.width, shell: shell.width };
+    });
+    // Strictly wider than the prose column when the gutters have room...
+    expect(widths.breakout).toBeGreaterThan(widths.body);
+    // ...yet never wider than the article shell it lives in.
+    expect(widths.breakout).toBeLessThanOrEqual(widths.shell);
+
+    // The same track must not open horizontal overflow at phone width.
+    await page.setViewportSize({ width: 375, height: 667 });
+    await expect(page.locator('.px-article-body')).toBeVisible();
+    const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+    expect(scrollWidth).toBeLessThanOrEqual(375);
+  });
+
   test('the status field mounts on the 404 route', async ({ page }) => {
     await page.goto('/this-route-does-not-exist');
     await expectFieldMounted(page, 'canvas.px-status-field');

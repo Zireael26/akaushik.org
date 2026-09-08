@@ -1,7 +1,12 @@
 # ADR-0011: Writing-post HyperFrames loops
 
-Status: Accepted
+Status: Superseded by ADR-0020 (2026-08-24)
 Date: 2026-05-19
+
+Writing posts no longer ship HyperFrames loops. The same three failures that
+retired the case-study reels apply here: baked pixels, no dark variant, and a
+motion gate with no remaining caller. The art is a `RouteField` canvas.
+
 
 ## Context
 

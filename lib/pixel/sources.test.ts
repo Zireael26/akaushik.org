@@ -231,6 +231,7 @@ describe('seedFrom', () => {
       'process-gate-stack-profiles',
       'renaming-projects',
       'trellis-1-0-rc',
+      'trellis-1-0-stable',
       'trellis-loop-era',
       'trellis',
       'neev',

@@ -98,7 +98,7 @@ describe('cursor engine snap rendering', () => {
     callback?.(timestamp);
   }
 
-  it('draws at the eased snap point without a velocity trail and resets on exit', () => {
+  it('eases to the target centre and scopes the hidden native cursor to the hit element', () => {
     const target = document.createElement('div');
     target.dataset.pixelHover = '';
     target.getBoundingClientRect = () => makeRect(100, 100, 40, 40);
@@ -114,19 +114,49 @@ describe('cursor engine snap rendering', () => {
     fillStyles.length = 0;
     window.dispatchEvent(new MouseEvent('pointermove', { clientX: 120, clientY: 90 }));
     runFrame(16);
+    // The first proximity frame eases from null, which returns the pointer
+    // origin (120, 90) — snapped to (120, 92). The keycap wall's row 0,
+    // column 1 fill lands at (102, 78).
     expect(fills[0]?.x).toBe(102);
-    expect(fillStyles).not.toContain(PALETTE.cobalt);
-    expect(document.documentElement.classList.contains('px-cursor-active')).toBe(true);
+    expect(fills[0]?.y).toBe(78);
+    // The native cursor hides on the hovered element itself - never globally.
+    expect(target.hasAttribute('data-pixel-cursor-hide')).toBe(true);
+    expect(document.documentElement.hasAttribute('data-pixel-cursor-hide')).toBe(false);
 
     fills.length = 0;
     runFrame(32);
-    expect(fills[0]?.x).toBe(106);
+    // Second ease step: the eased point moves from (120, 90) toward the
+    // centre (120, 120): y = 96. The same wall cell lands two rows lower.
+    expect(fills[0]?.y).toBe(82);
 
     document.documentElement.dispatchEvent(new Event('pointerleave'));
-    expect(document.documentElement.classList.contains('px-cursor-active')).toBe(false);
+    expect(target.hasAttribute('data-pixel-cursor-hide')).toBe(false);
     fills.length = 0;
     runFrame(48);
     expect(fills).toHaveLength(0);
+  });
+
+  it('hides the native cursor only while a target is hit, releasing it between elements', () => {
+    const first = document.createElement('div');
+    first.dataset.pixelHover = '';
+    first.getBoundingClientRect = () => makeRect(100, 100, 40, 40);
+    const second = document.createElement('div');
+    second.dataset.pixelHover = '';
+    second.getBoundingClientRect = () => makeRect(200, 200, 40, 40);
+    document.body.append(first, second);
+
+    const canvas = document.createElement('canvas');
+    dispose = mountCursor(canvas);
+
+    window.dispatchEvent(new MouseEvent('pointermove', { clientX: 110, clientY: 110 }));
+    runFrame(0);
+    expect(first.hasAttribute('data-pixel-cursor-hide')).toBe(true);
+    expect(second.hasAttribute('data-pixel-cursor-hide')).toBe(false);
+
+    window.dispatchEvent(new MouseEvent('pointermove', { clientX: 210, clientY: 210 }));
+    runFrame(16);
+    expect(first.hasAttribute('data-pixel-cursor-hide')).toBe(false);
+    expect(second.hasAttribute('data-pixel-cursor-hide')).toBe(true);
   });
 
   it('anchors an overlap to the nearest hit target', () => {
@@ -145,11 +175,14 @@ describe('cursor engine snap rendering', () => {
 
     fills.length = 0;
     runFrame(16);
-    // The second target is nearest (distance 0 vs 5), so its x=126 anchor
-    // eases the draw point to 101.2, which grid-snaps to 100 before the keycap.
-    expect(fills[0]?.x).toBe(82);
+    // The second target is nearest (distance 0 vs 5). The first ease from
+    // null returns the pointer origin (95, 120), snapped to x=96; the
+    // keycap's -22 offset plus the face's leading gutter puts the first
+    // fill at 78.
+    expect(fills[0]?.x).toBe(78);
   });
 });
+
 describe('cursor proximity snap', () => {
   it('eases exactly 0.2 toward the tile anchor and resets from the origin', () => {
     const origin = { x: 40, y: 80 };
