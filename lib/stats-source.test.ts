@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import statsSnapshot from '@/public/data/stats.json';
 import {
   GITHUB_USERNAME,
   STATS_KV_KEY,
@@ -20,9 +21,6 @@ import {
  */
 
 const HOUR = 60 * 60 * 1000;
-
-/** generatedAt of public/data/stats.json as checked in; see the fallback tests below. */
-const CHECKED_IN_GENERATED_AT = '2026-08-13T05:50:08.537Z';
 
 /** A GitHub response factory covering every call the pipeline makes. */
 function githubHarness(options?: {
@@ -330,20 +328,18 @@ describe('resolveStats', () => {
   });
 
   it('falls back to the checked-in snapshot, labelled degraded+stale, when KV is empty', async () => {
-    const view = await resolveStats({ get: async () => null }, NOW.getTime());
+    const now = Date.parse(statsSnapshot.generatedAt) + 48 * HOUR;
+    const view = await resolveStats({ get: async () => null }, now);
     expect(view.degraded).toBe(true);
-    // The checked-in file's own generatedAt (2026-08-13) is long past the
-    // window, so its honest label is stale — it IS a stale snapshot being
-    // served as last-good. 'missing' is reserved for a fallback file that is
-    // somehow still fresh.
+    // Keep the fallback beyond the 36-hour window even after a daily refresh.
     expect(view.reason).toBe('stale');
-    expect(view.stats.generatedAt).toBe(CHECKED_IN_GENERATED_AT);
+    expect(view.stats).toEqual(statsSnapshot);
   });
 
   it('falls back when the KV value fails the contract', async () => {
     const view = await resolveStats({ get: async () => '{"generatedAt":"nope"}' }, NOW.getTime());
     expect(view.degraded).toBe(true);
-    expect(view.stats.generatedAt).toBe(CHECKED_IN_GENERATED_AT);
+    expect(view.stats).toEqual(statsSnapshot);
   });
 
   it('falls back when the KV read throws instead of taking the render down', async () => {
@@ -356,12 +352,12 @@ describe('resolveStats', () => {
       NOW.getTime(),
     );
     expect(view.degraded).toBe(true);
-    expect(view.stats.generatedAt).toBe(CHECKED_IN_GENERATED_AT);
+    expect(view.stats).toEqual(statsSnapshot);
   });
 
   it('degrades gracefully with no KV at all', async () => {
     const view = await resolveStats(null, NOW.getTime());
     expect(view.degraded).toBe(true);
-    expect(view.stats.generatedAt).toBe(CHECKED_IN_GENERATED_AT);
+    expect(view.stats).toEqual(statsSnapshot);
   });
 });
