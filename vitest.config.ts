@@ -18,6 +18,8 @@ export default defineConfig({
       '**/e2e/**',
       '**/*.spec.{ts,tsx}',
       '**/.claude/worktrees/**',
+      '**/apps/**',
+      '**/specs/007-friendsof/qualification/**',
       // `.trellis/runtime` is a symlink to the shared immutable Trellis release
       // (~/.trellis/releases/<version>/payload), added by the portable-manifest
       // migration in 4585ec6. The include glob follows it and runs the

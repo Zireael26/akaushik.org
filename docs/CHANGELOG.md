@@ -6,6 +6,12 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Added
 
+- 2026-09-09: Added an isolated authenticated Friends workspace with immutable
+  document revisions, explicit sharing, protected original media, search, and
+  meeting records. Its package, Worker, databases, and storage remain separate
+  from the portfolio under ADR-0021. Question registers now render as readable
+  cards with topic navigation and search, preserving the source wording.
+
 - 2026-09-07: Published the measured Trellis 1.0 restructuring article, with
   release-validation links, explicit native capability limits, the held-out
   pilot's zero accuracy gain, and the completed fleet rollout. The post uses

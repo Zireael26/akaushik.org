@@ -1,3 +1,34 @@
+# Friends portal publication checkpoint — 10 September 2026
+
+The isolated portal is deployed at https://friendsof.akaushik.org. Application
+source and portable tests live in `apps/friendsof`; see its README and ADR-0021.
+The public portfolio retains its independent build and stores.
+
+Delivered: authenticated document reading, protected media and seeking, workspace
+search, authorized source links, meeting views, and readable question registers
+with topic navigation and filtering. Question rendering preserves imported text;
+it does not save answers or infer decisions.
+
+Production checks on 9 September covered authentication/origin/body bounds,
+owner/guest isolation, private response headers, source byte identity, media
+ranges, browser layouts, search authorization, and an encrypted populated backup
+restored to scratch. These are scoped results. Structured answer/decision UI,
+public export approval UI, remaining lifecycle/admin controls, exhaustive abuse
+and cross-product authorization testing remain unfinished.
+
+Client-specific plans, receipts, private import rehearsals, source data, and
+operator setup are retained locally under ignored `specs/007-friendsof/` or in
+external private storage. The full private handoff was archived before this
+publication. Never publish that material or generated credentials. Passwords
+remain unchanged. Temporary qualification cloud resources and preview processes
+were removed after evidence preservation; production stores remain in service.
+
+This branch is being validated for publication and merge to main. Consult Git
+history for the resulting commit and merge rather than treating this checkpoint
+as proof of remote publication.
+
+---
+
 # Handoff
 
 _Written 2026-08-23, ~03:30 IST, at the end of an unattended L4 run._
