@@ -1,0 +1,84 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "friendsof-shell-qual-20260909-858046",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-09-09",
+  "compatibility_flags": ["nodejs_compat"],
+  "account_id": "ca127da6bde0b3d48082bdd84132dc09",
+  "workers_dev": true,
+  "vars": {
+    "ENVIRONMENT": "qualification",
+    "ENABLE_QUALIFICATION_ENDPOINTS": "true",
+    "CANONICAL_HOST": "preview.friendsof.akaushik.org"
+  },
+  "d1_databases": [
+    {
+      "binding": "CONTENT_DB",
+      "database_name": "friendsof-qual-core-20260909-858046",
+      "database_id": "161ebdff-2171-481b-a157-2f60658de127"
+    },
+    {
+      "binding": "AUTH_DB",
+      "database_name": "friendsof-qual-auth-20260909-858046",
+      "database_id": "f9589611-0999-4dec-83d0-dbdc78c0d436"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "friendsof-qual-media-20260909-858046"
+    }
+  ],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "env": {
+    "production": {
+      "name": "friendsof-prod-worker",
+      "workers_dev": false,
+      "routes": [
+        {
+          "pattern": "friendsof.akaushik.org",
+          "custom_domain": true
+        }
+      ],
+      "limits": {
+        "cpu_ms": 30000
+      },
+      "vars": {
+        "ENVIRONMENT": "production",
+        "ENABLE_QUALIFICATION_ENDPOINTS": "false",
+        "CANONICAL_HOST": "friendsof.akaushik.org"
+      },
+      "d1_databases": [
+        {
+          "binding": "CONTENT_DB",
+          "database_name": "friendsof-prod-content",
+          "database_id": "33446b2d-c06c-41c9-9bc6-0ba36d62be6f"
+        },
+        {
+          "binding": "AUTH_DB",
+          "database_name": "friendsof-prod-auth",
+          "database_id": "db807dd0-2598-4035-9cf2-5f3d30819823"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "MEDIA",
+          "bucket_name": "friendsof-prod-media"
+        }
+      ],
+      "assets": {
+        "directory": ".open-next/assets",
+        "binding": "ASSETS"
+      },
+      "observability": {
+        "enabled": true
+      }
+    }
+  }
+}

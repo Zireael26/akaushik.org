@@ -1,11 +1,10 @@
 {
   "compilerOptions": {
-    "stableTypeOrdering": true,
     "target": "ES2022",
     "lib": [
       "dom",
       "dom.iterable",
-      "ES2022"
+      "esnext"
     ],
     "allowJs": true,
     "skipLibCheck": true,
@@ -18,9 +17,7 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
-    "forceConsistentCasingInFileNames": true,
     "noUncheckedIndexedAccess": true,
-    "verbatimModuleSyntax": false,
     "plugins": [
       {
         "name": "next"
@@ -29,18 +26,6 @@
     "paths": {
       "@/*": [
         "./*"
-      ],
-      "@/app/*": [
-        "./app/*"
-      ],
-      "@/components/*": [
-        "./components/*"
-      ],
-      "@/content/*": [
-        "./content/*"
-      ],
-      "@/lib/*": [
-        "./lib/*"
       ]
     }
   },
@@ -53,9 +38,7 @@
   ],
   "exclude": [
     "node_modules",
-    ".next",
-    "out",
-    "apps/**",
-    "specs/007-friendsof/qualification/**"
+    ".open-next",
+    "test/**"
   ]
 }
