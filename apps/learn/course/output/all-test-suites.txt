@@ -1,0 +1,112 @@
+Core and graph tests
+test_embedded_credentials_rejected (test_core.AdapterTests.test_embedded_credentials_rejected) ... ok
+test_local_fake_server_contract (test_core.AdapterTests.test_local_fake_server_contract) ... ok
+test_remote_plain_http_rejected (test_core.AdapterTests.test_remote_plain_http_rejected) ... ok
+test_boolean_money (test_core.ContextTests.test_boolean_money) ... ok
+test_duplicate_identity (test_core.ContextTests.test_duplicate_identity) ... ok
+test_exact_fit (test_core.ContextTests.test_exact_fit) ... ok
+test_extra_authority_field (test_core.ContextTests.test_extra_authority_field) ... ok
+test_invalid_costs (test_core.ContextTests.test_invalid_costs) ... ok
+test_mandatory_cannot_be_truncated (test_core.ContextTests.test_mandatory_cannot_be_truncated) ... ok
+test_optional_omitted_whole (test_core.ContextTests.test_optional_omitted_whole) ... ok
+test_scope_before_selection (test_core.ContextTests.test_scope_before_selection) ... ok
+test_cancelled_late_result (test_core.CoordinationTests.test_cancelled_late_result) ... ok
+test_commutative_nonconflicting_merge (test_core.CoordinationTests.test_commutative_nonconflicting_merge) ... ok
+test_conflicting_merge (test_core.CoordinationTests.test_conflicting_merge) ... ok
+test_duplicate_delivery (test_core.CoordinationTests.test_duplicate_delivery) ... ok
+test_idempotent_merge (test_core.CoordinationTests.test_idempotent_merge) ... ok
+test_mutable_input_does_not_change_stored_artifact (test_core.CoordinationTests.test_mutable_input_does_not_change_stored_artifact) ... ok
+test_protocol_cross_tenant (test_core.CoordinationTests.test_protocol_cross_tenant) ... ok
+test_protocol_malformed_params (test_core.CoordinationTests.test_protocol_malformed_params) ... ok
+test_protocol_no_tenant_override (test_core.CoordinationTests.test_protocol_no_tenant_override) ... ok
+test_stale_revision (test_core.CoordinationTests.test_stale_revision) ... ok
+test_topology_arithmetic (test_core.CoordinationTests.test_topology_arithmetic) ... ok
+test_wrong_owner (test_core.CoordinationTests.test_wrong_owner) ... ok
+test_cluster_unit_count (test_core.EvaluationTests.test_cluster_unit_count) ... ok
+test_confusion_counts (test_core.EvaluationTests.test_confusion_counts) ... ok
+test_failed_attempt_cost_included (test_core.EvaluationTests.test_failed_attempt_cost_included) ... ok
+test_identical_paired_outcomes_zero_interval (test_core.EvaluationTests.test_identical_paired_outcomes_zero_interval) ... ok
+test_no_success_cost_undefined (test_core.EvaluationTests.test_no_success_cost_undefined) ... ok
+test_pass_any_all_have_different_denominators (test_core.EvaluationTests.test_pass_any_all_have_different_denominators) ... ok
+test_pass_k_too_large (test_core.EvaluationTests.test_pass_k_too_large) ... ok
+test_budget_preflight_before_call (test_core.MemoryTests.test_budget_preflight_before_call) ... ok
+test_expiry_boundary (test_core.MemoryTests.test_expiry_boundary) ... ok
+test_full_coverage (test_core.MemoryTests.test_full_coverage) ... ok
+test_future_observation (test_core.MemoryTests.test_future_observation) ... ok
+test_nonboolean_labels_rejected (test_core.MemoryTests.test_nonboolean_labels_rejected) ... ok
+test_tenant_filter (test_core.MemoryTests.test_tenant_filter) ... ok
+test_tombstone_prevents_resurrection (test_core.MemoryTests.test_tombstone_prevents_resurrection) ... ok
+test_wrong_tenant_delete_no_effect (test_core.MemoryTests.test_wrong_tenant_delete_no_effect) ... ok
+test_active_lease_cannot_be_stolen (test_core.OperationsTests.test_active_lease_cannot_be_stolen) ... ok
+test_budget_no_oversubscription (test_core.OperationsTests.test_budget_no_oversubscription) ... ok
+test_cancelled_job_cannot_finish (test_core.OperationsTests.test_cancelled_job_cannot_finish) ... ok
+test_migration_never_invents_success (test_core.OperationsTests.test_migration_never_invents_success) ... ok
+test_queue_wait_includes_load (test_core.OperationsTests.test_queue_wait_includes_load) ... ok
+test_stale_worker_fenced (test_core.OperationsTests.test_stale_worker_fenced) ... ok
+test_unknown_migration_rejected (test_core.OperationsTests.test_unknown_migration_rejected) ... ok
+test_all_reference_patches_and_negative_controls (test_core.OptimizationAndCodingTests.test_all_reference_patches_and_negative_controls) ... ok
+test_bandit_objective_not_accuracy (test_core.OptimizationAndCodingTests.test_bandit_objective_not_accuracy) ... ok
+test_deterministic_bandit (test_core.OptimizationAndCodingTests.test_deterministic_bandit) ... ok
+test_split_leakage_rejected (test_core.OptimizationAndCodingTests.test_split_leakage_rejected) ... ok
+test_changed_payload_rejected (test_core.ProductTests.test_changed_payload_rejected) ... ok
+test_crash_then_reopen_both_databases (test_core.ProductTests.test_crash_then_reopen_both_databases) ... ok
+test_exact_expiry (test_core.ProductTests.test_exact_expiry) ... ok
+test_forged_approval_no_effect (test_core.ProductTests.test_forged_approval_no_effect) ... ok
+test_new_operation_needs_new_approval (test_core.ProductTests.test_new_operation_needs_new_approval) ... ok
+test_nonfinite_clock_rejected (test_core.ProductTests.test_nonfinite_clock_rejected) ... ok
+test_numeric_operation_identity_rejected (test_core.ProductTests.test_numeric_operation_identity_rejected) ... ok
+test_policy_change (test_core.ProductTests.test_policy_change) ... ok
+test_reconcile_after_expiry (test_core.ProductTests.test_reconcile_after_expiry) ... ok
+test_replay_same_receipt (test_core.ProductTests.test_replay_same_receipt) ... ok
+test_revocation (test_core.ProductTests.test_revocation) ... ok
+test_second_operation_cannot_refund_twice (test_core.ProductTests.test_second_operation_cannot_refund_twice) ... ok
+test_verified_effect (test_core.ProductTests.test_verified_effect) ... ok
+test_wrong_actor_no_effect (test_core.ProductTests.test_wrong_actor_no_effect) ... ok
+test_all_dynamic_workers_join (test_graphs.GraphTests.test_all_dynamic_workers_join) ... ok
+test_command_and_static_edge_both_schedule (test_graphs.GraphTests.test_command_and_static_edge_both_schedule) ... ok
+test_duplicate_jobs_rejected (test_graphs.GraphTests.test_duplicate_jobs_rejected) ... ok
+test_empty_work_not_vacuous_success (test_graphs.GraphTests.test_empty_work_not_vacuous_success) ... ok
+test_forged_resume_cannot_create_effect (test_graphs.GraphTests.test_forged_resume_cannot_create_effect) ... ok
+test_interrupt_crash_persistent_reopen_resume (test_graphs.GraphTests.test_interrupt_crash_persistent_reopen_resume) ... ok
+test_missing_evidence_not_success (test_graphs.GraphTests.test_missing_evidence_not_success) ... ok
+test_subgraph_projection_hides_private_note (test_graphs.GraphTests.test_subgraph_projection_hides_private_note) ... ok
+
+----------------------------------------------------------------------
+Ran 71 tests in 0.859s
+
+OK
+Starter tests
+test_business_key_preserves_one_effect_across_reopen (test_labs.DurabilityTests.test_business_key_preserves_one_effect_across_reopen) ... ok
+test_remote_commit_replay_duplicates_without_dedup (test_labs.DurabilityTests.test_remote_commit_replay_duplicates_without_dedup) ... ok
+test_same_key_different_amount_rejected (test_labs.DurabilityTests.test_same_key_different_amount_rejected) ... ok
+test_cost_denominator_includes_failures (test_labs.EvaluationTests.test_cost_denominator_includes_failures) ... ok
+test_estimators_match_exhaustive_subsets (test_labs.EvaluationTests.test_estimators_match_exhaustive_subsets) ... ok
+test_invalid_k_rejected (test_labs.EvaluationTests.test_invalid_k_rejected) ... ok
+test_nonfinite_costs_rejected_in_either_variant (test_labs.EvaluationTests.test_nonfinite_costs_rejected_in_either_variant) ... ok
+test_pairing_preserved_and_seed_reproducible (test_labs.EvaluationTests.test_pairing_preserved_and_seed_reproducible) ... ok
+test_zero_success_has_no_finite_cost_per_success (test_labs.EvaluationTests.test_zero_success_has_no_finite_cost_per_success) ... ok
+test_budget_bounds_read_loop (test_labs.HarnessTests.test_budget_bounds_read_loop) ... ok
+test_invalid_amounts_cannot_modify_state (test_labs.HarnessTests.test_invalid_amounts_cannot_modify_state) ... ok
+test_model_cannot_grant_authority (test_labs.HarnessTests.test_model_cannot_grant_authority) ... ok
+test_operator_approval_enables_valid_effect (test_labs.HarnessTests.test_operator_approval_enables_valid_effect) ... ok
+test_rejected_attempts_consume_budget (test_labs.HarnessTests.test_rejected_attempts_consume_budget) ... ok
+test_success_claim_cannot_replace_state_change (test_labs.HarnessTests.test_success_claim_cannot_replace_state_change) ... ok
+test_turn_budget_bounds_non_tool_actions (test_labs.HarnessTests.test_turn_budget_bounds_non_tool_actions) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 0.013s
+
+OK
+LangGraph bridge
+test_duplicate_result_is_idempotent_but_conflict_is_rejected (test_example.GraphSemanticsTests.test_duplicate_result_is_idempotent_but_conflict_is_rejected) ... ok
+test_identical_claim_does_not_override_failed_verification (test_example.GraphSemanticsTests.test_identical_claim_does_not_override_failed_verification) ... ok
+test_incomplete_observations_do_not_qualify_for_completion (test_example.GraphSemanticsTests.test_incomplete_observations_do_not_qualify_for_completion) ... ok
+test_independent_ids_merge_without_dependence_on_order (test_example.GraphSemanticsTests.test_independent_ids_merge_without_dependence_on_order) ... ok
+test_parallel_readers_join_before_proposal_and_verification (test_example.GraphSemanticsTests.test_parallel_readers_join_before_proposal_and_verification) ... ok
+test_unknown_order_fails_before_readers (test_example.GraphSemanticsTests.test_unknown_order_fails_before_readers) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.023s
+
+OK
+All acceptance suites passed. These are local invariant tests, not live-model benchmarks.

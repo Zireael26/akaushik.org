@@ -1,0 +1,17 @@
+{
+  "task": "pagination",
+  "policy": "reference",
+  "before": {
+    "returncode": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"/tmp/course-code-_w5xhl4k/acceptance.py\", line 3, in <module>\n    assert next_offset(10,10,20) is None\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+  },
+  "after": {
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "verified": true,
+  "artifact_sha256": "b3620f5f11601a77d1276d12b61a9029bc78111ad9698fa27da58b59f373d296",
+  "scope": "trusted supplied Python fixtures; subprocess is NOT a security sandbox"
+}

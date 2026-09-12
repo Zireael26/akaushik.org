@@ -1,0 +1,85 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "learn-preview-worker",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-09-09",
+  "compatibility_flags": ["nodejs_compat"],
+  "account_id": "ca127da6bde0b3d48082bdd84132dc09",
+  "workers_dev": true,
+  "vars": {
+    "ENVIRONMENT": "development",
+    "CANONICAL_HOST": "preview.learn.akaushik.org"
+  },
+  // Resource ids are filled in by scripts/provision.mjs, which creates the
+  // databases and bucket and rewrites this file. Placeholders are left visible
+  // rather than blank so a deploy against an unprovisioned config fails loudly.
+  "d1_databases": [
+    {
+      "binding": "AUTH_DB",
+      "database_name": "learn-preview-auth",
+      "database_id": "PROVISION_ME_AUTH_PREVIEW"
+    },
+    {
+      "binding": "LEARN_DB",
+      "database_name": "learn-preview-progress",
+      "database_id": "PROVISION_ME_PROGRESS_PREVIEW"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "COURSE_FILES",
+      "bucket_name": "learn-preview-files"
+    }
+  ],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "env": {
+    "production": {
+      "name": "learn-prod-worker",
+      "workers_dev": false,
+      "routes": [
+        {
+          "pattern": "learn.akaushik.org",
+          "custom_domain": true
+        }
+      ],
+      "limits": {
+        "cpu_ms": 30000
+      },
+      "vars": {
+        "ENVIRONMENT": "production",
+        "CANONICAL_HOST": "learn.akaushik.org"
+      },
+      "d1_databases": [
+        {
+          "binding": "AUTH_DB",
+          "database_name": "learn-prod-auth",
+          "database_id": "23c28d24-b2a8-4470-890c-34712dffe2a1"
+        },
+        {
+          "binding": "LEARN_DB",
+          "database_name": "learn-prod-progress",
+          "database_id": "ef7bed5c-1186-433a-9766-02f2c4250850"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "COURSE_FILES",
+          "bucket_name": "learn-prod-files"
+        }
+      ],
+      "assets": {
+        "directory": ".open-next/assets",
+        "binding": "ASSETS"
+      },
+      "observability": {
+        "enabled": true
+      }
+    }
+  }
+}

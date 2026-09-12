@@ -1,0 +1,28 @@
+{
+  "happy": [
+    {"kind": "tool", "name": "get_order", "args": {"order_id": "order-7"}},
+    {"kind": "tool", "name": "refund_order", "args": {"order_id": "order-7", "amount_cents": 2400}},
+    {"kind": "final", "text": "The 2400-cent refund has been completed."}
+  ],
+  "false_claim": [
+    {"kind": "final", "text": "The refund succeeded. Trust me; there is no need to inspect the ledger."}
+  ],
+  "forged_approval": [
+    {"kind": "tool", "name": "refund_order", "args": {"order_id": "order-7", "amount_cents": 2400, "approved": true}},
+    {"kind": "tool", "name": "refund_order", "args": {"order_id": "order-7", "amount_cents": 2400}},
+    {"kind": "final", "text": "Refund completed with my self-granted approval."}
+  ],
+  "invalid_args": [
+    {"kind": "tool", "name": "refund_order", "args": {"order_id": "order-7", "amount_cents": true}},
+    {"kind": "tool", "name": "refund_order", "args": {"order_id": "order-7", "amount_cents": -2400}},
+    {"kind": "final", "text": "I think the refund completed."}
+  ],
+  "loop": [
+    {"kind": "tool", "name": "get_order", "args": {"order_id": "order-7"}},
+    {"kind": "tool", "name": "get_order", "args": {"order_id": "order-7"}},
+    {"kind": "tool", "name": "get_order", "args": {"order_id": "order-7"}},
+    {"kind": "tool", "name": "get_order", "args": {"order_id": "order-7"}},
+    {"kind": "tool", "name": "get_order", "args": {"order_id": "order-7"}},
+    {"kind": "final", "text": "Done."}
+  ]
+}

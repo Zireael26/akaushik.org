@@ -1,0 +1,13 @@
+{
+  "task_id": "T17",
+  "revision": 4,
+  "owner": "W2",
+  "objective": "Return source-backed prices for the specified catalog",
+  "input_refs": ["catalog-v4"],
+  "input_dependency_hash": "replace-with-canonical-input-digest",
+  "allowed_actions": ["read-authorized-catalog"],
+  "budget": {"max_calls": 3, "deadline_seconds": 30},
+  "output_fields": ["task_id", "revision", "input_dependency_hash", "claims", "sources", "limitations"],
+  "acceptance": "current owner/revision/dependency; complete supported claims",
+  "cancellation": "reject late output after cancellation"
+}

@@ -1,0 +1,913 @@
+{
+  "edition": "complete-2026-09-12",
+  "research_as_of": "2026-09-12",
+  "counts": {
+    "lessons": 24,
+    "lesson_words": 25363,
+    "assignments_with_solutions": 24,
+    "module_assessments_with_keys": 12,
+    "module_labs": 12,
+    "interactive_models": 12,
+    "notebooks": 3,
+    "reference_capstones": 2,
+    "python_tests_passed": 93,
+    "browser_checks_passed": 26,
+    "pdf_pages": {
+      "Harness-Engineering-Course.pdf": 94,
+      "Harness-Engineering-Workbook.pdf": 22,
+      "Harness-Engineering-Solutions.pdf": 18
+    }
+  },
+  "lesson_map": [
+    {
+      "lesson": 1,
+      "path": "lessons/01-agent-system.md",
+      "title": "Lesson 1: The Model Is One Component of the Agent",
+      "module": 1,
+      "lab_command": "python labs/run_lab.py 1"
+    },
+    {
+      "lesson": 2,
+      "path": "lessons/02-state-control-observability.md",
+      "title": "Lesson 2: State, Control, and Observable Execution",
+      "module": 1,
+      "lab_command": "python labs/run_lab.py 1"
+    },
+    {
+      "lesson": 3,
+      "path": "lessons/03-context-as-a-data-pipeline.md",
+      "title": "Lesson 3: Context as a Data Pipeline",
+      "module": 2,
+      "lab_command": "python labs/run_lab.py 2"
+    },
+    {
+      "lesson": 4,
+      "path": "lessons/04-tools-skills-environments.md",
+      "title": "Lesson 4: Tool Contracts, Skills, and Engineered Environments",
+      "module": 2,
+      "lab_command": "python labs/run_lab.py 2"
+    },
+    {
+      "lesson": 5,
+      "path": "lessons/05-outcomes-datasets-graders.md",
+      "title": "Lesson 5: Outcomes, Datasets, and Graders",
+      "module": 3,
+      "lab_command": "python labs/run_lab.py 3"
+    },
+    {
+      "lesson": 6,
+      "path": "lessons/06-statistics-and-agent-economics.md",
+      "title": "Lesson 6: Statistics and Agent Economics",
+      "module": 3,
+      "lab_command": "python labs/run_lab.py 3"
+    },
+    {
+      "lesson": 7,
+      "path": "lessons/07-langgraph-state-and-reducers.md",
+      "title": "Lesson 7: LangGraph State and Reducers",
+      "module": 4,
+      "lab_command": "python labs/run_lab.py 4"
+    },
+    {
+      "lesson": 8,
+      "path": "lessons/08-dynamic-workers-and-subgraphs.md",
+      "title": "Lesson 8: Dynamic Workers and Subgraph Boundaries",
+      "module": 4,
+      "lab_command": "python labs/run_lab.py 4"
+    },
+    {
+      "lesson": 9,
+      "path": "lessons/09-durability-and-external-effects.md",
+      "title": "Lesson 9: Durability and External Effects",
+      "module": 5,
+      "lab_command": "python labs/run_lab.py 5"
+    },
+    {
+      "lesson": 10,
+      "path": "lessons/10-approvals-and-compatible-change.md",
+      "title": "Lesson 10: Approvals and Compatible Change",
+      "module": 5,
+      "lab_command": "python labs/run_lab.py 5"
+    },
+    {
+      "lesson": 11,
+      "path": "lessons/11-multiagent-topologies.md",
+      "title": "Lesson 11: Choosing a Multi-Agent Topology",
+      "module": 6,
+      "lab_command": "python labs/run_lab.py 6"
+    },
+    {
+      "lesson": 12,
+      "path": "lessons/12-testing-multiagent-claims.md",
+      "title": "Lesson 12: Testing Multi-Agent Claims",
+      "module": 6,
+      "lab_command": "python labs/run_lab.py 6"
+    },
+    {
+      "lesson": 13,
+      "path": "lessons/13-work-contracts-and-integration.md",
+      "title": "Lesson 13: Work Contracts and Artifact Integration",
+      "module": 7,
+      "lab_command": "python labs/run_lab.py 7"
+    },
+    {
+      "lesson": 14,
+      "path": "lessons/14-protocols-and-interoperability.md",
+      "title": "Lesson 14: MCP, A2A, and Trust Across Boundaries",
+      "module": 7,
+      "lab_command": "python labs/run_lab.py 7"
+    },
+    {
+      "lesson": 15,
+      "path": "lessons/15-long-horizon-coding.md",
+      "title": "Lesson 15: Long-Horizon Coding and Environment Restoration",
+      "module": 8,
+      "lab_command": "python labs/run_lab.py 8"
+    },
+    {
+      "lesson": 16,
+      "path": "lessons/16-memory-and-large-context.md",
+      "title": "Lesson 16: Memory, Retrieval, and Large-Context Computation",
+      "module": 8,
+      "lab_command": "python labs/run_lab.py 8"
+    },
+    {
+      "lesson": 17,
+      "path": "lessons/17-authority-and-sandboxing.md",
+      "title": "Lesson 17: Authority, Sandboxing, and Threat Models",
+      "module": 9,
+      "lab_command": "python labs/run_lab.py 9"
+    },
+    {
+      "lesson": 18,
+      "path": "lessons/18-adversarial-evaluation.md",
+      "title": "Lesson 18: Adversarial Evaluation Without Destroying Usefulness",
+      "module": 9,
+      "lab_command": "python labs/run_lab.py 9"
+    },
+    {
+      "lesson": 19,
+      "path": "lessons/19-queues-budgets-and-observability.md",
+      "title": "Lesson 19: Queues, Budgets, and Operational Evidence",
+      "module": 10,
+      "lab_command": "python labs/run_lab.py 10"
+    },
+    {
+      "lesson": 20,
+      "path": "lessons/20-deployment-and-incident-recovery.md",
+      "title": "Lesson 20: Deployment, Migration, Routing, and Incidents",
+      "module": 10,
+      "lab_command": "python labs/run_lab.py 10"
+    },
+    {
+      "lesson": 21,
+      "path": "lessons/21-reflective-optimization.md",
+      "title": "Lesson 21: Reflective Optimization and Honest Holdouts",
+      "module": 11,
+      "lab_command": "python labs/run_lab.py 11"
+    },
+    {
+      "lesson": 22,
+      "path": "lessons/22-learning-and-adaptive-compute.md",
+      "title": "Lesson 22: Learning, Credit Assignment, and Adaptive Compute",
+      "module": 11,
+      "lab_command": "python labs/run_lab.py 11"
+    },
+    {
+      "lesson": 23,
+      "path": "lessons/23-capstone-integration.md",
+      "title": "Lesson 23: Integrating the Two Capstones",
+      "module": 12,
+      "lab_command": "python labs/run_lab.py 12"
+    },
+    {
+      "lesson": 24,
+      "path": "lessons/24-engineering-defense-and-transfer.md",
+      "title": "Lesson 24: Engineering Defense, Research Judgment, and Transfer",
+      "module": 12,
+      "lab_command": "python labs/run_lab.py 12"
+    }
+  ],
+  "files": [
+    {
+      "path": "CURRICULUM.md",
+      "bytes": 45419,
+      "sha256": "aa2366f4c4208a97c73b92c9e5db6634e4fa8514fcce79afc813f923e3011fd5"
+    },
+    {
+      "path": "Harness-Engineering-Course.pdf",
+      "bytes": 615792,
+      "sha256": "ee6bd5c265fa9d54dcafe82ec7d0cbd5c04cb90ff1d76b2193e7b800a5b2d2ea"
+    },
+    {
+      "path": "Harness-Engineering-Reader.html",
+      "bytes": 644660,
+      "sha256": "293d42dac90549a6e91f05e1c6a93e69867c9d302fbb204f625d6173a3f75456"
+    },
+    {
+      "path": "Harness-Engineering-Solutions.pdf",
+      "bytes": 107515,
+      "sha256": "54ccd7383f13c21fd4b9b768515c28d38a4237577df14e473895df14f9943fc8"
+    },
+    {
+      "path": "Harness-Engineering-Workbook.pdf",
+      "bytes": 112706,
+      "sha256": "2f67f99d93c2c5c26c3ac076ea8e6f1c5f68c0b94418ba7a80df60b777183353"
+    },
+    {
+      "path": "LANGGRAPH-LAB.md",
+      "bytes": 17476,
+      "sha256": "188103c4f368fe55147bde7229ade923c7048660f4bd79378afc0396696e4a74"
+    },
+    {
+      "path": "PROGRESS.md",
+      "bytes": 1942,
+      "sha256": "8e16cfbad0cc4d31a4bf0820f48ad1f6509aad52ef041ca73387a5dd6bd6613c"
+    },
+    {
+      "path": "QUICK-REFERENCE.md",
+      "bytes": 7963,
+      "sha256": "112c5b6d4cebbab405bce1fe40e9adce64629107b541c208dabeb372249bd6df"
+    },
+    {
+      "path": "RESEARCH.md",
+      "bytes": 35403,
+      "sha256": "6be367833d08a0a9febaa85817a21cb068d591836f5953b873afec4eee08af1a"
+    },
+    {
+      "path": "START-HERE.md",
+      "bytes": 4726,
+      "sha256": "0e31dc7eb38d5c85db7b63539b18e203c3291baf40e129e0c39ee9480274c7a4"
+    },
+    {
+      "path": "VERIFICATION.md",
+      "bytes": 3767,
+      "sha256": "b7161e3ecbbd9c29dc1e8078972bb32b69fe65d2fb74e6b8bb024c96e0613ed0"
+    },
+    {
+      "path": "assessments/TRACE-CASES.md",
+      "bytes": 3761,
+      "sha256": "bcb5a80d274e8839eadfe5c8bac3ce523a39878d543c2bb7ee4f0530ced9fcaa"
+    },
+    {
+      "path": "assessments/WORKBOOK.md",
+      "bytes": 23578,
+      "sha256": "f07255e9c72467dfaa7b63946183a6eeba929fc4ed13cd6c05d1b2b12c539bfb"
+    },
+    {
+      "path": "assessments/assignments.json",
+      "bytes": 33252,
+      "sha256": "7e5f2d65601643bac7ed9e0bfb1bb4f59b0239c6c698f8cad445b97232dfe014"
+    },
+    {
+      "path": "assessments/module-assessments.json",
+      "bytes": 8519,
+      "sha256": "0a14aff73162123ec3fa89c1c03f601da83b0420628578fde228294411d141c0"
+    },
+    {
+      "path": "capstones/README.md",
+      "bytes": 1224,
+      "sha256": "466f408868585191621561af6c367102012bddc23293e0b7e1fd41597ccb1aeb"
+    },
+    {
+      "path": "labs/README.md",
+      "bytes": 8164,
+      "sha256": "f0efdc4b9fedf5f10af4020dd833f85417db1a4738b06830eb69b11b5622b2a2"
+    },
+    {
+      "path": "labs/coursekit/__init__.py",
+      "bytes": 72,
+      "sha256": "4c9a3588bd617746fe723fdeb51339a02ae49c8b123b2fbcea7420371eeb8a08"
+    },
+    {
+      "path": "labs/coursekit/adapters.py",
+      "bytes": 1696,
+      "sha256": "87c951e64b806b6de76f0daeaeea4a5a7a5ce0644c90ffc144af7b29c9950cdd"
+    },
+    {
+      "path": "labs/coursekit/coding.py",
+      "bytes": 4175,
+      "sha256": "8a1bddaade929e8688689185a6c9ed4c58c9941c73eed4173b147e16a7a857da"
+    },
+    {
+      "path": "labs/coursekit/context.py",
+      "bytes": 2240,
+      "sha256": "8ecdde007ecec82cdd6e533d808ebb76fd18768863c7f56f05e170134f4eb002"
+    },
+    {
+      "path": "labs/coursekit/coordination.py",
+      "bytes": 4798,
+      "sha256": "465d2f2dfa43440c3f00f4795b66176fbc32d02bfcb70cade2daf55774e05b82"
+    },
+    {
+      "path": "labs/coursekit/evaluation.py",
+      "bytes": 2734,
+      "sha256": "84833412ab692b0c261dc9ae38155ef4523aac0c734b8f616068cb4f536aefb6"
+    },
+    {
+      "path": "labs/coursekit/graphs.py",
+      "bytes": 4293,
+      "sha256": "93fd91ac398bd4296d0e95daf62a8a8983a2927bacc0d787732913090110dcc2"
+    },
+    {
+      "path": "labs/coursekit/memory.py",
+      "bytes": 2587,
+      "sha256": "145acf8fd6cafa60596120c8210df8a551ae55460969a41c511ca412a259d5ff"
+    },
+    {
+      "path": "labs/coursekit/operations.py",
+      "bytes": 3379,
+      "sha256": "eada6408a5a838d00cdd01d3cc5e3aa29e6a74bafb6ecf0323e5f84250ace4f6"
+    },
+    {
+      "path": "labs/coursekit/optimization.py",
+      "bytes": 2640,
+      "sha256": "a95f655b3bd124970dda39613b235f6b5fba606a76640d4810acba6969e8f914"
+    },
+    {
+      "path": "labs/coursekit/product.py",
+      "bytes": 6820,
+      "sha256": "36c0e091c686ce524df74b9a148ca31890e1661042602393c731c1373a28d73f"
+    },
+    {
+      "path": "labs/fixtures/README.md",
+      "bytes": 636,
+      "sha256": "0bae4a4457eaafda5a51355001860046f3342b45edf3eb5d1c5ed37e02156cd7"
+    },
+    {
+      "path": "labs/fixtures/optimization.json",
+      "bytes": 1112,
+      "sha256": "5bc79469b7ca09bb39e32dd2dae710c2520110b5a92da87a93fe2ac68d5e2887"
+    },
+    {
+      "path": "labs/fixtures/paired.json",
+      "bytes": 1594,
+      "sha256": "ee6cdc9023b0da6dee99946dc0462e2f36f4fc796c6f70016ad38e775b33739d"
+    },
+    {
+      "path": "labs/live_text.py",
+      "bytes": 751,
+      "sha256": "85e930994e0243a4c8a4a611b36c1500de1d1c54f08b60c99c1da7f9643e8444"
+    },
+    {
+      "path": "labs/requirements-lock.txt",
+      "bytes": 778,
+      "sha256": "5d940de726a61b872945026fa71c4b4362c3f5306e6b4f9624797e7000c19641"
+    },
+    {
+      "path": "labs/requirements.txt",
+      "bytes": 53,
+      "sha256": "4c94b6cbf4ddf8a5a301b2cedad1152e0910ed096dcc38eae5ecc0891592eef8"
+    },
+    {
+      "path": "labs/run_lab.py",
+      "bytes": 10207,
+      "sha256": "78a3e1d37fcd51d720ecf7aaf55f67ac0d0e0bf9c0fd0c2c152d7491f446133d"
+    },
+    {
+      "path": "labs/tests/test_core.py",
+      "bytes": 12532,
+      "sha256": "4c2ed6aeddb3460cf70b88a200d10094fef05d8a37432029ea2920eca73aab54"
+    },
+    {
+      "path": "labs/tests/test_graphs.py",
+      "bytes": 3105,
+      "sha256": "2d063566d4da2d28cf94b2ee7a2a3514be066b41d221761085d77bfecdc343ee"
+    },
+    {
+      "path": "langgraph-example/README.md",
+      "bytes": 1827,
+      "sha256": "56c261506b93e80f114ab668d301e599f9e4ea53e7dc7d1e5984bf7249743325"
+    },
+    {
+      "path": "langgraph-example/VERIFIED_RESULTS.json",
+      "bytes": 408,
+      "sha256": "a3a07a956f1d6af4c173897c3818d3c1e87a6e580bb76dca4b2688bc9619663f"
+    },
+    {
+      "path": "langgraph-example/refund_verification.py",
+      "bytes": 4259,
+      "sha256": "4100f1c1c565ac39bfb09dc47f88c2f605a28fa94a239b9938bf5637c06a567a"
+    },
+    {
+      "path": "langgraph-example/requirements-lock.txt",
+      "bytes": 707,
+      "sha256": "add3dfea9dc177f0a85c957f83c2d14b7a60c9bd9c29b4f0415390ee3b95bfdd"
+    },
+    {
+      "path": "langgraph-example/requirements.txt",
+      "bytes": 18,
+      "sha256": "e889c25728d2c1bed68b763ba73210cfaed1d48dc698f610a3d87958e6b28b53"
+    },
+    {
+      "path": "langgraph-example/test_example.py",
+      "bytes": 2363,
+      "sha256": "1d7df46915a4f2915c394a66efa2bb3710476b910708f4b3ceeffe94b8ab7856"
+    },
+    {
+      "path": "lessons/01-agent-system.md",
+      "bytes": 19594,
+      "sha256": "ded9a681c68938099f7ca923964020ea310eb8dc0ce3e31f1e466a9c62378980"
+    },
+    {
+      "path": "lessons/02-state-control-observability.md",
+      "bytes": 8302,
+      "sha256": "485a0071826b344d7bd4ee6ae83679b507d3e505d20be8e0cc2d9b14d4ac24e6"
+    },
+    {
+      "path": "lessons/03-context-as-a-data-pipeline.md",
+      "bytes": 8468,
+      "sha256": "f966923f55ab84b25c9b6b801d2305d9be2ae9b92b123b7f72d20b22b0b49a8e"
+    },
+    {
+      "path": "lessons/04-tools-skills-environments.md",
+      "bytes": 8324,
+      "sha256": "d7518e6c694e457be9a91b8d982f78b94a10582373c4c716b7cfeadc40624eff"
+    },
+    {
+      "path": "lessons/05-outcomes-datasets-graders.md",
+      "bytes": 7797,
+      "sha256": "eeaa9dff7fe93629cf43eff62eec09bc46e22d1df2f6b117f8d3c92798ccb539"
+    },
+    {
+      "path": "lessons/06-statistics-and-agent-economics.md",
+      "bytes": 8764,
+      "sha256": "713ffcee5176cb35141d702a0dff1921440f6da9dd5a5640525cc0b670ed7122"
+    },
+    {
+      "path": "lessons/07-langgraph-state-and-reducers.md",
+      "bytes": 7426,
+      "sha256": "0ec301cc15410c023986e80fbd592f0df786ecf7e17004f5ca813f49c8f01d9e"
+    },
+    {
+      "path": "lessons/08-dynamic-workers-and-subgraphs.md",
+      "bytes": 7108,
+      "sha256": "e80024c03b285ca571c376cfa3999b46dd33f45c38e949c5461ebd8eabe281e3"
+    },
+    {
+      "path": "lessons/09-durability-and-external-effects.md",
+      "bytes": 7845,
+      "sha256": "949099a15482f0081fef423abce6bd44fb8053d2620fe90b45ac89e7e5fc6713"
+    },
+    {
+      "path": "lessons/10-approvals-and-compatible-change.md",
+      "bytes": 7283,
+      "sha256": "69cdd945f9d3722a3868cd4af66e2124c13c7bf16c47febafca2486a466fe54f"
+    },
+    {
+      "path": "lessons/11-multiagent-topologies.md",
+      "bytes": 6847,
+      "sha256": "a35c199482a685c0d44d0a46fb26e5053c7cf79201cba21a1655c7453bb055eb"
+    },
+    {
+      "path": "lessons/12-testing-multiagent-claims.md",
+      "bytes": 7782,
+      "sha256": "9a7292de58be89ef5d3963a0c1bf11f5db978f9dde76152047e6716a53ea8cb1"
+    },
+    {
+      "path": "lessons/13-work-contracts-and-integration.md",
+      "bytes": 6334,
+      "sha256": "98bca27982decbced5dc8741ebd87b943302e8b19539a5f380633d08e1655ebc"
+    },
+    {
+      "path": "lessons/14-protocols-and-interoperability.md",
+      "bytes": 6461,
+      "sha256": "5bc1e48f5d1cf238820455126770fe36403ce0e1d052c1414da9749b2cc351b9"
+    },
+    {
+      "path": "lessons/15-long-horizon-coding.md",
+      "bytes": 6295,
+      "sha256": "2b6ebf8f2f4bcf65e8f89c8dd3942ea69054c4906fcab387c043ba78a16c73d3"
+    },
+    {
+      "path": "lessons/16-memory-and-large-context.md",
+      "bytes": 5866,
+      "sha256": "d0336ff2d57913b36e4c3578d8e85f770f5539d1a7aa058bb69142b1a2e73096"
+    },
+    {
+      "path": "lessons/17-authority-and-sandboxing.md",
+      "bytes": 5639,
+      "sha256": "a1bc36626573349f6c940c8d1e1142cfa05baa1ad39262351dfe73dccce844e4"
+    },
+    {
+      "path": "lessons/18-adversarial-evaluation.md",
+      "bytes": 5779,
+      "sha256": "46f094c232ee8da26e7f9554fe9948fd8b29e53234d49000e22b694034374f3a"
+    },
+    {
+      "path": "lessons/19-queues-budgets-and-observability.md",
+      "bytes": 4918,
+      "sha256": "28db2b766c7d6bda6e7fed6ad45345ea62000390bc5340f353be35215970c6ee"
+    },
+    {
+      "path": "lessons/20-deployment-and-incident-recovery.md",
+      "bytes": 5311,
+      "sha256": "a4a1926cffe69d7ccabd9e3c89b3f4760a8ba3dc3355b021be3fa5290d9fa718"
+    },
+    {
+      "path": "lessons/21-reflective-optimization.md",
+      "bytes": 5247,
+      "sha256": "7bc90992ecff91c3419aca4f303ebe0a4f96c1ef88e9039cd50e6c5e2a668486"
+    },
+    {
+      "path": "lessons/22-learning-and-adaptive-compute.md",
+      "bytes": 5485,
+      "sha256": "ea53728585b03ae4f49a203f877965d00dc8c9bbd9496daedf26a86a0469f293"
+    },
+    {
+      "path": "lessons/23-capstone-integration.md",
+      "bytes": 5714,
+      "sha256": "7f50671466984f0d509cda73d62f108c218d18661b7847eff754c76c181f07ee"
+    },
+    {
+      "path": "lessons/24-engineering-defense-and-transfer.md",
+      "bytes": 5767,
+      "sha256": "1bca67e616a50929e3580199e2e146b804600976b0feab581a5bd797faf0883f"
+    },
+    {
+      "path": "notebooks/01-reliability-and-pairing.ipynb",
+      "bytes": 3531,
+      "sha256": "0e748ab601ca5fc0f4b7a43dc7f34c9f7e13a34ee8d4d71383196f31f34cbfe3"
+    },
+    {
+      "path": "notebooks/02-state-contracts.ipynb",
+      "bytes": 3555,
+      "sha256": "bef329b7a0ef920b70edab627aaf3bef37a2128c4407b72364fdbf33c64b302e"
+    },
+    {
+      "path": "notebooks/03-selection-and-utility.ipynb",
+      "bytes": 4350,
+      "sha256": "6b2ee9c347413ad09c3328bfdeef1e714690de22669fa2d4b7038aa83dff34d3"
+    },
+    {
+      "path": "output/all-test-suites.txt",
+      "bytes": 9939,
+      "sha256": "115883d6e6c1044de0318487a9a48fce343a9cd272c059eb6be611ef50a1b193"
+    },
+    {
+      "path": "output/browser-verification.json",
+      "bytes": 3346,
+      "sha256": "8d6961c9e9d5e5b5478d5de422cf953dd9351fbdbd35b3fca0a6e67717f4f484"
+    },
+    {
+      "path": "output/pdf-verification.json",
+      "bytes": 1250,
+      "sha256": "4abd7c7d24f0a43150f16036624acd9d93e38e67fc611746f1f57f80849d1326"
+    },
+    {
+      "path": "output/previews/queue-model.png",
+      "bytes": 51058,
+      "sha256": "4e169b841e068a0284375ed0e610986f47512575069e9737beb9eb4a38e1074c"
+    },
+    {
+      "path": "output/previews/reader-desktop.png",
+      "bytes": 152906,
+      "sha256": "3b470904dd6d8c8e452b548c005aff40b3243ccaa3e7c7767ac4de5922bb6f8f"
+    },
+    {
+      "path": "output/previews/reader-mobile.png",
+      "bytes": 64513,
+      "sha256": "dd0405baa0a2b0468e1f2e7dd1119811c8865f44e4f92b091b2e0720ee601097"
+    },
+    {
+      "path": "output/reference-run/artifacts/10/jobs.sqlite",
+      "bytes": 12288,
+      "sha256": "1cd48960aeff38b212bebe8cf6331d6edd37abb2ec4f0099ca39af88fd32e6ee"
+    },
+    {
+      "path": "output/reference-run/artifacts/12/coding/inventory/acceptance.py",
+      "bytes": 208,
+      "sha256": "87ed34f33e93b0a4c52fa26dfdd76ca636d468d206ba21b7cca41c52d585a2ee"
+    },
+    {
+      "path": "output/reference-run/artifacts/12/coding/inventory/report.json",
+      "bytes": 602,
+      "sha256": "d42edcba0cb338fe623b37bbd9a97f3bd332e24726d01dafd94b814ff0cc296b"
+    },
+    {
+      "path": "output/reference-run/artifacts/12/coding/inventory/service.py",
+      "bytes": 150,
+      "sha256": "a3689ff97e0ddfb03853a7b51fe23305ae7bd620c5b50f7f564724e6ceb1909c"
+    },
+    {
+      "path": "output/reference-run/artifacts/12/coding/invoice/acceptance.py",
+      "bytes": 98,
+      "sha256": "b8f1fc01043eeaabe778c19e7929a08d613a33c80631287c8c628b12353725e0"
+    },
+    {
+      "path": "output/reference-run/artifacts/12/coding/invoice/report.json",
+      "bytes": 582,
+      "sha256": "3aa6ac20ab56f19fd150d4ded63f68e1f44b1d0970500123898ae058996824f0"
+    },
+    {
+      "path": "output/reference-run/artifacts/12/coding/invoice/service.py",
+      "bytes": 56,
+      "sha256": "908d700daf758ced33ca70cc54a80286c7e35f839ece99435780f010755394eb"
+    },
+    {
+      "path": "output/reference-run/artifacts/12/coding/money/acceptance.py",
+      "bytes": 129,
+      "sha256": "6454ad0e52c141a531d1b59ee10e36327284550b69f9d182a329bb7891037d6d"
+    },
+    {
+      "path": "output/reference-run/artifacts/12/coding/money/report.json",
+      "bytes": 582,
+      "sha256": "92b32f183eee650786e5e2941d132b4912e50e7a5684a3acfa0cd0e2e864c8ad"
+    },
+    {
+      "path": "output/reference-run/artifacts/12/coding/money/service.py",
+      "bytes": 68,
+      "sha256": "b27cf526b09b02f728a303684cf86c7cf4b2d8195e7bc8692fe76bb4727ddc2f"
+    },
+    {
+      "path": "output/reference-run/artifacts/12/coding/pagination/acceptance.py",
+      "bytes": 126,
+      "sha256": "07c89a8d5445c90eb118f42b1f0a3b671fd6e8580ffdda0eb8616a79c33ef36a"
+    },
+    {
+      "path": "output/reference-run/artifacts/12/coding/pagination/report.json",
+      "bytes": 603,
+      "sha256": "14378e2434b741d60e5a01e2e778d3220bdc917d96e88e3847d81037abb2c4d0"
+    },
+    {
+      "path": "output/reference-run/artifacts/12/coding/pagination/service.py",
+      "bytes": 115,
+      "sha256": "b3620f5f11601a77d1276d12b61a9029bc78111ad9698fa27da58b59f373d296"
+    },
+    {
+      "path": "output/reference-run/artifacts/12/coding/status/acceptance.py",
+      "bytes": 98,
+      "sha256": "6bfd6f20b3e929d6474092974e3aa8d2fd462c7d1d65f7e0d08a9457a37d8efa"
+    },
+    {
+      "path": "output/reference-run/artifacts/12/coding/status/report.json",
+      "bytes": 609,
+      "sha256": "db969e901c30d1170fda676f661c8d4a923c52b22cfecf37b5658fe6fcc75b49"
+    },
+    {
+      "path": "output/reference-run/artifacts/12/coding/status/service.py",
+      "bytes": 78,
+      "sha256": "9dc9723d419f03fc717f6a45a0d71f66e1c7809a71d58519da38f303f41f8dcc"
+    },
+    {
+      "path": "output/reference-run/artifacts/12/coding/tenant/acceptance.py",
+      "bytes": 125,
+      "sha256": "71ef451e356e4a931ab0771e109ccaab761c0027a6d0c1825f215160153de116"
+    },
+    {
+      "path": "output/reference-run/artifacts/12/coding/tenant/report.json",
+      "bytes": 639,
+      "sha256": "4c2ffa14d099c99955f73a3edf8849a9a51fe318243e7b9a5c4cd3f0bd2b54dc"
+    },
+    {
+      "path": "output/reference-run/artifacts/12/coding/tenant/service.py",
+      "bytes": 61,
+      "sha256": "2e894a7b5b11f11285fd2286c46d1b0dbed382f3416fe8b10d1a7640f8622b3d"
+    },
+    {
+      "path": "output/reference-run/artifacts/12/product/controller.sqlite",
+      "bytes": 12288,
+      "sha256": "4aa16711220dd85dc34f7af6dc03e73afc30225287a6cf2ed5930869c46df276"
+    },
+    {
+      "path": "output/reference-run/artifacts/12/product/effects.sqlite",
+      "bytes": 32768,
+      "sha256": "02b7f6051d46a804ff3851a94f68ea3d19761f499f24713f1721e064f7262548"
+    },
+    {
+      "path": "output/reference-run/artifacts/5/effects.sqlite",
+      "bytes": 32768,
+      "sha256": "c2d23084103fcf32e1da95a54552e974eedd5e809d0c86dd69f0ae3bb46cd737"
+    },
+    {
+      "path": "output/reference-run/artifacts/5/graph.sqlite",
+      "bytes": 28672,
+      "sha256": "de6527c637966a4afdb96943e7e7158f954fda2ad5148434360aa35606707551"
+    },
+    {
+      "path": "output/reference-run/artifacts/8/memory.sqlite",
+      "bytes": 12288,
+      "sha256": "63486b87ba2c6363948f48553c68f7744d6cf0be59b05ea66558091577076439"
+    },
+    {
+      "path": "output/reference-run/artifacts/9/changed_amount.sqlite",
+      "bytes": 32768,
+      "sha256": "2bee4ac6d4463cdd9fa5a59cff27d8695f7cb73a0e31b45caeff4e859b8ab22b"
+    },
+    {
+      "path": "output/reference-run/artifacts/9/expired.sqlite",
+      "bytes": 32768,
+      "sha256": "9cdff65d2f6e359ac38247a6810fb82d16c708ba1c8a93c724529d90f7524d4c"
+    },
+    {
+      "path": "output/reference-run/artifacts/9/forged.sqlite",
+      "bytes": 32768,
+      "sha256": "f2ebc37ee79299efbf25a31156d89840e36c537ae410e0172779cf4fb039fa1f"
+    },
+    {
+      "path": "output/reference-run/artifacts/9/injected_note.sqlite",
+      "bytes": 32768,
+      "sha256": "6e5b7cf594bac288da74874ab3c1acf9d0f9cd74d99b655f3f05696d7a031af7"
+    },
+    {
+      "path": "output/reference-run/artifacts/9/revoked.sqlite",
+      "bytes": 32768,
+      "sha256": "94460e7ef9ba52b27a2934c9bdeab54e4754a4430aa9474b7c23f72c0b43e31c"
+    },
+    {
+      "path": "output/reference-run/artifacts/9/stale_policy.sqlite",
+      "bytes": 32768,
+      "sha256": "c80b4810e6314d606780dec1a5cd70206ef66ad4a6b576f110bfe443d5de8099"
+    },
+    {
+      "path": "output/reference-run/artifacts/9/valid.sqlite",
+      "bytes": 32768,
+      "sha256": "f1ce9c107064e845907da4daffee8df6ed665006bcf1db11df44da5ff219f87e"
+    },
+    {
+      "path": "output/reference-run/artifacts/9/wrong_tenant.sqlite",
+      "bytes": 32768,
+      "sha256": "dbcfd746c8fa8209ec7d3dc08808dd9f1365b261bcaa4a31f48d3283a399abca"
+    },
+    {
+      "path": "output/reference-run/results.json",
+      "bytes": 30184,
+      "sha256": "820928c6afeff8038f12cf0296948d4974ebc80593eaf47cbb981bd7556d0248"
+    },
+    {
+      "path": "solutions/SOLUTIONS.md",
+      "bytes": 35047,
+      "sha256": "3370661284a0743b66668f90e831e757a25e4e62b3e9d25c55ba7f5f6aa08363"
+    },
+    {
+      "path": "solutions/TRACE-KEY.md",
+      "bytes": 6654,
+      "sha256": "13c9a94d9f12bbe46ef3c35fd1514a092dcd6fae838898a1cd40a748beda5296"
+    },
+    {
+      "path": "starter-labs/01_harness.py",
+      "bytes": 5848,
+      "sha256": "46acc62d4306397fdcd31b416ee21ae243a6343dee405a4f3df7d73dd9f4079c"
+    },
+    {
+      "path": "starter-labs/02_durable_effects.py",
+      "bytes": 4894,
+      "sha256": "a19b875e72743ca6d5c9e50aed0d9a459f03bff454f0c0cd2d4fcde945b8f115"
+    },
+    {
+      "path": "starter-labs/03_eval_metrics.py",
+      "bytes": 5160,
+      "sha256": "f99b5cd6138100aebd746d9c8b4041b45b40b28b4adf8819a6164489d7104c20"
+    },
+    {
+      "path": "starter-labs/README.md",
+      "bytes": 11295,
+      "sha256": "55b0de65df918d6deb3fcc96dfb94e12831b560d49d7f1e612d664117e9ba68d"
+    },
+    {
+      "path": "starter-labs/VERIFIED_RESULTS.md",
+      "bytes": 1895,
+      "sha256": "8a240da3e41fa9454eb5557b1f93bb6a8711a1a7d7244245e984654f5edfb5db"
+    },
+    {
+      "path": "starter-labs/fixtures/harness_policies.json",
+      "bytes": 1457,
+      "sha256": "537732ff0cca8d03c0e6fac02fe2fbfd565bc5e387e15e467ed8f56ba31ab64b"
+    },
+    {
+      "path": "starter-labs/fixtures/paired_eval.json",
+      "bytes": 5825,
+      "sha256": "e0d02134d95670013d8707a5dfced1d799758bc9b7b6f24fa29be13d237882c4"
+    },
+    {
+      "path": "starter-labs/test_labs.py",
+      "bytes": 7013,
+      "sha256": "f5113bd7fefd871aec057afd6d49d6d259c1cb4ae0a3956d9b1578069f5b0f4d"
+    },
+    {
+      "path": "templates/decision-record.md",
+      "bytes": 434,
+      "sha256": "ee094144f341b0a4553015ded7485f615899b49c26f58c44be56b0a5d8001bc9"
+    },
+    {
+      "path": "templates/evaluation-protocol.md",
+      "bytes": 508,
+      "sha256": "a03d96fe51aea073a7ed6dfd8a42b47515a49775f614c86eeb64e04937c1c2ec"
+    },
+    {
+      "path": "templates/experiment-manifest.yaml",
+      "bytes": 956,
+      "sha256": "7ad15f1ca3dfe3a03763e3d97ca19d55526b05ceec5c5a14771f5c1e8ee61f09"
+    },
+    {
+      "path": "templates/incident-record.md",
+      "bytes": 331,
+      "sha256": "9b392476ad0bd91a3fccf13418752f35cd71d91db86c7684705d1339d0ea1dd6"
+    },
+    {
+      "path": "templates/task-contract.md",
+      "bytes": 1157,
+      "sha256": "881a818bdb61c8be33bcef6ccee67bc41cc0966556b122adcc47c8d391c82970"
+    },
+    {
+      "path": "templates/threat-model.md",
+      "bytes": 401,
+      "sha256": "444b7a7f222d31232daa9b51bfffb87eeb9b7ba4214f496654522ea0c73c3136"
+    },
+    {
+      "path": "templates/trace-event.json",
+      "bytes": 596,
+      "sha256": "eb2c70a602a88c85a8628a92ee414532f0fdec7827b90ecd9472fab51cea71d6"
+    },
+    {
+      "path": "templates/work-contract.json",
+      "bytes": 575,
+      "sha256": "aa0a37d757f37bf18a7bec4022c96b5094c809eb990050a0b7e07a8aefe224c3"
+    },
+    {
+      "path": "tools/README.md",
+      "bytes": 1504,
+      "sha256": "22242d84c758dded9a2a5d7b184ddc48821b5c37c06ccb2bea5ae3ec09220e6e"
+    },
+    {
+      "path": "tools/author_assessments.py",
+      "bytes": 47135,
+      "sha256": "32e781b336d3be65ba8058a4cb46e53cc78323009668c220d0a1390d66fe94a4"
+    },
+    {
+      "path": "tools/build_books.py",
+      "bytes": 5130,
+      "sha256": "00823019653e0876912473d0355e2ac0b2763d6a74c3730841fb3fc108a34901"
+    },
+    {
+      "path": "tools/build_figures.py",
+      "bytes": 2462,
+      "sha256": "7f32c62a90f44bcf9215a8efa884f5e6df2385fc6f43800eea0726fe9d37a049"
+    },
+    {
+      "path": "tools/build_notebooks.py",
+      "bytes": 4824,
+      "sha256": "4300a0668a94316df6be3ff23d7930d2c4e74a533b28e87d2af596e615101af1"
+    },
+    {
+      "path": "tools/build_reader.py",
+      "bytes": 19282,
+      "sha256": "38f2d268fd19faabf54e100858938a565052a34fb126c83ab9173b68ccdfdeee"
+    },
+    {
+      "path": "tools/pdf_engine.py",
+      "bytes": 9791,
+      "sha256": "d9dab7572f99c146b44056aed4a14b1e6af41fad0f532f1353f100d2fe845ff0"
+    },
+    {
+      "path": "tools/requirements-build.txt",
+      "bytes": 97,
+      "sha256": "1153ab66cd07e74abd106221660eb15ba4900aafd9ee988e396ecdb68be3d805"
+    },
+    {
+      "path": "tools/verify_all.py",
+      "bytes": 861,
+      "sha256": "669b2fd94ed0379b2e38b9844425e6f46af3ea29023b5bc1a35300ea79766e7b"
+    },
+    {
+      "path": "visuals/advanced-atlas.html",
+      "bytes": 19511,
+      "sha256": "2687ac92d4bccfa4bce097d986da7102c10973286da17d34d2921a9124feffd6"
+    },
+    {
+      "path": "visuals/harness-experiments.html",
+      "bytes": 49364,
+      "sha256": "4e5e332ed510da6ab48bbad2be49eaf3fab1b495d8eee06d3a71762388ae5e53"
+    },
+    {
+      "path": "visuals/plots/communication.png",
+      "bytes": 108093,
+      "sha256": "c0845b9754e157835b5192e69a7dd30b0ca8d41205dec6c674974ba110851bee"
+    },
+    {
+      "path": "visuals/plots/communication.svg",
+      "bytes": 61475,
+      "sha256": "520a695a0113a7c9d86ae51c171cf3255aeddfce395d5169f92ae4aa00934bf0"
+    },
+    {
+      "path": "visuals/plots/queue-latency.png",
+      "bytes": 71505,
+      "sha256": "46afbc5010145c54e094c35abf1cb36fed79629f25a34593d9ea7bc8bb5c0517"
+    },
+    {
+      "path": "visuals/plots/queue-latency.svg",
+      "bytes": 54730,
+      "sha256": "66a5b68cf2a38df0af5504a66552465576ac57d1acb4bd089fc507b1f749b9f9"
+    },
+    {
+      "path": "visuals/plots/reliability.png",
+      "bytes": 94280,
+      "sha256": "b9d7554ea770e86f7d5766b31e61306ad9f770cd091106b3cc40da6731a05bef"
+    },
+    {
+      "path": "visuals/plots/reliability.svg",
+      "bytes": 55282,
+      "sha256": "c7ada71549231b679e71c66021be0bb6237aae61b1622a3579ee8c4cf53d4e67"
+    }
+  ]
+}

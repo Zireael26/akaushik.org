@@ -1,0 +1,44 @@
+{
+  "Harness-Engineering-Course.pdf": {
+    "pages": 94,
+    "out_of_bounds": [],
+    "empty_pages": [],
+    "outline_entries": 45,
+    "links": 210,
+    "figure_pages": [
+      39,
+      54,
+      71
+    ],
+    "contains_review_edits": {
+      "256 distinct resamples": true,
+      "1/(f+(1-f)/n)": true,
+      "260 configurations": true
+    }
+  },
+  "Harness-Engineering-Workbook.pdf": {
+    "pages": 22,
+    "out_of_bounds": [],
+    "empty_pages": [],
+    "outline_entries": 28,
+    "links": 56,
+    "figure_pages": [],
+    "contains_review_edits": {
+      "256 distinct resamples": true,
+      "coding section of Lab 12": true
+    }
+  },
+  "Harness-Engineering-Solutions.pdf": {
+    "pages": 18,
+    "out_of_bounds": [],
+    "empty_pages": [],
+    "outline_entries": 14,
+    "links": 28,
+    "figure_pages": [],
+    "contains_review_edits": {
+      "256 distinct resamples": true,
+      "check-then-spend": true
+    }
+  },
+  "_note": "Regenerated 12 September 2026 after the Fable review edits, with a PyMuPDF check script equivalent to the original fields (page count, text blocks outside the page rectangle, empty pages, outline entries, link annotations, pages with images). Text presence checks confirm the edited source reached the PDFs."
+}
