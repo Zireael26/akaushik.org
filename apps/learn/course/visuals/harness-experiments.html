@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Harness Engineering — Five Interactive Experiments</title>
+<style>
+:root{--ink:#172b2b;--muted:#4f6262;--paper:#fff;--soft:#f5f7f7;--line:#d5dfde;--accent:#086c63;--pale:#e8f4f1;--warn:#864716;--warn-bg:#fff3e6;--bad:#a13333;--code:#edf1f1;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--paper);font-size:16px;line-height:1.6}
+*{box-sizing:border-box}body{margin:0}a{color:var(--accent);text-underline-offset:.2em}button,input,select{font:inherit}button,select,input[type=number]{min-height:44px;border:1px solid #90a5a2;border-radius:5px;background:white;color:var(--ink)}button{padding:.5rem .9rem;cursor:pointer;font-weight:600}button:hover{background:var(--pale)}button:disabled{opacity:.45;cursor:default}button.primary{background:var(--accent);color:white;border-color:var(--accent)}button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid #d28a24;outline-offset:3px}select,input[type=number]{padding:.45rem .6rem;width:100%;min-width:0}input[type=range]{width:100%;accent-color:var(--accent);min-height:35px;margin:0}input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent);flex-shrink:0}h1,h2,h3,p{margin:0}h1{font-size:clamp(2rem,5vw,3.5rem);line-height:1.1;letter-spacing:-.045em;max-width:850px}h2{font-size:clamp(1.45rem,3vw,2rem);line-height:1.2;letter-spacing:-.025em}h3{font-size:1rem;line-height:1.4;font-weight:650}p+p{margin-top:.8rem}header,main,footer{max-width:1160px;margin:auto;padding-left:clamp(20px,4vw,48px);padding-right:clamp(20px,4vw,48px)}header{padding-top:52px;padding-bottom:30px}.eyebrow{text-transform:uppercase;letter-spacing:.13em;font-size:.76rem;font-weight:700;color:var(--accent);margin-bottom:15px}.lead{font-size:1.12rem;color:var(--muted);max-width:850px;margin-top:20px}.meta{font-size:.83rem;color:var(--muted);margin-top:18px}nav{display:flex;gap:8px 20px;flex-wrap:wrap;margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}nav a{font-size:.88rem;font-weight:600}.experiment{padding:36px 0 42px;border-top:1px solid var(--line);scroll-margin-top:20px}.section-head{display:flex;align-items:baseline;gap:16px;margin-bottom:12px}.number{font:500 1rem ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--accent)}.intro{max-width:900px;color:var(--muted);margin-bottom:24px}.layout{display:grid;grid-template-columns:minmax(245px,1fr) minmax(0,1.7fr);gap:28px;align-items:start}.controls{display:grid;gap:17px}.control{display:grid;gap:5px}.control>label,.control>span{font-size:.9rem;font-weight:600}.control-head{display:flex;justify-content:space-between;gap:10px;font-size:.9rem;font-weight:600}.control-head output{font-variant-numeric:tabular-nums;color:var(--accent)}.hint{font-size:.8rem;color:var(--muted);line-height:1.45}.check{display:flex;align-items:flex-start;gap:10px;font-size:.87rem}.check input{margin-top:3px}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:3px}.display{background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:20px;min-width:0}.result-title{font-weight:650;font-size:1.02rem;margin-bottom:8px}.live-line{min-height:3.2em;font-size:.9rem}.status{font-size:.85rem;font-weight:700;display:inline-block;padding:3px 8px;background:var(--pale);color:var(--accent);border-radius:3px}.status.warn{background:var(--warn-bg);color:var(--warn)}.status.bad{background:#fbecec;color:var(--bad)}.key{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:15px 0}.metric{border-top:1px solid var(--line);padding-top:10px}.metric strong{font-size:1.45rem;display:block;font-variant-numeric:tabular-nums;letter-spacing:-.02em}.metric span{font-size:.8rem;color:var(--muted)}code,pre{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.8rem}code{background:var(--code);border-radius:3px;padding:2px 4px;overflow-wrap:anywhere}pre{background:var(--code);padding:12px;margin:6px 0 14px;border-radius:4px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5;max-width:100%}pre code{padding:0}.state-grid{display:grid;gap:14px;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:18px}.state-grid pre{margin-bottom:0;min-height:150px}.diagram{display:block;width:100%;height:auto;margin:14px 0 18px}.diagram text{font-family:inherit;fill:var(--ink)}.diagram .node{fill:white;stroke:#9fb3b0;stroke-width:1}.diagram .active-node{fill:var(--pale);stroke:var(--accent);stroke-width:2}.diagram .edge{fill:none;stroke:#7b9590;stroke-width:1.5}.diagram .label{font-size:13px;font-weight:600}.diagram .small{font-size:12px;fill:var(--muted)}.diagram .current{fill:var(--accent);font-weight:700}.note{font-size:.86rem;margin-top:20px;padding-left:12px;border-left:3px solid #a9c9c2;color:var(--muted)}.note strong{color:var(--ink)}.assumptions{font-size:.8rem;color:var(--muted);margin-top:18px;line-height:1.55}.formula{font-size:.86rem;line-height:1.75;overflow-wrap:anywhere;margin-top:10px}.formula code{font-size:.8rem}.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}table{width:100%;border-collapse:collapse;font-size:.82rem}th,td{padding:9px 6px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:anywhere}th{font-weight:650}td:last-child,th:last-child{text-align:right;font-variant-numeric:tabular-nums}.warning{padding:10px 12px;background:var(--warn-bg);color:var(--warn);font-size:.85rem;border-radius:4px;margin:12px 0}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.event-log{margin:10px 0 0;padding-left:20px;font-size:.81rem;line-height:1.6}.event-log li{padding-left:3px}.event-log li:last-child{font-weight:650}.pill-row{display:flex;gap:12px;flex-wrap:wrap;font-size:.8rem;margin-top:12px}.pill-row span{display:inline-flex;gap:5px;align-items:center}.swatch{display:inline-block;width:11px;height:11px;border-radius:2px;background:var(--accent)}.swatch.neutral{background:#a1b7b1}.answer{margin-top:16px;font-size:.89rem;color:var(--muted)}footer{border-top:1px solid var(--line);padding-top:28px;padding-bottom:44px;color:var(--muted);font-size:.83rem}.print-note{display:none}noscript{display:block;padding:24px;background:var(--warn-bg)}
+@media(max-width:760px){header{padding-top:30px}.layout{grid-template-columns:1fr;gap:22px}.controls{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.controls>.wide,.controls>.actions,.controls>.check,.controls>.hint{grid-column:1/-1}.state-grid{grid-template-columns:1fr}.state-grid pre{min-height:0}.display{padding:16px}.section-head{gap:12px}.key{gap:12px}}
+@media(max-width:400px){.controls,.two{grid-template-columns:1fr}.controls>*{grid-column:1/-1}.metric strong{font-size:1.3rem}.experiment{padding-top:28px}.display{padding:12px}.diagram{margin:12px 0}.state-grid{gap:12px}nav{gap:10px 16px}#context table,#evaluation table{table-layout:fixed}#context th:first-child{width:50%}#context th:nth-child(2),#context th:nth-child(3){width:25%}#evaluation th:first-child{width:40%}#evaluation th:nth-child(2){width:35%}#evaluation th:nth-child(3){width:25%}#context th:nth-child(n+2),#evaluation th:nth-child(n+2),#context td:nth-child(n+2),#evaluation td:nth-child(n+2){white-space:nowrap;overflow-wrap:normal}}
+@media print{body{font-size:10pt}.experiment{break-before:page;break-inside:avoid}header,main,footer{max-width:none;padding-left:0;padding-right:0}header{padding-top:0}.layout{grid-template-columns:1fr}.controls{display:none}.display{background:white;border:0;padding:0}.state-grid{grid-template-columns:1fr 1fr}.diagram{max-height:230px}.print-note{display:block;font-size:9pt;margin-top:12px}nav{display:none}a{color:inherit}h1{font-size:30pt}.intro{font-size:10pt;margin-bottom:10px}.note,.assumptions{font-size:9pt}pre{font-size:8pt}.key{margin:10px 0}.actions{display:none}footer{break-before:page}}
+</style>
+</head>
+<body>
+<header>
+<div class="eyebrow">Harness Engineering · Interactive companion</div>
+<h1>Make the hidden mechanics visible.</h1>
+<p class="lead">Five small experiments in agent control, context, coordination, durable execution, and evaluation. Change one assumption, predict the result, then inspect what actually changes.</p>
+<p class="meta">Offline · No API keys · No external libraries · Illustrative calculations, not benchmark results</p>
+<nav aria-label="Experiments"><a href="#loop">01 Agent loop</a><a href="#context">02 Context budget</a><a href="#topology">03 Coordination</a><a href="#replay">04 Crash &amp; replay</a><a href="#evaluation">05 Reliability</a></nav>
+<p class="print-note">Print captures the current state of each experiment. Open this file in a browser to operate the controls.</p>
+</header>
+<noscript>These experiments require JavaScript to calculate results and advance the simulations. The explanations and formulas remain readable below.</noscript>
+<main>
+<section class="experiment" id="loop" aria-labelledby="loop-title">
+<div class="section-head"><span class="number">01</span><h2 id="loop-title">The model proposes. The harness controls.</h2></div>
+<p class="intro">A coding agent must fix a timeout regression and pass eight deterministic acceptance checks. Follow one turn and see why a convincing completion message is insufficient evidence.</p>
+<div class="layout">
+<div class="controls">
+<div class="control wide"><label for="loop-fault">Tool outcome</label><select id="loop-fault"><option value="clean">Patch passes all eight checks</option><option value="false">One check fails; model claims success</option></select></div>
+<label class="check wide"><input type="checkbox" id="loop-gate" checked><span>Require the acceptance verifier before marking the task complete</span></label>
+<div class="actions"><button id="loop-next" class="primary" type="button">Next step</button><button id="loop-reset" type="button">Reset</button></div>
+<p class="hint wide">Predict: with a failed test and an optimistic model message, which component has authority to mark the run complete?</p>
+<div class="note wide"><strong>Transfer to your product:</strong> define machine-checkable completion evidence, store it with the run, and make the terminal transition conditional on it.</div>
+</div>
+<div class="display">
+<div id="loop-status" class="status">Step 0 / 7 · Request received</div>
+<svg id="loop-diagram" class="diagram" role="img" aria-label="Agent control loop" viewBox="0 0 480 232"></svg>
+<p id="loop-text" class="live-line" aria-live="polite"></p>
+<div class="state-grid"><div><h3>Durable run state</h3><pre id="loop-state"></pre></div><div><h3>Current model context / action</h3><pre id="loop-context"></pre></div></div>
+</div>
+</div>
+<p class="assumptions">Toy execution: one patch, one test invocation, one completion decision. The test suite is an explicit acceptance condition for this task, not proof that the whole program is correct. A real harness also enforces permissions, budgets, cancellation, and tool schemas.</p>
+</section>
+
+<section class="experiment" id="context" aria-labelledby="context-title">
+<div class="section-head"><span class="number">02</span><h2 id="context-title">Context is an admission decision.</h2></div>
+<p class="intro">Reserve output space and preserve the example’s mandatory policies, task, and unresolved tool facts. Optional context is admitted by priority. A full window is a ceiling, not a target.</p>
+<div class="layout">
+<div class="controls">
+<div class="control"><div class="control-head"><label for="ctx-window">Total window</label><output id="ctx-window-value" for="ctx-window"></output></div><input id="ctx-window" type="range" min="8192" max="65536" step="512" value="32768"></div>
+<div class="control"><div class="control-head"><label for="ctx-output">Output reserve</label><output id="ctx-output-value" for="ctx-output"></output></div><input id="ctx-output" type="range" min="1024" max="8192" step="256" value="4096"></div>
+<div class="control"><div class="control-head"><label for="ctx-evidence">Retrieved evidence</label><output id="ctx-evidence-value" for="ctx-evidence"></output></div><input id="ctx-evidence" type="range" min="0" max="24000" step="500" value="6000"></div>
+<div class="control"><div class="control-head"><label for="ctx-history">Conversation history</label><output id="ctx-history-value" for="ctx-history"></output></div><input id="ctx-history" type="range" min="0" max="24000" step="500" value="6000"></div>
+<div class="control"><div class="control-head"><label for="ctx-memory">Long-term memory</label><output id="ctx-memory-value" for="ctx-memory"></output></div><input id="ctx-memory" type="range" min="0" max="12000" step="500" value="2000"></div>
+<div class="control"><label for="ctx-priority">Optional admission order</label><select id="ctx-priority"><option value="evidence,history,memory">Evidence → history → memory</option><option value="history,evidence,memory">History → evidence → memory</option><option value="memory,evidence,history">Memory → evidence → history</option></select></div>
+<p class="hint wide">Try an 8,192-token window with 4,096 reserved for output. Do the mandatory inputs fit? Then raise the window and swap the optional priority.</p>
+</div>
+<div class="display">
+<div id="ctx-status" class="status"></div>
+<svg id="ctx-diagram" class="diagram" role="img" aria-label="Token window allocation" viewBox="0 0 480 88"></svg>
+<div id="ctx-alert" class="warning" role="alert" hidden></div>
+<table><thead><tr><th scope="col">Context component</th><th scope="col">Wanted</th><th scope="col">Kept</th></tr></thead><tbody id="ctx-table"></tbody></table>
+<div class="key"><div class="metric"><strong id="ctx-free"></strong><span>Unused tokens after reserve</span></div><div class="metric"><strong id="ctx-omitted"></strong><span>Optional tokens omitted</span></div></div>
+<p id="ctx-explanation" class="answer" aria-live="polite"></p>
+</div>
+</div>
+<p class="note"><strong>Never silently discard unresolved facts.</strong> Here, 2,000 policy tokens, 1,500 task tokens, and 4,000 required tool-result tokens are protected. When they cannot fit with the output reserve, this allocator rejects the call. In production, fetch referenced artifacts, summarize under a validated contract, or choose an appropriate context limit.</p>
+<p class="assumptions">Assumptions: simple token counts; no tokenizer overhead; fixed mandatory sizes; divisible optional payloads. Real messages need structured boundaries, provenance, trust labels, and sometimes indivisible chunks. Admission order and token counts do not estimate answer quality. Tool output remains untrusted data even when it must be retained.</p>
+</section>
+
+<section class="experiment" id="topology" aria-labelledby="topology-title">
+<div class="section-head"><span class="number">03</span><h2 id="topology-title">Coordination has a bill.</h2></div>
+<p class="intro">Compare five explicit execution plans for the same <em>n × r</em> worker calls. Coordination may add model calls, serial dependencies, or message copies. These calculations say nothing about which plan solves the task better.</p>
+<div class="layout">
+<div class="controls">
+<div class="control wide"><label for="top-kind">Execution topology</label><select id="top-kind"><option value="single">Single agent · sequential loop</option><option value="supervisor">Supervisor · dispatch and synthesize each round</option><option value="parallel">Parallel workers · one final synthesizer</option><option value="debate">Debate · all-to-all between rounds</option><option value="workflow">Fixed workflow · deterministic barriers</option></select></div>
+<div class="control"><div class="control-head"><label for="top-n">Workers / work items, n</label><output id="top-n-value" for="top-n"></output></div><input id="top-n" type="range" min="2" max="8" step="1" value="3"></div>
+<div class="control"><div class="control-head"><label for="top-r">Rounds / steps, r</label><output id="top-r-value" for="top-r"></output></div><input id="top-r" type="range" min="1" max="5" step="1" value="3"></div>
+<div class="control"><label for="top-t">Seconds per LLM call, t</label><input id="top-t" type="number" min="0.1" max="120" step="0.1" value="4"></div>
+<div class="control"><label for="top-d">Seconds per message hop, d</label><input id="top-d" type="number" min="0" max="10" step="0.01" value="0.05"></div>
+<div class="control"><label for="top-m">Tokens per message copy, m</label><input id="top-m" type="number" min="1" max="100000" step="1" value="200"></div>
+<p class="hint wide">Try debate with eight workers and five rounds. Which grows faster: calls, critical-path time, or communication?</p>
+</div>
+<div class="display">
+<p id="top-definition" class="result-title"></p>
+<svg id="top-diagram" class="diagram" role="img" aria-label="Selected orchestration topology" viewBox="0 0 480 265"></svg>
+<div class="key"><div class="metric"><strong id="top-calls"></strong><span>Total LLM calls</span></div><div class="metric"><strong id="top-time"></strong><span>Modeled critical-path time</span></div><div class="metric"><strong id="top-edges"></strong><span>Intercomponent message copies</span></div><div class="metric"><strong id="top-tokens"></strong><span>Communication tokens transported</span></div></div>
+<div id="top-formulas" class="formula"></div>
+<p id="top-description" class="answer" aria-live="polite"></p>
+</div>
+</div>
+<p class="assumptions">Model: identical call duration <em>t</em>; unlimited concurrency; no rate limits, queueing, retries, tool time, or growing prompts; one message size <em>m</em>; fan-out/fan-in messages can travel concurrently in <em>d</em> seconds per hop. Communication counts assignments, intercomponent handoffs, and returns; single-agent local loop traffic is excluded. Tokens transported are not billed tokens: recipients and prompt-history retention determine billing. Deterministic scheduling/join compute is modeled as zero time. The diagrams aggregate parallel workers and repeated rounds.</p>
+<p class="note"><strong>Framework mapping:</strong> a graph can encode any of these plans. Choose concurrency and state ownership explicitly. Then compare task success, failure modes, latency, and cost against a strong single-agent baseline.</p>
+</section>
+
+<section class="experiment" id="replay" aria-labelledby="replay-title">
+<div class="section-head"><span class="number">04</span><h2 id="replay-title">A checkpoint cannot undo a side effect.</h2></div>
+<p class="intro">A support agent proposes a $100 credit for invoice INV-42. Approve the exact action, execute it, then crash before the harness saves the result. Observe what replay does at the external boundary.</p>
+<div class="layout">
+<div class="controls">
+<div class="control wide"><label for="replay-mode">External credit service</label><select id="replay-mode"><option value="safe">Stable business key + atomic deduplication</option><option value="unsafe">No idempotency protection</option></select></div>
+<div class="actions"><button id="replay-next" type="button" class="primary">Save intent &amp; interrupt</button><button id="replay-reset" type="button">Reset</button></div>
+<div class="actions"><button id="replay-approve" type="button" disabled>Approve exact action</button><button id="replay-change" type="button" disabled>Change amount to $150</button></div>
+<p class="hint wide">Approval binds to the invoice, amount, operation, and payload version. Changing the amount invalidates approval and requires a new decision.</p>
+<div class="note wide"><strong>The hard boundary:</strong> the external service must atomically couple its deduplication record with the credit. A local “already called” flag is insufficient across this crash window.</div>
+</div>
+<div class="display">
+<div id="replay-status" class="status"></div>
+<svg id="replay-diagram" class="diagram" role="img" aria-label="Checkpoint, approval, external effect, replay, and commit sequence" viewBox="0 0 480 205"></svg>
+<p id="replay-text" class="live-line" aria-live="polite"></p>
+<div class="state-grid"><div><h3>Latest durable checkpoint</h3><pre id="replay-state"></pre></div><div><h3>External credit ledger</h3><pre id="replay-ledger"></pre></div></div>
+<ol id="replay-log" class="event-log" aria-label="Execution log"></ol>
+</div>
+</div>
+<p class="assumptions">This is a deterministic in-memory simulator; refreshing the page clears it. In a real durable engine, checkpoints live outside the process. The safe service enforces a unique stable operation key, returns the previous receipt on replay, and rejects reuse with a different payload. That models one visible credit under retry; it does not assert universal “exactly once” execution. Approval authentication, expiry, revocation, and concurrent updates need implementation beyond this toy.</p>
+</section>
+
+<section class="experiment" id="evaluation" aria-labelledby="evaluation-title">
+<div class="section-head"><span class="number">05</span><h2 id="evaluation-title">Reliability depends on the question.</h2></div>
+<p class="intro">“At least one of five attempts works” and “all five attempts work” measure different things. Correlated failures change both, even when the success probability of one attempt stays fixed.</p>
+<div class="layout">
+<div class="controls">
+<div class="control"><div class="control-head"><label for="eval-p">Marginal success probability, p</label><output id="eval-p-value" for="eval-p"></output></div><input id="eval-p" type="range" min="0" max="100" step="1" value="70"></div>
+<div class="control"><div class="control-head"><label for="eval-k">Attempts per batch, k</label><output id="eval-k-value" for="eval-k"></output></div><input id="eval-k" type="range" min="1" max="20" step="1" value="5"></div>
+<div class="control wide"><div class="control-head"><label for="eval-q">Shared-failure probability, q</label><output id="eval-q-value" for="eval-q"></output></div><input id="eval-q" type="range" min="0" max="30" step="1" value="10"><p id="eval-bound" class="hint"></p></div>
+<p class="hint wide">Try k = 1: both models must give p. Then increase k. Finally set q = 0 and confirm the independent and mixture results coincide.</p>
+<div class="note wide"><strong>Illustrative inputs only.</strong> There are no empirical success rates in this experiment. Repeated attempts help only if your selector or verifier can identify a valid result.</div>
+</div>
+<div class="display">
+<div class="pill-row"><span><i class="swatch" aria-hidden="true"></i>Independent attempts</span><span><i class="swatch neutral" aria-hidden="true"></i>Shared-failure mixture</span></div>
+<svg id="eval-diagram" class="diagram" role="img" aria-label="Comparison of at-least-one and all-attempt success probabilities" viewBox="0 0 480 246"></svg>
+<table><thead><tr><th scope="col">Criterion</th><th scope="col">Independent</th><th scope="col">Mixture</th></tr></thead><tbody id="eval-table"></tbody></table>
+<div class="formula"><strong>Independent Bernoulli attempts</strong><br><code>pass@k = 1 − (1 − p)<sup>k</sup></code><br><code>pass^k = p<sup>k</sup></code><br><strong>Shared-failure mixture, same marginal p</strong><br><code>s = p / (1 − q)</code><br><code>pass@k = (1 − q) · [1 − (1 − s)<sup>k</sup>]</code><br><code>pass^k = (1 − q) · s<sup>k</sup></code></div>
+<p id="eval-description" class="answer" aria-live="polite"></p>
+</div>
+</div>
+<p class="assumptions">Mixture definition: with probability <em>q</em>, a shared event makes every attempt fail; otherwise attempts are independent Bernoulli(<em>s</em>). Holding marginal <em>p</em> fixed requires <em>s = p/(1−q)</em> and <em>0 ≤ q ≤ 1−p</em>. At <em>p = 0, q = 1</em>, all attempts fail and the conditional success rate is undefined. This is one positive-correlation model, not a general model of agent errors.</p>
+<p class="note"><strong>Evaluation transfer:</strong> report the task distribution, trial count, verifier, uncertainty, and costs. These formulas describe an assumed probability model. For an empirical candidate set of <em>n</em> samples with <em>c</em> successes, the standard combinatorial pass@k estimator is <code>1 − C(n−c,k) / C(n,k)</code> for <em>n ≥ k</em>; plugging an estimated success rate into the independent formula is not the same estimator. This companion uses <em>pass^k</em> for the probability all <em>k</em> runs succeed.</p>
+</section>
+</main>
+<footer><p><strong>Use each experiment as a lab preflight.</strong> State a hypothesis, change one control, explain the mechanism, then reproduce the failure and fix in real code. A production harness needs measured evidence across representative tasks.</p><p>Designed as a companion to the Harness Engineering &amp; Multi-Agent Systems curriculum. All examples are synthetic. No browser data is transmitted or saved.</p></footer>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const fmt = n => new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(n);
+const pct = n => `${(Math.max(0,Math.min(1,n))*100).toFixed(2)}%`;
+const escapeHTML = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const defs = `<defs><marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#7b9590"/></marker></defs>`;
+function node(x,y,w,h,label,active=false,subtitle='') {return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="5" class="${active?'active-node':'node'}"/><text x="${x+w/2}" y="${y+(subtitle?22:h/2+5)}" data-node-width="${w}" data-center-y="${y+h/2}" text-anchor="middle" class="label">${escapeHTML(label)}</text>${subtitle?`<text x="${x+w/2}" y="${y+41}" data-subtitle="true" text-anchor="middle" class="small">${escapeHTML(subtitle)}</text>`:''}`;}
+function edge(path){return `<path d="${path}" class="edge" marker-end="url(#arrow)"/>`;}
+function diagram(el,body,title,description){const marker=el.id+'-arrow';el.innerHTML=`<title>${escapeHTML(title)}</title><desc>${escapeHTML(description)}</desc>${defs}${body}`.replaceAll('id="arrow"',`id="${marker}"`).replaceAll('url(#arrow)',`url(#${marker})`);}
+
+// 01 — deterministic agent-loop simulation
+let loopStep=0;
+const loopLabels=['Request received','Checkpoint intent','Build context','Choose tool action','Persist observation','Model claims completion','Verify acceptance','Terminal decision'];
+function renderLoop(){
+ const fault=$('loop-fault').value==='false', gate=$('loop-gate').checked;
+ const failed=fault&&loopStep>=4, complete=loopStep===7&&(!fault||!gate), blocked=loopStep===7&&fault&&gate;
+ $('loop-status').textContent=`Step ${loopStep} / 7 · ${loopLabels[loopStep]}`;
+ $('loop-status').className='status'+(blocked?' warn':complete&&fault?' bad':'');
+ const texts=[
+ 'Task: fix the timeout regression. Acceptance requires all eight specified checks to pass.',
+ 'The harness stores the task, acceptance contract, and running status. This survives a process restart.',
+ 'The harness constructs a model input from durable state, current instructions, and selected repository evidence.',
+ 'The model proposes apply_patch_and_test. The harness validates the tool arguments and permits execution.',
+ fault?'The tool reports 7/8 checks passed. The harness stores the failure and a test-log reference.':'The tool reports 8/8 checks passed. The harness stores the result and a test-log reference.',
+ fault?'The model says “Fixed; all done.” This contradicts the stored tool result. A completion claim is just another model output.':'The model says “Fixed; all done.” The harness has a claim and supporting test evidence.',
+ gate?(fault?'The acceptance verifier reads the stored evidence and rejects completion: timeout_retry still fails.':'The acceptance verifier confirms the required eight checks passed.'):'The completion gate is disabled. The harness accepts the model’s claim without checking the acceptance contract.',
+ blocked?'Status: needs_work. The failed acceptance condition remains visible; the task is not marked complete.':fault?'False completion: the harness marked the task complete despite a known failing check.':'Status: complete. The durable outcome includes the acceptance result and evidence reference.'
+ ];
+ $('loop-text').textContent=texts[loopStep];
+ const state=loopStep===0?{run_id:'run-42',status:'not_started'}:{run_id:'run-42',status:blocked?'needs_work':complete?'complete':'running',acceptance:'8/8 checks pass',phase:loopLabels[loopStep],...(loopStep>=4?{tests_passed:fault?7:8,evidence:'artifact:test-log-42'}:{}),...(loopStep>=6?{verified:gate&&!fault}:{}),...(loopStep===7?{completed:complete}:{})};
+ $('loop-state').textContent=JSON.stringify(state,null,2);
+ let context='No model invocation yet.';
+ if(loopStep===2) context='POLICY: Use approved repository tools.\nTASK: Fix timeout regression.\nACCEPT: 8/8 checks pass.\nEVIDENCE: timeout handler + failing test.';
+ if(loopStep===3) context='Tool proposal:\napply_patch_and_test({\n  patch_ref: "patch-42",\n  suite: "timeout_acceptance"\n})';
+ if(loopStep===4) context=`Tool observation:\npassed: ${fault?7:8}\nfailed: ${fault?'timeout_retry':'none'}\nlog: artifact:test-log-42`;
+ if(loopStep>=5) context=`Model output:\n"Fixed; all done."\n\nStored evidence: ${fault?7:8}/8 pass\nVerifier required: ${gate?'yes':'no'}\nTerminal authority: harness`;
+ $('loop-context').textContent=context;
+ const active=loopStep<=1?0:loopStep===2?1:loopStep<=4?2:loopStep===5?3:4;
+ diagram($('loop-diagram'),edge('M154 36 H182')+edge('M326 36 H352')+edge('M410 65 V120 H311')+edge('M169 148 H145')+edge('M75 120 V72')+node(10,8,144,56,'Durable state',active===0,'Task + evidence')+node(182,8,144,56,'Context',active===1,'Selected input')+node(354,8,116,56,'Model / tool',active===2,'Propose + act')+node(169,120,142,56,'Completion claim',active===3,'Untrusted assertion')+node(10,120,135,56,'Harness gate',active===4,gate?'Checks evidence':'Gate disabled')+`<text x="240" y="216" text-anchor="middle" class="small">State persists; model context is rebuilt for each call.</text>`,'Agent loop with completion gate',`Current step: ${loopLabels[loopStep]}. Durable state feeds context, context feeds model and tool execution, the completion claim is checked by a harness gate, and results return to durable state.`);
+ $('loop-next').disabled=loopStep===7;
+}
+$('loop-next').addEventListener('click',()=>{loopStep=Math.min(7,loopStep+1);renderLoop();});
+$('loop-reset').addEventListener('click',()=>{loopStep=0;renderLoop();});
+['loop-fault','loop-gate'].forEach(id=>$(id).addEventListener('change',()=>{loopStep=0;renderLoop();}));
+
+// 02 — strict budget allocator; mandatory context is never silently removed
+function renderContext(){
+ const keys=['window','output','evidence','history','memory'];const v={};
+ keys.forEach(k=>{v[k]=+$("ctx-"+k).value;$("ctx-"+k+'-value').textContent=fmt(v[k]);});
+ const mandatory=7500, valid=mandatory+v.output<=v.window;
+ let remaining=Math.max(0,v.window-v.output-mandatory);const admitted={evidence:0,history:0,memory:0};
+ if(valid) $('ctx-priority').value.split(',').forEach(k=>{admitted[k]=Math.min(remaining,v[k]);remaining-=admitted[k];});
+ const omitted=v.evidence+v.history+v.memory-admitted.evidence-admitted.history-admitted.memory;
+ $('ctx-status').textContent=valid?'Call admissible · Mandatory context preserved':'Call rejected · Mandatory context cannot fit';
+ $('ctx-status').className='status'+(valid?'':' warn');
+ $('ctx-alert').hidden=valid;
+ $('ctx-alert').textContent=`Mandatory context + output reserve exceeds the window by ${fmt(mandatory+v.output-v.window)} tokens. Increase capacity or reduce the output reserve. No model call is made.`;
+ const rows=[['Policies · required',2000,2000],['Task · required',1500,1500],['Tool facts · required',4000,4000],['Retrieved evidence',v.evidence,admitted.evidence],['History',v.history,admitted.history],['Memory',v.memory,admitted.memory],['Output reserve',v.output,v.output]];
+ $('ctx-table').innerHTML=rows.map(([name,requested,actual])=>`<tr><td>${name}</td><td>${fmt(requested)}</td><td>${valid?fmt(actual):'—'}</td></tr>`).join('');
+ $('ctx-free').textContent=valid?fmt(remaining):'No call';$('ctx-omitted').textContent=valid?fmt(omitted):'No call';
+ $('ctx-explanation').textContent=valid?`${fmt(v.window-v.output-remaining)} input tokens admitted; ${fmt(v.output)} reserved for output. ${omitted?fmt(omitted)+' optional tokens require omission or another retrieval/compaction strategy.':'Every requested input component fits.'}`:'The dashes mean no context was submitted. The harness does not convert an invalid allocation into a smaller, policy-free prompt.';
+ let body=`<text x="0" y="15" class="small">${valid?'Input, output reserve, and unused capacity':'Required capacity exceeds available window'}</text>`;
+ if(valid){let x=0;const segments=[[mandatory,'#086c63','Required'],[admitted.evidence,'#4f9588','Evidence'],[admitted.history,'#88b7ac','History'],[admitted.memory,'#abcac1','Memory'],[v.output,'#c7d2cf','Output'],[remaining,'#e3e9e7','Free']];segments.forEach(([count,color,label])=>{const w=count/v.window*480;if(w>0)body+=`<rect x="${x}" y="28" width="${w}" height="25" fill="${color}"><title>${label}: ${fmt(count)} tokens</title></rect>`;x+=w;});body+=`<text x="0" y="76" class="small">0 tokens</text><text x="480" y="76" text-anchor="end" class="small">${fmt(v.window)} tokens</text>`;}
+ else{const max=mandatory+v.output;const fit=v.window/max*480;body+=`<rect x="0" y="28" width="480" height="25" fill="#e5d7c5"/><rect x="0" y="28" width="${fit}" height="25" fill="#abcac1"/><path d="M${fit} 23 V59" stroke="#864716" stroke-width="2"/><text x="0" y="76" class="small">Available: ${fmt(v.window)}</text><text x="480" y="76" text-anchor="end" class="small">Required: ${fmt(max)}</text>`;}
+ diagram($('ctx-diagram'),body,'Context admission budget',valid?`Window ${v.window}; mandatory ${mandatory}; optional admitted ${admitted.evidence+admitted.history+admitted.memory}; output reserve ${v.output}; unused ${remaining}.`:`Rejected: ${mandatory+v.output} required tokens exceed ${v.window} available tokens.`);
+}
+['window','output','evidence','history','memory','priority'].forEach(k=>$('ctx-'+k).addEventListener('input',renderContext));
+
+// 03 — closed-form topology models; no claims about empirical performance
+function numeric(id,fallback,min,max){const v=Number($(id).value);return Number.isFinite(v)?Math.min(max,Math.max(min,v)):fallback;}
+function renderTopology(){
+ const n=+$('top-n').value,r=+$('top-r').value,t=numeric('top-t',4,.1,120),d=numeric('top-d',.05,0,10),m=Math.round(numeric('top-m',200,1,100000)),kind=$('top-kind').value;
+ $('top-n-value').textContent=n;$('top-r-value').textContent=r;
+ const models={
+ single:{calls:n*r,edges:0,time:n*r*t,formula:'C = n·r; E = 0; T = n·r·t',title:'One model performs all worker calls sequentially.',desc:`The agent executes ${n*r} calls in one serial loop. No intercomponent messages are modeled. Local tool observations and context rebuilding still have real costs outside this model.`},
+ supervisor:{calls:r*(n+2),edges:2*n*r,time:3*r*t+2*r*d,formula:'C = r·(n+2); E = 2·n·r; T = 3·r·t + 2·r·d',title:'Every round has dispatch, parallel work, and synthesis.',desc:`For each of ${r} rounds: one supervisor call dispatches ${n} workers in parallel, then one supervisor call synthesizes their replies. Rounds are sequential. Each round adds two coordination calls and ${2*n} messages.`},
+ parallel:{calls:n*r+1,edges:2*n,time:(r+1)*t+2*d,formula:'C = n·r + 1; E = 2·n; T = (r+1)·t + 2·d',title:'Independent worker branches converge once.',desc:`A deterministic dispatcher assigns ${n} workers. Each runs ${r} local sequential calls. One final LLM call synthesizes the returned results. Workers never exchange messages with one another.`},
+ debate:{calls:n*r+1,edges:2*n+n*(n-1)*(r-1),time:(r+1)*t+(r+1)*d,formula:'C = n·r + 1; E = 2·n + n·(n−1)·(r−1); T = (r+1)·t + (r+1)·d',title:'Agents read every peer between synchronous rounds.',desc:`There are ${r} simultaneous debate rounds and one final judge call. Every inter-round boundary sends ${n*(n-1)} directed peer messages. Replies and initial assignments add ${2*n} more messages. No peer exchange is needed after the last round.`},
+ workflow:{calls:n*r,edges:n*(r+1),time:r*t+(r+1)*d,formula:'C = n·r; E = n·(r+1); T = r·t + (r+1)·d',title:'Fixed stages run in parallel with deterministic barriers.',desc:`Each of ${n} branches runs ${r} LLM stages. Each stage receives only its branch’s previous output. A deterministic barrier waits between stages and a deterministic join collects final outputs. ${n} assignments, ${n*(r-1)} inter-stage transfers, and ${n} returns are counted.`}
+ };
+ const x=models[kind];$('top-definition').textContent=x.title;$('top-calls').textContent=fmt(x.calls);$('top-time').textContent=fmt(x.time)+' s';$('top-edges').textContent=fmt(x.edges);$('top-tokens').textContent=fmt(x.edges*m);$('top-formulas').innerHTML=`<code>${x.formula}</code><br><code>Communication tokens = E·m</code>`;$('top-description').textContent=x.desc;
+ let body='';
+ if(kind==='single')body=edge('M240 68 V106')+edge('M240 164 V202')+node(128,10,224,58,'One agent',true,`${n*r} sequential calls`)+node(128,106,224,58,'Local state / tools',false,'No peer messages')+node(128,202,224,42,'Final result')+edge('M352 136 H397 V39 H354');
+ if(kind==='supervisor')body=edge('M240 68 V105')+edge('M240 163 V202')+node(108,10,264,58,'Supervisor dispatch',true,'1 LLM call per round')+node(108,105,264,58,`${n} parallel workers`,false,'1 call each per round')+node(108,202,264,58,'Supervisor synthesis',true,`1 call; repeat ${r} rounds`);
+ if(kind==='parallel')body=edge('M240 52 V97')+edge('M240 157 V200')+node(116,10,248,42,'Deterministic dispatcher')+node(108,97,264,60,`${n} parallel worker branches`,true,`${r} sequential calls per branch`)+node(116,200,248,58,'Final synthesizer',false,'1 LLM call');
+ if(kind==='debate')body=edge('M128 79 H352')+edge('M352 99 H128')+edge('M81 116 V156 H240 V194')+edge('M399 116 V156 H240')+node(8,58,120,58,'Agent 1',true,`${r} rounds`)+node(352,58,120,58,`Agent ${n}`,true,`${r} rounds`)+`<text x="240" y="27" text-anchor="middle" class="small">${n} agents · all-to-all peer exchange</text><text x="240" y="131" text-anchor="middle" class="small">${r-1} exchange boundaries</text>`+node(108,194,264,58,'Final judge',false,'1 LLM call');
+ if(kind==='workflow')body=edge('M240 52 V97')+edge('M240 155 V198')+node(108,10,264,42,'Deterministic dispatcher')+node(100,97,280,58,`${n} parallel branches × ${r} stages`,true,'Barrier after each stage')+node(108,198,264,58,'Deterministic join',false,'No extra LLM calls');
+ diagram($('top-diagram'),body,'Selected topology: '+kind,x.desc);
+}
+['kind','n','r','t','d','m'].forEach(k=>$('top-'+k).addEventListener('input',renderTopology));
+
+// 04 — external effects are independent from local checkpoint commits
+let replay={step:0,amount:100,approved:false,ledger:[],events:[],checkpoint:{status:'not_started'}};
+const replayLabels=['Ready','Awaiting approval','Approved','External effect committed','Process crashed','Checkpoint resumed','Tool replayed','Result checkpointed'];
+const replayNextLabels=['Save intent & interrupt','Approval required','Execute credit','Crash before checkpoint','Resume checkpoint','Replay tool call','Save result','Complete'];
+function replayReset(){replay={step:0,amount:100,approved:false,ledger:[],events:[],checkpoint:{status:'not_started'}};renderReplay();}
+function recordEvent(message){replay.events.push(message);}
+function applyCredit(){
+ const safe=$('replay-mode').value==='safe';
+ if(safe&&replay.ledger.length){recordEvent('Service returns the original receipt; no new credit is created.');return;}
+ replay.ledger.push({receipt:'CR-'+(replay.ledger.length+1),invoice:'INV-42',amount_usd:replay.amount,key:safe?'credit:INV-42:v1':null});
+ recordEvent(`External service writes ${replay.ledger.at(-1).receipt}: $${replay.amount}.`);
+}
+function advanceReplay(){
+ switch(replay.step){
+ case 0:replay.step=1;replay.checkpoint={status:'awaiting_approval',operation:'issue_credit',invoice:'INV-42',amount_usd:replay.amount,business_key:'credit:INV-42:v1'};recordEvent('Intent checkpointed. Execution interrupted before the side effect.');break;
+ case 2:if(!replay.approved)return;applyCredit();replay.step=3;break;
+ case 3:replay.step=4;recordEvent('Process crashes before persisting the tool result.');break;
+ case 4:replay.step=5;recordEvent('Resume from approved checkpoint: the next action is still execute_credit.');break;
+ case 5:applyCredit();replay.step=6;break;
+ case 6:replay.step=7;replay.checkpoint={...replay.checkpoint,status:'completed',next_action:null,receipt:replay.ledger.at(-1).receipt};recordEvent('Tool result checkpointed. Run completed.');break;
+ }
+ renderReplay();
+}
+function approveReplay(){
+ if(replay.step!==1)return;
+ replay.approved=true;replay.step=2;replay.checkpoint={...replay.checkpoint,status:'approved',amount_usd:replay.amount,approved_payload:`INV-42|issue_credit|USD|${replay.amount}|v1`,next_action:'execute_credit'};
+ recordEvent(`Human approves exact $${replay.amount} payload; approval is checkpointed.`);renderReplay();
+}
+function changeReplay(){
+ if(replay.step!==2||replay.amount!==100)return;
+ replay.amount=150;replay.approved=false;replay.step=1;replay.checkpoint={...replay.checkpoint,status:'awaiting_approval',amount_usd:150,approved_payload:null,next_action:null};recordEvent('Amount changed to $150. Previous approval invalidated; interrupt again.');renderReplay();
+}
+function renderReplay(){
+ const safe=$('replay-mode').value==='safe';const s=replay.step;
+ $('replay-mode').disabled=s!==0;
+ $('replay-status').textContent=`Step ${s} / 7 · ${replayLabels[s]}`;
+ $('replay-status').className='status'+(s===4?' warn':!safe&&s>=6?' bad':'');
+ $('replay-next').textContent=replayNextLabels[s];$('replay-next').disabled=s===1||s===7;
+ $('replay-approve').disabled=s!==1;$('replay-change').disabled=s!==2||replay.amount!==100;
+ const descriptions=[`A proposed $${replay.amount} credit has not been approved or executed.`,
+ `The run is paused. Only approval of the current $${replay.amount} payload permits the next action.`,
+ `Approval is durable. The exact $${replay.amount} credit is permitted; an altered payload is not.`,
+ 'The external credit exists. The durable checkpoint still says “execute_credit”; the result has not been saved.',
+ 'The worker process is gone. The external ledger survives, and so does the older approved checkpoint.',
+ 'The engine restarts at the approved checkpoint. It cannot infer whether the external call already committed.',
+ safe?'Replay returned the original receipt. The external ledger still contains one credit.':'Replay created a second credit. A correct local checkpoint strategy did not prevent the duplicate effect.',
+ safe?'The run completed with one visible credit and a durable receipt. Deduplication protected the external boundary.':'The run completed, but the customer received two credits. Completion is not evidence of correct external effects.'
+ ];
+ $('replay-text').textContent=descriptions[s];$('replay-state').textContent=JSON.stringify(replay.checkpoint,null,2);
+ $('replay-ledger').textContent=JSON.stringify({credits:replay.ledger.map(({receipt,amount_usd})=>({receipt,amount_usd})),total_usd:replay.ledger.reduce((a,x)=>a+x.amount_usd,0)},null,2);
+ $('replay-log').innerHTML=replay.events.map(e=>`<li>${escapeHTML(e)}</li>`).join('');
+ diagram($('replay-diagram'),edge('M146 36 H180')+edge('M306 36 H340')+edge('M404 63 V124 H307')+edge('M172 152 H139')+node(8,8,138,56,'Save intent',s<=1,'Durable')+node(180,8,126,56,'Approval',s===2,'Exact payload')+node(340,8,132,56,'Credit service',s===3,'External effect')+node(172,124,135,56,'Crash / replay',s>=4&&s<=6,safe?'Stable key':'No deduplication')+node(8,124,131,56,'Save receipt',s===7,'Durable result'),'Credit execution across a crash boundary',descriptions[s]);
+}
+$('replay-next').addEventListener('click',advanceReplay);$('replay-reset').addEventListener('click',replayReset);$('replay-mode').addEventListener('change',replayReset);$('replay-approve').addEventListener('click',approveReplay);$('replay-change').addEventListener('click',changeReplay);
+
+// 05 — fixed-marginal shared-failure mixture
+function reliability(p,k,q){
+ const independentAny=1-Math.pow(1-p,k),independentAll=Math.pow(p,k);
+ if(q===1)return {independentAny,independentAll,any:0,all:0,s:null};
+ const s=Math.min(1,p/(1-q));return {independentAny,independentAll,any:(1-q)*(1-Math.pow(1-s,k)),all:(1-q)*Math.pow(s,k),s};
+}
+function renderEvaluation(){
+ const p=+$('eval-p').value/100,k=+$('eval-k').value;
+ const maxQ=100-(+$('eval-p').value);$('eval-q').max=maxQ;if(+$('eval-q').value>maxQ)$('eval-q').value=maxQ;
+ const q=+$('eval-q').value/100,calc=reliability(p,k,q);
+ $('eval-p-value').textContent=(p*100).toFixed(0)+'%';$('eval-k-value').textContent=k;$('eval-q-value').textContent=(q*100).toFixed(0)+'%';
+ $('eval-bound').textContent=`Allowed q: 0–${maxQ}%. This keeps the marginal success rate at p and conditional success at or below 100%.`;
+ $('eval-table').innerHTML=`<tr><td>At least one succeeds · pass@${k}</td><td>${pct(calc.independentAny)}</td><td>${pct(calc.any)}</td></tr><tr><td>All succeed · pass^${k}</td><td>${pct(calc.independentAll)}</td><td>${pct(calc.all)}</td></tr>`;
+ $('eval-description').textContent=q===1?'Every batch is in the shared-failure state. All success probabilities are zero; the non-failure branch has probability zero, so its conditional success rate is undefined.':`The mixture keeps one-attempt success at ${pct(p)}: ${pct(q)} of batches fail together; otherwise each attempt succeeds independently with probability ${pct(calc.s)}. ${k===1?'At k = 1, every displayed criterion equals p.':q===0?'With q = 0, both models are identical.':'At fixed p, this positive dependence lowers “at least one” and raises “all” relative to independence.'}`;
+ let body=`<text x="0" y="16" class="label">At least one attempt succeeds</text><text x="0" y="129" class="label">Every attempt succeeds</text>`;
+ const plotWidth=375,barX=0;
+ [[calc.independentAny,35,'#086c63','Independent'],[calc.any,68,'#a1b7b1','Mixture'],[calc.independentAll,148,'#086c63','Independent'],[calc.all,181,'#a1b7b1','Mixture']].forEach(([v,y,color,label])=>{body+=`<rect x="${barX}" y="${y}" width="${plotWidth}" height="20" fill="#e3e9e7"/><rect x="${barX}" y="${y}" width="${v*plotWidth}" height="20" fill="${color}"/><text x="480" y="${y+15}" text-anchor="end" class="small">${pct(v)}</text><title>${label}: ${pct(v)}</title>`;});
+ body+=`<text x="0" y="237" class="small">0%</text><text x="${plotWidth/2}" y="237" text-anchor="middle" class="small">Probability</text><text x="${plotWidth}" y="237" text-anchor="end" class="small">100%</text>`;
+ diagram($('eval-diagram'),body,'Probability of at least one success and all successes',`With p ${p}, k ${k}, q ${q}: independent at-least-one ${pct(calc.independentAny)}, mixture at-least-one ${pct(calc.any)}, independent all ${pct(calc.independentAll)}, mixture all ${pct(calc.all)}.`);
+}
+['p','k','q'].forEach(k=>$('eval-'+k).addEventListener('input',renderEvaluation));
+
+renderLoop();renderContext();renderTopology();renderReplay();renderEvaluation();
+// Match text to actual screen pixels. On narrow diagrams, aggregate-node subtitles
+// are omitted and main labels wrap; the adjacent explanation retains their detail.
+function adaptDiagramText(){document.querySelectorAll('.diagram').forEach(svg=>{
+ const scale=Math.max(.25,svg.getBoundingClientRect().width/480),narrow=scale<.85;
+ svg.querySelectorAll('text').forEach(el=>{
+  if(!el.dataset.original){el.dataset.original=el.textContent;el.dataset.originalY=el.getAttribute('y');}
+  el.textContent=el.dataset.original;el.setAttribute('y',el.dataset.originalY);
+  el.style.display=narrow&&el.dataset.subtitle?'none':'';
+  const size=(el.classList.contains('label')?13:11.5)/Math.min(1,scale);el.style.fontSize=size+'px';
+  if(!narrow||el.dataset.subtitle)return;
+  const maxWidth=el.dataset.nodeWidth?Number(el.dataset.nodeWidth)-12:460;
+  const words=el.dataset.original.split(' '),lines=[];let current='';
+  for(const word of words){const candidate=current?current+' '+word:word;el.textContent=candidate;if(el.getComputedTextLength()>maxWidth&&current){lines.push(current);current=word;}else current=candidate;}
+  if(current)lines.push(current);
+  const lineHeight=size*1.08;
+  const firstY=el.dataset.centerY?Number(el.dataset.centerY)-(lines.length-1)*lineHeight/2+size*.33:Math.max(size,Number(el.dataset.originalY)-(lines.length-1)*lineHeight);
+  el.textContent='';lines.forEach((line,i)=>{const span=document.createElementNS('http://www.w3.org/2000/svg','tspan');span.setAttribute('x',el.getAttribute('x'));span.setAttribute('y',firstY+i*lineHeight);span.textContent=line;el.appendChild(span);});
+ });
+});}
+window.addEventListener('resize',adaptDiagramText);
+document.addEventListener('input',adaptDiagramText);document.addEventListener('click',adaptDiagramText);adaptDiagramText();
+</script>
+</body>
+</html>

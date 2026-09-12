@@ -1,0 +1,15 @@
+{
+  "verified_date": "2026-09-12",
+  "python": "3.12.14",
+  "platform": "Linux-6.18.35-x86_64-with-glibc2.39",
+  "langgraph": "1.2.11",
+  "tests_passed": 6,
+  "scenario_results": {
+    "verified": "verified",
+    "false_completion": "needs_review",
+    "missing_evidence": "needs_review"
+  },
+  "model_calls": 0,
+  "external_effects": 0,
+  "persistence_extension": "conceptual; unimplemented and untested"
+}

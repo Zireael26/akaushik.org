@@ -1,0 +1,17 @@
+{
+  "task": "invoice",
+  "policy": "reference",
+  "before": {
+    "returncode": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"/tmp/course-code-n7jcvvyv/acceptance.py\", line 2, in <module>\n    assert total(120, 3) == 360\n           ^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+  },
+  "after": {
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "verified": true,
+  "artifact_sha256": "908d700daf758ced33ca70cc54a80286c7e35f839ece99435780f010755394eb",
+  "scope": "trusted supplied Python fixtures; subprocess is NOT a security sandbox"
+}

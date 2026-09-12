@@ -1,0 +1,773 @@
+/* Course chrome: prose that is not a blog post, module cards, the contents
+   ledger, quizzes, and the labs table.
+
+   The main site's article styles cover headings and paragraphs. This course is
+   dense with tables, code and definition-like rows, which those styles never
+   had to carry, so the prose rules below extend .px-article-body rather than
+   restating it. */
+
+/* ------------------------------------------------------------------ *
+ * Prose extensions
+ * ------------------------------------------------------------------ */
+
+.px-article-body h3 {
+  margin: 30px 0 12px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(17px, 1.8vw, 20px);
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.px-article-body ul,
+.px-article-body ol {
+  margin: 0 0 20px;
+  padding-left: 22px;
+}
+
+.px-article-body li {
+  margin-bottom: 8px;
+}
+
+.px-article-body strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.px-article-body a {
+  color: var(--px-cobalt-ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.px-article-body a:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* Citation links are numbered superscripts in the source ([1](url)). Marking
+   them keeps a run of them from reading as a wall of blue in a paragraph. */
+.px-article-body a[data-external='true'] {
+  text-decoration-color: color-mix(in srgb, var(--px-cobalt-ink) 45%, transparent);
+}
+
+.px-article-body blockquote {
+  margin: 0 0 20px;
+  padding-left: 18px;
+  border-left: 2px solid var(--line);
+  color: var(--ink60);
+}
+
+.px-article-body code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  padding: 1px 5px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  color: var(--ink);
+}
+
+.px-article-body pre {
+  margin: 0 0 22px;
+  padding: 16px 18px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--ink) 3%, transparent);
+  line-height: 1.65;
+}
+
+.px-article-body pre code {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-size: 12.5px;
+  color: var(--ink70);
+}
+
+/* Tables carry a lot of this course's argument, so they get a real treatment
+   rather than browser defaults. The wrapper scrolls; the page never does. */
+.px-table-scroll {
+  overflow-x: auto;
+  margin: 0 0 24px;
+}
+
+.px-article-body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.px-article-body th,
+.px-article-body td {
+  padding: 10px 14px 10px 0;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--line);
+}
+
+.px-article-body th {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink40);
+  border-bottom-color: var(--ink40);
+}
+
+.px-article-body hr {
+  margin: 36px 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+/* ------------------------------------------------------------------ *
+ * Page furniture
+ * ------------------------------------------------------------------ */
+
+.px-page {
+  max-width: var(--wrap-max);
+  margin: 0 auto;
+  padding: clamp(24px, 4vh, 48px) var(--wrap-pad) clamp(56px, 9vh, 104px);
+}
+
+.px-page-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px clamp(24px, 5vw, 72px);
+  align-items: flex-end;
+  justify-content: space-between;
+  padding-bottom: clamp(20px, 3vh, 32px);
+  border-bottom: 1px solid var(--line);
+}
+
+.px-page-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(30px, 4.4vw, 56px);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+}
+
+.px-page-lede {
+  max-width: 62ch;
+  margin: 14px 0 0;
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--ink70);
+}
+
+.px-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink40);
+  margin-bottom: 12px;
+}
+
+/* ------------------------------------------------------------------ *
+ * Progress meter
+ * ------------------------------------------------------------------ */
+
+.px-meter {
+  flex: 0 0 auto;
+  min-width: 220px;
+  text-align: right;
+}
+
+.px-meter-count {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 3.2vw, 40px);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.px-meter-count span {
+  color: var(--ink40);
+  font-size: 0.55em;
+  letter-spacing: 0;
+}
+
+.px-meter-label {
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink40);
+}
+
+/* 24 ticks, one per lesson. A bar would round away the fact that this is a
+   countable number of discrete things. */
+.px-meter-ticks {
+  display: flex;
+  gap: 3px;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.px-tick {
+  width: 7px;
+  height: 18px;
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+.px-tick.is-done {
+  background: var(--px-cobalt);
+}
+
+.px-tick.is-reading {
+  background: var(--px-amber);
+}
+
+/* ------------------------------------------------------------------ *
+ * Module ledger (contents page)
+ * ------------------------------------------------------------------ */
+
+.px-module {
+  border-bottom: 1px solid var(--line);
+  padding: clamp(22px, 3.5vh, 34px) 0;
+}
+
+.px-module-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  align-items: baseline;
+}
+
+.px-module-index {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--ink40);
+}
+
+.px-module-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(19px, 2.2vw, 26px);
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+.px-module-title a {
+  color: inherit;
+}
+
+.px-module-title a:hover {
+  color: var(--px-cobalt-ink);
+}
+
+.px-module-meta {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink40);
+}
+
+.px-module-artifact {
+  margin: 10px 0 0;
+  max-width: 66ch;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ink60);
+}
+
+.px-lesson-rows {
+  margin-top: 16px;
+}
+
+/* Rows are the spine of the contents page: number, title, state, time. */
+.px-lesson-row {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 11px 0;
+  border-top: 1px solid var(--line);
+  color: var(--ink);
+  transition: padding-left 0.18s ease;
+}
+
+.px-lesson-row:hover {
+  padding-left: 8px;
+}
+
+.px-lesson-row:hover .px-lesson-name {
+  color: var(--px-cobalt-ink);
+}
+
+.px-lesson-num {
+  flex: 0 0 28px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink40);
+}
+
+.px-lesson-name {
+  flex: 1 1 auto;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  transition: color 0.18s ease;
+}
+
+.px-lesson-time {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink40);
+}
+
+.px-state {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border: 1px solid var(--line);
+  color: var(--ink40);
+}
+
+.px-state.is-done {
+  border-color: var(--px-cobalt);
+  color: var(--px-cobalt-ink);
+}
+
+.px-state.is-reading {
+  border-color: var(--px-amber);
+  color: var(--px-amber-ink);
+}
+
+/* ------------------------------------------------------------------ *
+ * Cards and panels
+ * ------------------------------------------------------------------ */
+
+.px-panel {
+  border: 1px solid var(--line);
+  padding: clamp(18px, 3vw, 28px);
+  margin: clamp(24px, 4vh, 40px) 0;
+}
+
+.px-panel-title {
+  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(18px, 2vw, 22px);
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+.px-panel-note {
+  margin: 0 0 18px;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--ink60);
+}
+
+.px-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  margin: clamp(24px, 4vh, 36px) 0;
+}
+
+.px-card {
+  background: var(--bg);
+  padding: clamp(18px, 2.6vw, 26px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--ink);
+  transition: background 0.18s ease;
+}
+
+a.px-card:hover {
+  background: color-mix(in srgb, var(--px-cobalt) 7%, var(--bg));
+}
+
+.px-card-kicker {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink40);
+}
+
+.px-card-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 18px;
+  letter-spacing: -0.015em;
+}
+
+.px-card-body {
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--ink60);
+}
+
+/* ------------------------------------------------------------------ *
+ * Quiz / answer forms
+ * ------------------------------------------------------------------ */
+
+.px-quiz-prompt {
+  margin: 0 0 20px;
+  font-size: 15.5px;
+  line-height: 1.75;
+  color: var(--ink);
+}
+
+.px-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.px-label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink40);
+}
+
+.px-textarea {
+  width: 100%;
+  min-height: 150px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--ink);
+  resize: vertical;
+}
+
+.px-textarea:focus {
+  outline: 2px solid var(--px-cobalt);
+  outline-offset: 1px;
+}
+
+.px-quiz-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-top: 14px;
+}
+
+.px-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--panelInk);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity 0.18s ease;
+}
+
+.px-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.px-button--ghost {
+  background: transparent;
+  color: var(--ink);
+}
+
+.px-button--ghost:hover {
+  border-color: var(--px-cobalt);
+  color: var(--px-cobalt-ink);
+}
+
+.px-grades {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.px-grade {
+  padding: 6px 11px;
+  border: 1px solid var(--line);
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink40);
+  cursor: pointer;
+}
+
+.px-grade.is-on {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+.px-grade.is-on[data-grade='confident'] {
+  border-color: var(--px-cobalt);
+  color: var(--px-cobalt-ink);
+}
+
+.px-grade.is-on[data-grade='partial'] {
+  border-color: var(--px-amber);
+  color: var(--px-amber-ink);
+}
+
+.px-grade.is-on[data-grade='missed'] {
+  border-color: var(--px-red);
+  color: var(--px-red-ink);
+}
+
+/* The model answer stays behind a deliberate click. The course's own method is
+   predict first, then compare; revealing by default removes the exercise. */
+.px-answer {
+  margin-top: 20px;
+  padding: 18px 20px;
+  border: 1px solid var(--px-cobalt);
+  background: color-mix(in srgb, var(--px-cobalt) 6%, transparent);
+}
+
+.px-answer-label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--px-cobalt-ink);
+  margin-bottom: 8px;
+}
+
+.px-answer-text {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.75;
+  color: var(--ink70);
+}
+
+.px-saved-note {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  color: var(--ink40);
+}
+
+/* ------------------------------------------------------------------ *
+ * Lesson page
+ * ------------------------------------------------------------------ */
+
+/* The measure column is capped near the prose measure rather than taking all
+   remaining width, so a wide screen centres the pair instead of stranding the
+   table of contents on the far right with a void between. */
+.px-lesson-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 78ch) 230px;
+  justify-content: center;
+  gap: clamp(28px, 5vw, 72px);
+  max-width: var(--wrap-max);
+  margin: 0 auto;
+  padding: clamp(24px, 4vh, 40px) var(--wrap-pad) clamp(56px, 9vh, 104px);
+  align-items: start;
+}
+
+.px-toc {
+  position: sticky;
+  top: 24px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.px-toc-title {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink40);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 12px;
+}
+
+.px-toc ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: toc;
+}
+
+.px-toc li {
+  margin-bottom: 9px;
+}
+
+.px-toc a {
+  color: var(--ink60);
+  transition: color 0.18s ease;
+}
+
+.px-toc a:hover {
+  color: var(--px-cobalt-ink);
+}
+
+.px-pager {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
+  margin-top: clamp(36px, 6vh, 56px);
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.px-pager-link {
+  max-width: 46%;
+  color: var(--ink);
+}
+
+.px-pager-link.is-next {
+  margin-left: auto;
+  text-align: right;
+}
+
+.px-pager-dir {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink40);
+  margin-bottom: 5px;
+}
+
+.px-pager-name {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.px-pager-link:hover .px-pager-name {
+  color: var(--px-cobalt-ink);
+}
+
+/* ------------------------------------------------------------------ *
+ * Files / labs table
+ * ------------------------------------------------------------------ */
+
+.px-files {
+  margin-top: 8px;
+}
+
+.px-file {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.px-file:hover .px-file-name {
+  color: var(--px-cobalt-ink);
+}
+
+.px-file-name {
+  flex: 1 1 auto;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  word-break: break-all;
+  transition: color 0.18s ease;
+}
+
+.px-file-size {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  color: var(--ink40);
+}
+
+/* ------------------------------------------------------------------ *
+ * Atlas frame
+ * ------------------------------------------------------------------ */
+
+.px-atlas-frame {
+  width: 100%;
+  height: min(82vh, 900px);
+  border: 1px solid var(--line);
+  background: var(--bg);
+}
+
+/* ------------------------------------------------------------------ *
+ * Small screens
+ * ------------------------------------------------------------------ */
+
+@media (max-width: 900px) {
+  .px-lesson-layout {
+    grid-template-columns: minmax(0, 1fr);
+    justify-content: stretch;
+  }
+
+  /* The table of contents is a sidebar, not content. On one column it becomes
+     a long list between the reader and the lesson, so it is dropped: the
+     headings themselves are three scrolls away. */
+  .px-toc {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .px-meter {
+    min-width: 0;
+    text-align: left;
+  }
+
+  .px-meter-ticks {
+    justify-content: flex-start;
+  }
+
+  .px-module-meta {
+    margin-left: 0;
+  }
+
+  .px-lesson-row {
+    flex-wrap: wrap;
+  }
+
+  .px-grades {
+    margin-left: 0;
+  }
+
+  .px-pager-link,
+  .px-pager-link.is-next {
+    max-width: 100%;
+    text-align: left;
+  }
+
+  .px-pager-link.is-next {
+    margin-left: 0;
+  }
+}

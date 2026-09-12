@@ -1,0 +1,53 @@
+/* Design tokens for friendsof.akaushik.org.
+   Mirroring core tokens without hardcoded client identifiers. */
+
+:root {
+  --bg: #ffffff;
+  --ink: #111318;
+  --ink70: rgba(17, 19, 24, 0.72);
+  --ink65: rgba(17, 19, 24, 0.68);
+  --ink60: rgba(17, 19, 24, 0.64);
+  --ink55: rgba(17, 19, 24, 0.62);
+  --ink45: rgba(17, 19, 24, 0.6);
+  --ink40: rgba(17, 19, 24, 0.58);
+  --line: rgba(17, 19, 24, 0.13);
+  --panel: #111318;
+  --panelInk: #ffffff;
+
+  --px-cobalt: #3b5bf6;
+  --px-amber: #f6a61c;
+  --px-red: #e8401c;
+  --px-lime: #c8f218;
+
+  --px-cobalt-ink: #3b5bf6;
+  --px-amber-ink: #a16806;
+  --px-red-ink: #d53716;
+  --px-lime-ink: #677e07;
+
+  --font-display: 'Cabinet Grotesk', system-ui, sans-serif;
+  --font-body: 'General Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+  --wrap-max: 1560px;
+  --wrap-pad: clamp(20px, 4vw, 56px);
+  --prose-max: 75ch;
+}
+
+[data-mode='dark'] {
+  --bg: #0f1218;
+  --ink: #eff1f6;
+  --ink70: rgba(239, 241, 246, 0.78);
+  --ink65: rgba(239, 241, 246, 0.72);
+  --ink60: rgba(239, 241, 246, 0.66);
+  --ink55: rgba(239, 241, 246, 0.6);
+  --ink45: rgba(239, 241, 246, 0.55);
+  --ink40: rgba(239, 241, 246, 0.5);
+  --line: rgba(239, 241, 246, 0.16);
+  --panel: #eff1f6;
+  --panelInk: #0f1218;
+
+  --px-cobalt-ink: #5873f7;
+  --px-amber-ink: #f6a61c;
+  --px-red-ink: #e8401c;
+  --px-lime-ink: #c8f218;
+}
