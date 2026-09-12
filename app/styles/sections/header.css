@@ -147,3 +147,18 @@
     flex: 0 0 auto;
   }
 }
+
+/* Offsite nav links (learn., friendsof.). The arrow is the only thing marking
+   them: both are private subdomains of this site rather than someone else's
+   domain, so a heavier treatment would overstate the distance. The glyph is
+   aria-hidden — a screen reader announcing "Learn, up-right arrow" is worse
+   than it announcing "Learn", and the destination is in the href either way. */
+.px-nav-offsite span {
+  margin-left: 3px;
+  font-size: 0.85em;
+  color: var(--ink40);
+}
+
+.px-nav-offsite:hover span {
+  color: inherit;
+}
