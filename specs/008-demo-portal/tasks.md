@@ -30,8 +30,8 @@
 - [x] T19 Provision preview and production D1; apply migrations
 - [x] T20 Preview custom-domain route; deploy; gate smoke (401/403/400, noindex)
 - [x] T21 Preview secrets: BA_SECRET, channel, branding, suggestions, key
-- [ ] T22 Preview test account; end-to-end run of every suggested question → SC10
-- [ ] T23 Confirm source frames carry `url` and `#page` opens inline
+- [x] T22 Preview test account; end-to-end run of every suggested question → SC10
+- [x] T23 Confirm source frames carry `url` and `#page` opens inline
 
 ## U5 — Production (operator-approved)
 - [ ] T24 Production secrets; `pnpm deploy:production`
