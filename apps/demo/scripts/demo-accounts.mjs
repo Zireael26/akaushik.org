@@ -238,8 +238,12 @@ function genId(len = 27) {
 
 function requireUsername(reader) {
   const username = typeof reader?.username === "string" ? reader.username : "";
-  if (!username || username.length < 3) {
-    console.error("An account entry has an invalid username; refusing to run.");
+  // Mirror better-auth's username plugin defaults (3-30 chars of
+  // [A-Za-z0-9_.]); anything else creates an account that cannot sign in.
+  if (!/^[a-zA-Z0-9_.]{3,30}$/.test(username)) {
+    console.error(
+      `Username ${JSON.stringify(username)} is invalid: use 3-30 letters, digits, "_" or "."; refusing to run.`,
+    );
     process.exit(1);
   }
   return username;

@@ -427,7 +427,9 @@ export function Chat({ title, subtitle, suggestions }: ChatProps) {
                   </span>
                 ) : null}
 
-                {m.sources && m.sources.length > 0 ? (
+                {/* A declined answer lists no sources: "not found" beside citations
+                    reads as a contradiction. */}
+                {m.sources && m.sources.length > 0 && normaliseVerdict(m.verdict ?? '') !== 'abstain' ? (
                   <ul className="dm-sources" aria-label="Sources">
                     {m.sources.map((s, i) => {
                       const n = String(i + 1);
