@@ -24,12 +24,12 @@
     {
       "binding": "AUTH_DB",
       "database_name": "demo-preview-auth",
-      "database_id": "PROVISION_ME_AUTH_PREVIEW"
+      "database_id": "663e99fb-5d08-4b34-8492-cb11dd88c6a9"
     },
     {
       "binding": "DEMO_DB",
       "database_name": "demo-preview-chat",
-      "database_id": "PROVISION_ME_CHAT_PREVIEW"
+      "database_id": "8c96be83-c717-48cf-9c08-cc6017665cf4"
     }
   ],
   "assets": {
@@ -65,12 +65,12 @@
         {
           "binding": "AUTH_DB",
           "database_name": "demo-prod-auth",
-          "database_id": "PROVISION_ME_AUTH_PROD"
+          "database_id": "ecaf193b-dfad-4f33-9f08-17fced15413d"
         },
         {
           "binding": "DEMO_DB",
           "database_name": "demo-prod-chat",
-          "database_id": "PROVISION_ME_CHAT_PROD"
+          "database_id": "9508b706-299d-4e80-a969-0b807d4afc9c"
         }
       ],
       "assets": {
