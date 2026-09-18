@@ -21,7 +21,7 @@ export const DEFAULT_DEMO_SUBTITLE = "A private demonstration";
 export const DEFAULT_VERICITE_API_BASE = "https://api.vericite.ai";
 export const DEFAULT_VERICITE_MAX_SOURCES = 5;
 export const MAX_VERICITE_SOURCES = 10;
-export const MAX_SUGGESTIONS = 8;
+export const MAX_SUGGESTIONS = 12;
 
 function clean(value: string | undefined): string {
   return (value ?? "").trim();

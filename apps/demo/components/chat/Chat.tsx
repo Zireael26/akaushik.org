@@ -198,6 +198,8 @@ export function Chat({ title, subtitle, suggestions }: ChatProps) {
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    // Nothing to follow on an empty thread; scrolling would hide the title.
+    if (messages.length === 0) return;
     bottomRef.current?.scrollIntoView({ block: 'end' });
   }, [messages, streaming]);
 
@@ -358,6 +360,10 @@ export function Chat({ title, subtitle, suggestions }: ChatProps) {
   }
 
   const canSend = input.trim().length > 0 && !streaming;
+  // After the first question, unasked suggestions stay one tap away above the
+  // composer, so a presenter can walk through them in order.
+  const asked = new Set(messages.filter((m) => m.role === 'user').map((m) => m.text));
+  const remaining = (suggestions ?? []).filter((q) => !asked.has(q));
 
   return (
     <main className="dm-wrap">
@@ -388,7 +394,7 @@ export function Chat({ title, subtitle, suggestions }: ChatProps) {
       ) : null}
 
       <div className="dm-list" role="log" aria-live="polite" aria-label="Conversation">
-        {messages.length === 0 && !streaming ? (
+        {messages.length === 0 && !streaming && !suggestions ? (
           <p className="dm-empty">Ask a question about the documents to begin.</p>
         ) : null}
 
@@ -467,6 +473,22 @@ export function Chat({ title, subtitle, suggestions }: ChatProps) {
       {/* Scroll anchor below the thread and any error, clear of the sticky composer. */}
       <div ref={bottomRef} className="dm-anchor" aria-hidden="true" />
 
+      <div className="dm-dock">
+      {suggestions && messages.length > 0 && remaining.length > 0 ? (
+        <div className="dm-suggest dm-suggest-row" aria-label="More suggested questions">
+          {remaining.map((q) => (
+            <button
+              key={q}
+              type="button"
+              className="dm-chip"
+              disabled={streaming}
+              onClick={() => void send(q)}
+            >
+              {q}
+            </button>
+          ))}
+        </div>
+      ) : null}
       <form
         className="dm-form"
         onSubmit={(e) => {
@@ -491,6 +513,7 @@ export function Chat({ title, subtitle, suggestions }: ChatProps) {
           {streaming ? 'Answering…' : 'Send →'}
         </button>
       </form>
+      </div>
     </main>
   );
 }

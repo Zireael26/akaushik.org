@@ -7,7 +7,7 @@ import { getSuggestions } from '@/lib/demo-config';
 
 export const dynamic = 'force-dynamic';
 
-const TITLE_FALLBACK = 'VeriCite demo';
+const TITLE_FALLBACK = 'Private demo';
 
 /**
  * Reads a public display binding. Worker vars/secrets arrive through the
@@ -45,7 +45,6 @@ function readSuggestionsRaw(): string | undefined {
 
 export default async function DemoPage() {
   const account = await currentAccount();
-  const title = demoPublic('DEMO_TITLE', TITLE_FALLBACK);
 
   // Real session identity, not a cookie's presence: a forged cookie without a
   // matching session row falls through to the form.
@@ -56,8 +55,10 @@ export default async function DemoPage() {
 
         <section className="px-hero-block">
           <div className="px-hero">
+            {/* Deliberately generic: the entrance is public, and the branded
+                title names the client, so it only appears after sign-in. */}
             <h1 className="px-hero-title">
-              {title}
+              {TITLE_FALLBACK}
             </h1>
 
             <div className="px-hero-aside">
@@ -80,8 +81,9 @@ export default async function DemoPage() {
     );
   }
 
+  const title = demoPublic('DEMO_TITLE', TITLE_FALLBACK);
   const subtitle = demoPublic('DEMO_SUBTITLE', '');
-  // Single parsing implementation (lib/demo-config.ts, 8-chip cap); null
+  // Single parsing implementation (lib/demo-config.ts, 12-chip cap); null
   // means no chips, never a throw.
   const suggestions = getSuggestions({ DEMO_SUGGESTIONS: readSuggestionsRaw() });
 

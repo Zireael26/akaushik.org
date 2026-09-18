@@ -72,10 +72,12 @@
   border: 1px solid var(--line);
   border-radius: 999px;
   color: var(--ink70);
-  padding: 10px 14px;
-  min-height: 44px;
+  padding: 6px 14px;
+  min-height: 40px;
   font-family: var(--font-body);
   font-size: 13px;
+  line-height: 1.35;
+  text-align: left;
   cursor: pointer;
 }
 
@@ -268,7 +270,7 @@
 
 .dm-anchor {
   height: 0;
-  scroll-margin-bottom: 96px;
+  scroll-margin-bottom: 150px;
 }
 
 .dm-error {
@@ -278,14 +280,38 @@
   color: var(--px-red-ink);
 }
 
-.dm-form {
+.dm-dock {
   position: sticky;
   bottom: 0;
-  display: flex;
-  gap: 8px;
-  padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0px));
   background: var(--bg);
   border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Compact, single scrolling row of the questions not yet asked. */
+.dm-suggest-row {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-top: 10px;
+  scrollbar-width: none;
+}
+
+.dm-suggest-row::-webkit-scrollbar {
+  display: none;
+}
+
+.dm-suggest-row .dm-chip {
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.dm-form {
+  display: flex;
+  gap: 8px;
+  padding: 12px 0;
 }
 
 .dm-input {

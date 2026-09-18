@@ -41,7 +41,7 @@ test("valid arrays return trimmed non-empty strings, capped", () => {
   assert.deepEqual(parseSuggestions('[1, null, "Widget Corp"]'), ["Widget Corp"]);
   const many = JSON.stringify(Array.from({ length: 20 }, (_, i) => `Acme Tower ${i}`));
   const parsed = parseSuggestions(many);
-  assert.ok(parsed && parsed.length <= 8, "suggestions are capped");
+  assert.equal(parsed?.length, 12, "suggestions are capped at 12");
 });
 
 test("getSuggestions reads the env binding", () => {
