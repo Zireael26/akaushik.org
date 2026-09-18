@@ -92,7 +92,7 @@ function renderInline(text: string, messageId: string, keyBase: string, sources?
             href={sourceHref(source)}
             target="_blank"
             rel="noopener noreferrer"
-            title={source.title}
+            title={titleOf(source)}
           >
             [{n}]
           </a>
@@ -182,9 +182,39 @@ function sourceHref(source: ChatSource): string {
   return url;
 }
 
+/**
+ * Display title: the upstream falls back to the stored filename and suffixes
+ * repeated documents with "— chunk N"; the card already shows the page, so
+ * drop the suffix and turn filename separators into spaces.
+ */
+function titleOf(source: ChatSource): string {
+  return source.title
+    .replace(/\s+[—-]\s+chunk\s+\d+\s*$/i, '')
+    .replace(/\.pdf$/i, '')
+    .replace(/_+/g, ' ')
+    .trim();
+}
+
 function excerptOf(source: ChatSource): string {
-  const text = typeof source.excerpt === 'string' ? source.excerpt : '';
-  return text.length > 300 ? text.slice(0, 300) : text;
+  let text = (typeof source.excerpt === 'string' ? source.excerpt : '').trim();
+  if (text.length > 300) text = `${text.slice(0, 300).trimEnd()}\u2026`;
+  // Excerpts are chunk windows and often start mid-word; say so.
+  if (text && /^[a-z]/.test(text)) text = `\u2026${text}`;
+  return text;
+}
+
+/**
+ * The model sometimes closes with its own "Source: [1] <file>" line, which
+ * repeats the source cards below it. Drop trailing lines of that shape.
+ */
+function stripSourceFooter(text: string): string {
+  const lines = text.split('\n');
+  while (lines.length > 1) {
+    const last = (lines[lines.length - 1] ?? '').trim();
+    if (last === '' || /^(\*\*)?(sources?|स्रोत)(\*\*)?\s*:/i.test(last)) lines.pop();
+    else break;
+  }
+  return lines.join('\n');
 }
 
 export function Chat({ title, subtitle, suggestions }: ChatProps) {
@@ -410,7 +440,7 @@ export function Chat({ title, subtitle, suggestions }: ChatProps) {
                 data-verdict={normaliseVerdict(m.verdict ?? '') || undefined}
               >
                 {m.text ? (
-                  <div className="dm-text">{renderAnswer(m.text, m.id, m.sources)}</div>
+                  <div className="dm-text">{renderAnswer(streaming && index === messages.length - 1 ? m.text : stripSourceFooter(m.text), m.id, m.sources)}</div>
                 ) : streaming && index === messages.length - 1 ? (
                   <p className="dm-text dm-streaming">Answering&hellip;</p>
                 ) : null}
@@ -446,10 +476,10 @@ export function Chat({ title, subtitle, suggestions }: ChatProps) {
                                 target="_blank"
                                 rel="noopener noreferrer"
                               >
-                                {s.title}
+                                {titleOf(s)}
                               </a>
                             ) : (
-                              <span className="dm-source-title dm-source-title-plain">{s.title}</span>
+                              <span className="dm-source-title dm-source-title-plain">{titleOf(s)}</span>
                             )}
                             {typeof s.page === 'number' || (typeof s.page === 'string' && s.page !== '') ? (
                               <span className="dm-source-page">p. {String(s.page)}</span>
