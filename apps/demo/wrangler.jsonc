@@ -1,0 +1,85 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "demo-preview-worker",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-09-09",
+  "compatibility_flags": ["nodejs_compat"],
+  "account_id": "ca127da6bde0b3d48082bdd84132dc09",
+  "workers_dev": true,
+  "vars": {
+    "ENVIRONMENT": "development",
+    "CANONICAL_HOST": "preview.demo.akaushik.org",
+    "DEMO_TITLE": "Demo",
+    "DEMO_SUBTITLE": "A private demonstration",
+    "VERICITE_API_BASE": "https://api.vericite.ai",
+    "VERICITE_CHANNEL_ID": "",
+    "VERICITE_MAX_SOURCES": "5"
+  },
+  // Resource ids are filled in by scripts/provision.mjs, which creates the
+  // databases and rewrites this file. Placeholders are left visible
+  // rather than blank so a deploy against an unprovisioned config fails loudly.
+  // Optional secrets (set with `wrangler secret put`, never committed):
+  //   BA_SECRET, VERICITE_API_KEY (both required), DEMO_SUGGESTIONS (optional)
+  "d1_databases": [
+    {
+      "binding": "AUTH_DB",
+      "database_name": "demo-preview-auth",
+      "database_id": "PROVISION_ME_AUTH_PREVIEW"
+    },
+    {
+      "binding": "DEMO_DB",
+      "database_name": "demo-preview-chat",
+      "database_id": "PROVISION_ME_CHAT_PREVIEW"
+    }
+  ],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "env": {
+    "production": {
+      "name": "demo-prod-worker",
+      "workers_dev": false,
+      "routes": [
+        {
+          "pattern": "demo.akaushik.org",
+          "custom_domain": true
+        }
+      ],
+      "limits": {
+        "cpu_ms": 30000
+      },
+      "vars": {
+        "ENVIRONMENT": "production",
+        "CANONICAL_HOST": "demo.akaushik.org",
+        "DEMO_TITLE": "Demo",
+        "DEMO_SUBTITLE": "A private demonstration",
+        "VERICITE_API_BASE": "https://api.vericite.ai",
+        "VERICITE_CHANNEL_ID": "",
+        "VERICITE_MAX_SOURCES": "5"
+      },
+      "d1_databases": [
+        {
+          "binding": "AUTH_DB",
+          "database_name": "demo-prod-auth",
+          "database_id": "PROVISION_ME_AUTH_PROD"
+        },
+        {
+          "binding": "DEMO_DB",
+          "database_name": "demo-prod-chat",
+          "database_id": "PROVISION_ME_CHAT_PROD"
+        }
+      ],
+      "assets": {
+        "directory": ".open-next/assets",
+        "binding": "ASSETS"
+      },
+      "observability": {
+        "enabled": true
+      }
+    }
+  }
+}
