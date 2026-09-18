@@ -6,20 +6,29 @@
   "compatibility_flags": ["nodejs_compat"],
   "account_id": "ca127da6bde0b3d48082bdd84132dc09",
   "workers_dev": true,
+  // The preview is only reachable on this host: the Worker's exact Host
+  // allowlist rejects the workers.dev name outside qualification.
+  "routes": [
+    {
+      "pattern": "preview.demo.akaushik.org",
+      "custom_domain": true
+    }
+  ],
   "vars": {
     "ENVIRONMENT": "development",
     "CANONICAL_HOST": "preview.demo.akaushik.org",
-    "DEMO_TITLE": "Demo",
-    "DEMO_SUBTITLE": "A private demonstration",
     "VERICITE_API_BASE": "https://api.vericite.ai",
-    "VERICITE_CHANNEL_ID": "",
+    "VERICITE_ORIGIN": "https://demo.akaushik.org",
     "VERICITE_MAX_SOURCES": "5"
   },
   // Resource ids are filled in by scripts/provision.mjs, which creates the
   // databases and rewrites this file. Placeholders are left visible
   // rather than blank so a deploy against an unprovisioned config fails loudly.
-  // Optional secrets (set with `wrangler secret put`, never committed):
-  //   BA_SECRET, VERICITE_API_KEY (both required), DEMO_SUGGESTIONS (optional)
+  // Secrets (set with `wrangler secret put`, never committed). Anything that
+  // names the client or the upstream channel is a secret, not a var, because
+  // this repository is public:
+  //   BA_SECRET, VERICITE_API_KEY, VERICITE_CHANNEL_ID (required)
+  //   DEMO_TITLE, DEMO_SUBTITLE, DEMO_SUGGESTIONS (optional branding)
   "d1_databases": [
     {
       "binding": "AUTH_DB",
@@ -55,10 +64,8 @@
       "vars": {
         "ENVIRONMENT": "production",
         "CANONICAL_HOST": "demo.akaushik.org",
-        "DEMO_TITLE": "Demo",
-        "DEMO_SUBTITLE": "A private demonstration",
         "VERICITE_API_BASE": "https://api.vericite.ai",
-        "VERICITE_CHANNEL_ID": "",
+        "VERICITE_ORIGIN": "https://demo.akaushik.org",
         "VERICITE_MAX_SOURCES": "5"
       },
       "d1_databases": [

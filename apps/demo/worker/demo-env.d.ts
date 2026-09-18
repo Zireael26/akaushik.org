@@ -13,7 +13,7 @@
 declare interface Env {
   /** better-auth tables (user, account, session, verification, rateLimit). */
   AUTH_DB: unknown;
-  /** Demo state (rate-limit/credential cache, chat tables defined by later units). */
+  /** Chat rate-limit window and the per-account upstream visitor credential. */
   DEMO_DB: unknown;
   ASSETS: unknown;
 
@@ -25,26 +25,26 @@ declare interface Env {
   BA_SECRET?: string;
 
   /**
-   * Plain vars (wrangler.jsonc `vars`; safe to commit).
-   * DEMO_TITLE / DEMO_SUBTITLE brand the chat shell (defaults in
-   * lib/demo-config.ts). VERICITE_API_BASE defaults to
-   * https://api.vericite.ai; VERICITE_CHANNEL_ID selects the upstream
-   * channel (empty = chat unconfigured → 503); VERICITE_MAX_SOURCES is
-   * clamped to 1-20, default 6.
+   * Plain vars (wrangler.jsonc `vars`; nothing client-specific, safe to
+   * commit). VERICITE_API_BASE is the answer API; VERICITE_ORIGIN is the
+   * Origin sent upstream, which a publishable key's origin allowlist must
+   * contain; VERICITE_MAX_SOURCES is clamped to 1-10, default 5.
    */
-  DEMO_TITLE?: string;
-  DEMO_SUBTITLE?: string;
   VERICITE_API_BASE?: string;
-  VERICITE_CHANNEL_ID?: string;
+  VERICITE_ORIGIN?: string;
   VERICITE_MAX_SOURCES?: string;
   /**
-   * Secrets (set with `wrangler secret put`, never committed):
-   * BA_SECRET (required — better-auth signing), VERICITE_API_KEY
-   * (upstream API key; chat 503s without it), DEMO_SUGGESTIONS (optional
-   * JSON array of starter chips; invalid JSON renders no chips, no throw).
+   * Secrets (`wrangler secret put`, never committed — anything naming the
+   * client or the upstream channel lives here because the repo is public).
+   * Required: VERICITE_API_KEY, VERICITE_CHANNEL_ID; without either, every
+   * question gets the single generic error. Optional: DEMO_TITLE,
+   * DEMO_SUBTITLE (chat branding) and DEMO_SUGGESTIONS (JSON array of
+   * starter chips; invalid JSON renders no chips and never throws).
    */
-  BA_SECRET?: string;
   VERICITE_API_KEY?: string;
+  VERICITE_CHANNEL_ID?: string;
+  DEMO_TITLE?: string;
+  DEMO_SUBTITLE?: string;
   DEMO_SUGGESTIONS?: string;
 }
 

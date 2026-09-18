@@ -57,14 +57,20 @@ alternative — calling the answer API from the client — would put the API
 key and the orchestration detail in the browser, which would defeat the only
 thing this application exists to do.
 
-**Upstream wiring is vars plus secrets, never code.** Branding
-(`DEMO_TITLE`, `DEMO_SUBTITLE`), the API base (default
-`https://api.vericite.ai`), channel id, and source budget are plain
-`wrangler.jsonc` vars; `BA_SECRET`, `VERICITE_API_KEY`, and the optional
-`DEMO_SUGGESTIONS` starter chips are `wrangler secret put` secrets.
-`VERICITE_CHANNEL_ID` ships blank as a deliberate placeholder: until it names
-a real channel every question gets the single generic error, so nothing talks
-to the wrong upstream.
+**Upstream wiring is vars plus secrets, never code.** Only values that say
+nothing about the client are `wrangler.jsonc` vars: the API base, the Origin
+presented upstream (`VERICITE_ORIGIN`), and the source budget. The key, the
+channel id and the branding (`DEMO_TITLE`, `DEMO_SUBTITLE`,
+`DEMO_SUGGESTIONS`) are `wrangler secret put` secrets, because a var is a
+committed file in a public repository. Until the key and channel id are set,
+every question gets the single generic error, so nothing talks to the wrong
+upstream.
+
+**The upstream key is publishable and origin-bound.** A `pk_` key scoped to
+querying, with an origin allowlist of exactly the production host, bounds
+what a leak can do: it cannot read documents or change configuration. The
+proxy sends `Origin: VERICITE_ORIGIN` on both upstream calls, since the
+gateway rejects a publishable key without a matching Origin.
 `DEMO_SUGGESTIONS` is parsed by `lib/demo-config.ts::parseSuggestions`;
 invalid JSON renders no chips and never throws.
 

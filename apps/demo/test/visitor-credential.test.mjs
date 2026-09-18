@@ -42,11 +42,14 @@ test("second isolate reuses the stored credential; no second mint", async () => 
   process.env.VERICITE_API_BASE = "https://api.example.test";
   process.env.VERICITE_API_KEY = "test-key";
   process.env.VERICITE_CHANNEL_ID = "test-channel";
+  process.env.VERICITE_ORIGIN = "https://demo.example.test";
   const db = fakeD1();
   let mints = 0;
   const realFetch = globalThis.fetch;
-  globalThis.fetch = async (url) => {
+  globalThis.fetch = async (url, init) => {
     assert.match(String(url), /visitor-credential$/);
+    // A publishable key is origin-bound: the mint must carry the configured Origin.
+    assert.equal(new Headers(init.headers).get("origin"), "https://demo.example.test");
     mints += 1;
     return new Response(
       JSON.stringify({

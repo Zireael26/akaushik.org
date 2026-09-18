@@ -92,15 +92,29 @@ function readEnv(name: string): string | undefined {
   return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
-function vericiteConfig(): { apiBase: string; apiKey: string; channelId: string; maxSources: number } {
+interface VericiteConfig {
+  apiBase: string;
+  apiKey: string;
+  channelId: string;
+  maxSources: number;
+  /**
+   * Origin presented upstream. A publishable key is bound to an exact origin
+   * allowlist and the gateway refuses a request without a matching Origin,
+   * so the server sends it explicitly on every upstream call.
+   */
+  origin: string;
+}
+
+function vericiteConfig(): VericiteConfig {
   const apiBase = readEnv("VERICITE_API_BASE");
   const apiKey = readEnv("VERICITE_API_KEY");
   const channelId = readEnv("VERICITE_CHANNEL_ID");
-  if (!apiBase || !apiKey || !channelId) throw new Error("Chat is not configured");
+  const origin = readEnv("VERICITE_ORIGIN");
+  if (!apiBase || !apiKey || !channelId || !origin) throw new Error("Chat is not configured");
   // Single source of truth for the default (5) and clamp (1-10, the upstream
   // maximum): lib/demo-config.ts. Never parse or clamp here in parallel.
   const maxSources = getVericiteMaxSources({ VERICITE_MAX_SOURCES: readEnv("VERICITE_MAX_SOURCES") });
-  return { apiBase: apiBase.replace(/\/+$/, ""), apiKey, channelId, maxSources };
+  return { apiBase: apiBase.replace(/\/+$/, ""), apiKey, channelId, maxSources, origin };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -136,13 +150,15 @@ function parseCredential(body: unknown): CachedCredential {
   return { credential, visitorId, expiresAtMs };
 }
 
-async function mint(apiBase: string, apiKey: string, previous: CachedCredential | null): Promise<CachedCredential> {
+async function mint(cfg: VericiteConfig, previous: CachedCredential | null): Promise<CachedCredential> {
+  const { apiBase, apiKey, origin } = cfg;
   let res: Response;
   try {
     res = await fetch(`${apiBase}/api/v1/chat/visitor-credential`, {
       method: "POST",
       headers: {
         "X-API-Key": apiKey,
+        Origin: origin,
         "content-type": "application/json",
         // Presenting the previous credential keeps the same visitor id.
         ...(previous ? { "X-VC-Visitor-Credential": previous.credential } : {}),
@@ -176,16 +192,16 @@ export async function getVisitorCredential(db: D1Like, accountId: string): Promi
     return stored;
   }
 
-  const { apiBase, apiKey } = vericiteConfig();
+  const cfg = vericiteConfig();
   // An expired credential no longer verifies upstream, so present the old
   // one only while it is still valid (inside the refresh skew window).
   const previous = stored && stored.expiresAtMs > Date.now() ? stored : null;
   let minted: CachedCredential;
   try {
-    minted = await mint(apiBase, apiKey, previous);
+    minted = await mint(cfg, previous);
   } catch (err) {
     if (!previous) throw err;
-    minted = await mint(apiBase, apiKey, null);
+    minted = await mint(cfg, null);
   }
   credentialCache.set(accountId, minted);
   await store(db, accountId, minted);
@@ -204,7 +220,7 @@ export interface StreamChatArgs {
 
 /** Open the upstream SSE stream. Throws a generic Error on any failure. */
 export async function streamVericiteChat(args: StreamChatArgs): Promise<Response> {
-  const { apiBase, apiKey, channelId, maxSources } = vericiteConfig();
+  const { apiBase, apiKey, channelId, maxSources, origin } = vericiteConfig();
   const credential = await getVisitorCredential(args.db, args.accountId);
   // One controller for the whole exchange: a header timeout while waiting
   // for the upstream to respond, then a generous ceiling on the stream so a
@@ -219,6 +235,7 @@ export async function streamVericiteChat(args: StreamChatArgs): Promise<Response
         "X-API-Key": apiKey,
         "X-VC-Visitor-Credential": credential.credential,
         "X-VC-User-Id": credential.visitorId,
+        Origin: origin,
         "content-type": "application/json",
         accept: "text/event-stream",
       },

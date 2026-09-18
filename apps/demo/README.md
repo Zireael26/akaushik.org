@@ -71,6 +71,10 @@ null outside Cloudflare, so the anonymous paths execute for real.
 
 ## First deployment
 
+Preview (`demo-preview-worker`, `preview.demo.akaushik.org`) uses the
+top-level config; production adds `--env production`. Deploy with
+`env -u CLOUDFLARE_API_TOKEN` (see the repo's `gotchas.md`).
+
 ```sh
 node scripts/provision.mjs --env production      # creates D1s, writes ids
 pnpm exec wrangler d1 execute demo-prod-auth --env production --remote \
@@ -79,22 +83,32 @@ pnpm exec wrangler d1 execute demo-prod-chat --env production --remote \
   --file migrations/demo/0001_chat.sql
 pnpm exec wrangler d1 execute demo-prod-chat --env production --remote \
   --file migrations/demo/0002_visitor_credential.sql
-pnpm exec wrangler secret put BA_SECRET --env production
-pnpm exec wrangler secret put VERICITE_API_KEY --env production
-pnpm exec wrangler secret put DEMO_SUGGESTIONS --env production   # optional
-READER_CREDENTIAL_FILE=~/.demo-credentials.json node scripts/demo-accounts.mjs create   # one entry per viewer
+
+# Secrets. Pipe or paste them; never write them to a file.
+openssl rand -hex 32 | tr -d '\n' | pnpm exec wrangler secret put BA_SECRET --env production
+pnpm exec wrangler secret put VERICITE_API_KEY --env production      # operator pastes the key
+pnpm exec wrangler secret put VERICITE_CHANNEL_ID --env production
+pnpm exec wrangler secret put DEMO_TITLE --env production            # optional
+pnpm exec wrangler secret put DEMO_SUBTITLE --env production         # optional
+pnpm exec wrangler secret put DEMO_SUGGESTIONS --env production      # optional, JSON array
+
+READER_CREDENTIAL_FILE=~/.demo-credentials.json DEMO_AUTH_DB=demo-prod-auth \
+  node scripts/demo-accounts.mjs create   # one entry per viewer
 pnpm build:worker && pnpm deploy:production
 ```
 
-`wrangler.jsonc` ships with `PROVISION_ME_*` placeholders for the database
-ids, so a deploy against an unprovisioned config fails loudly rather than
-quietly binding the wrong store. `VERICITE_CHANNEL_ID` is intentionally left
-blank (the placeholder is the config): until it names a real channel, every
-question gets the single generic error and nothing talks to the wrong upstream. Production must use the
-explicit `production` environment; the default configuration is the disposable
-preview one.
+`VERICITE_API_KEY` is expected to be a publishable (`pk_`) key scoped to
+querying, whose origin allowlist contains exactly `VERICITE_ORIGIN`
+(`https://demo.akaushik.org`). The server sends that Origin on every upstream
+call, so the preview uses the same value; a leaked key cannot touch documents
+or configuration.
 
-Plain vars live in `wrangler.jsonc` (`DEMO_TITLE`, `DEMO_SUBTITLE`,
-`VERICITE_API_BASE`, `VERICITE_CHANNEL_ID`, `VERICITE_MAX_SOURCES`); see
-`worker/demo-env.d.ts` for the binding contract. Secrets never appear in
-committed files.
+Anything that names the client or the upstream channel is a secret, not a
+var, because this repository is public: `VERICITE_CHANNEL_ID`, `DEMO_TITLE`,
+`DEMO_SUBTITLE` and `DEMO_SUGGESTIONS` never appear in committed files. Until
+`VERICITE_API_KEY` and `VERICITE_CHANNEL_ID` are set, every question gets the
+single generic error, so nothing talks to the wrong upstream.
+
+Plain vars in `wrangler.jsonc`: `ENVIRONMENT`, `CANONICAL_HOST`,
+`VERICITE_API_BASE`, `VERICITE_ORIGIN`, `VERICITE_MAX_SOURCES`. See
+`worker/demo-env.d.ts` for the binding contract.
