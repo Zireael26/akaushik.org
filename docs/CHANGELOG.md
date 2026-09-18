@@ -6,6 +6,14 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Added
 
+- 2026-09-18: Added a private demo portal at `demo.akaushik.org`: a
+  password-gated chat over a hosted VeriCite answer API, with cited sources
+  that open the document at the cited page. The browser talks only to the
+  portal's own `/api/chat`, which checks the session, rate-limits per account,
+  and re-emits an allowlisted projection of the upstream stream. Everything
+  client-specific arrives as Worker vars and secrets, never in the repository.
+  Decisions in ADR-0023.
+
 - 2026-09-12: Added a gated course portal at `learn.akaushik.org`, serving the
   24-lesson harness-engineering course behind a password on the pattern
   ADR-0021 established. Its package, Worker, databases and storage are separate
