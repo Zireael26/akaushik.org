@@ -58,9 +58,6 @@
           "custom_domain": true
         }
       ],
-      "limits": {
-        "cpu_ms": 30000
-      },
       "vars": {
         "ENVIRONMENT": "production",
         "CANONICAL_HOST": "demo.akaushik.org",
