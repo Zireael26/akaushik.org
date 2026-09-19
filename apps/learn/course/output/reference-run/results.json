@@ -1,0 +1,1101 @@
+{
+  "lab-01": {
+    "happy": {
+      "task_success": true,
+      "stop_reason": "final",
+      "tool_attempts": 2,
+      "final_claim": "The 2400-cent refund has been completed.",
+      "state": {
+        "orders": {
+          "order-7": {
+            "paid_cents": 2400,
+            "status": "refunded"
+          }
+        },
+        "refunds": [
+          {
+            "order_id": "order-7",
+            "amount_cents": 2400
+          }
+        ]
+      },
+      "trace": [
+        {
+          "sequence": 0,
+          "event": "proposal",
+          "turn": 1,
+          "action": {
+            "kind": "tool",
+            "name": "get_order",
+            "args": {
+              "order_id": "order-7"
+            }
+          }
+        },
+        {
+          "sequence": 1,
+          "event": "observation",
+          "tool": "get_order",
+          "result": {
+            "paid_cents": 2400,
+            "status": "paid"
+          }
+        },
+        {
+          "sequence": 2,
+          "event": "proposal",
+          "turn": 2,
+          "action": {
+            "kind": "tool",
+            "name": "refund_order",
+            "args": {
+              "order_id": "order-7",
+              "amount_cents": 2400
+            }
+          }
+        },
+        {
+          "sequence": 3,
+          "event": "observation",
+          "tool": "refund_order",
+          "result": {
+            "status": "refunded",
+            "order_id": "order-7",
+            "amount_cents": 2400
+          }
+        },
+        {
+          "sequence": 4,
+          "event": "proposal",
+          "turn": 3,
+          "action": {
+            "kind": "final",
+            "text": "The 2400-cent refund has been completed."
+          }
+        },
+        {
+          "sequence": 5,
+          "event": "final_claim",
+          "text": "The 2400-cent refund has been completed."
+        },
+        {
+          "sequence": 6,
+          "event": "verification",
+          "state_ok": true,
+          "task_success": true
+        }
+      ]
+    },
+    "false_claim": {
+      "task_success": false,
+      "stop_reason": "final",
+      "tool_attempts": 0,
+      "final_claim": "The refund succeeded. Trust me; there is no need to inspect the ledger.",
+      "state": {
+        "orders": {
+          "order-7": {
+            "paid_cents": 2400,
+            "status": "paid"
+          }
+        },
+        "refunds": []
+      },
+      "trace": [
+        {
+          "sequence": 0,
+          "event": "proposal",
+          "turn": 1,
+          "action": {
+            "kind": "final",
+            "text": "The refund succeeded. Trust me; there is no need to inspect the ledger."
+          }
+        },
+        {
+          "sequence": 1,
+          "event": "final_claim",
+          "text": "The refund succeeded. Trust me; there is no need to inspect the ledger."
+        },
+        {
+          "sequence": 2,
+          "event": "verification",
+          "state_ok": false,
+          "task_success": false
+        }
+      ]
+    },
+    "forged_approval": {
+      "task_success": true,
+      "stop_reason": "final",
+      "tool_attempts": 2,
+      "final_claim": "Refund completed with my self-granted approval.",
+      "state": {
+        "orders": {
+          "order-7": {
+            "paid_cents": 2400,
+            "status": "refunded"
+          }
+        },
+        "refunds": [
+          {
+            "order_id": "order-7",
+            "amount_cents": 2400
+          }
+        ]
+      },
+      "trace": [
+        {
+          "sequence": 0,
+          "event": "proposal",
+          "turn": 1,
+          "action": {
+            "kind": "tool",
+            "name": "refund_order",
+            "args": {
+              "order_id": "order-7",
+              "amount_cents": 2400,
+              "approved": true
+            }
+          }
+        },
+        {
+          "sequence": 1,
+          "event": "rejected",
+          "tool": "refund_order",
+          "reason": "tool argument keys must exactly match the contract"
+        },
+        {
+          "sequence": 2,
+          "event": "proposal",
+          "turn": 2,
+          "action": {
+            "kind": "tool",
+            "name": "refund_order",
+            "args": {
+              "order_id": "order-7",
+              "amount_cents": 2400
+            }
+          }
+        },
+        {
+          "sequence": 3,
+          "event": "observation",
+          "tool": "refund_order",
+          "result": {
+            "status": "refunded",
+            "order_id": "order-7",
+            "amount_cents": 2400
+          }
+        },
+        {
+          "sequence": 4,
+          "event": "proposal",
+          "turn": 3,
+          "action": {
+            "kind": "final",
+            "text": "Refund completed with my self-granted approval."
+          }
+        },
+        {
+          "sequence": 5,
+          "event": "final_claim",
+          "text": "Refund completed with my self-granted approval."
+        },
+        {
+          "sequence": 6,
+          "event": "verification",
+          "state_ok": true,
+          "task_success": true
+        }
+      ]
+    },
+    "invalid_args": {
+      "task_success": false,
+      "stop_reason": "final",
+      "tool_attempts": 2,
+      "final_claim": "I think the refund completed.",
+      "state": {
+        "orders": {
+          "order-7": {
+            "paid_cents": 2400,
+            "status": "paid"
+          }
+        },
+        "refunds": []
+      },
+      "trace": [
+        {
+          "sequence": 0,
+          "event": "proposal",
+          "turn": 1,
+          "action": {
+            "kind": "tool",
+            "name": "refund_order",
+            "args": {
+              "order_id": "order-7",
+              "amount_cents": true
+            }
+          }
+        },
+        {
+          "sequence": 1,
+          "event": "rejected",
+          "tool": "refund_order",
+          "reason": "amount_cents must have type int"
+        },
+        {
+          "sequence": 2,
+          "event": "proposal",
+          "turn": 2,
+          "action": {
+            "kind": "tool",
+            "name": "refund_order",
+            "args": {
+              "order_id": "order-7",
+              "amount_cents": -2400
+            }
+          }
+        },
+        {
+          "sequence": 3,
+          "event": "rejected",
+          "tool": "refund_order",
+          "reason": "amount_cents must be positive"
+        },
+        {
+          "sequence": 4,
+          "event": "proposal",
+          "turn": 3,
+          "action": {
+            "kind": "final",
+            "text": "I think the refund completed."
+          }
+        },
+        {
+          "sequence": 5,
+          "event": "final_claim",
+          "text": "I think the refund completed."
+        },
+        {
+          "sequence": 6,
+          "event": "verification",
+          "state_ok": false,
+          "task_success": false
+        }
+      ]
+    },
+    "loop": {
+      "task_success": false,
+      "stop_reason": "tool_budget_exceeded",
+      "tool_attempts": 4,
+      "final_claim": null,
+      "state": {
+        "orders": {
+          "order-7": {
+            "paid_cents": 2400,
+            "status": "paid"
+          }
+        },
+        "refunds": []
+      },
+      "trace": [
+        {
+          "sequence": 0,
+          "event": "proposal",
+          "turn": 1,
+          "action": {
+            "kind": "tool",
+            "name": "get_order",
+            "args": {
+              "order_id": "order-7"
+            }
+          }
+        },
+        {
+          "sequence": 1,
+          "event": "observation",
+          "tool": "get_order",
+          "result": {
+            "paid_cents": 2400,
+            "status": "paid"
+          }
+        },
+        {
+          "sequence": 2,
+          "event": "proposal",
+          "turn": 2,
+          "action": {
+            "kind": "tool",
+            "name": "get_order",
+            "args": {
+              "order_id": "order-7"
+            }
+          }
+        },
+        {
+          "sequence": 3,
+          "event": "observation",
+          "tool": "get_order",
+          "result": {
+            "paid_cents": 2400,
+            "status": "paid"
+          }
+        },
+        {
+          "sequence": 4,
+          "event": "proposal",
+          "turn": 3,
+          "action": {
+            "kind": "tool",
+            "name": "get_order",
+            "args": {
+              "order_id": "order-7"
+            }
+          }
+        },
+        {
+          "sequence": 5,
+          "event": "observation",
+          "tool": "get_order",
+          "result": {
+            "paid_cents": 2400,
+            "status": "paid"
+          }
+        },
+        {
+          "sequence": 6,
+          "event": "proposal",
+          "turn": 4,
+          "action": {
+            "kind": "tool",
+            "name": "get_order",
+            "args": {
+              "order_id": "order-7"
+            }
+          }
+        },
+        {
+          "sequence": 7,
+          "event": "observation",
+          "tool": "get_order",
+          "result": {
+            "paid_cents": 2400,
+            "status": "paid"
+          }
+        },
+        {
+          "sequence": 8,
+          "event": "proposal",
+          "turn": 5,
+          "action": {
+            "kind": "tool",
+            "name": "get_order",
+            "args": {
+              "order_id": "order-7"
+            }
+          }
+        },
+        {
+          "sequence": 9,
+          "event": "budget_exceeded",
+          "budget": "tool_calls"
+        },
+        {
+          "sequence": 10,
+          "event": "verification",
+          "state_ok": false,
+          "task_success": false
+        }
+      ]
+    }
+  },
+  "lab-02": {
+    "selected": [
+      {
+        "id": "policy",
+        "tenant": "*",
+        "units": 30,
+        "priority": 100,
+        "text": "Only approved full refunds",
+        "source": "policy-v1",
+        "required": true,
+        "trust": "trusted"
+      },
+      {
+        "id": "order",
+        "tenant": "tenant-a",
+        "units": 25,
+        "priority": 9,
+        "text": "Paid 2400",
+        "source": "db/order-7",
+        "required": false,
+        "trust": "external"
+      }
+    ],
+    "omitted": [
+      "notes"
+    ],
+    "used": 55,
+    "available": 80,
+    "output_reserve": 20,
+    "invalid_money": {
+      "rejected": true,
+      "reason": "positive integer cents required"
+    }
+  },
+  "lab-03": {
+    "task_bootstrap": {
+      "difference": 0.1875,
+      "interval_95": [
+        -0.125,
+        0.5
+      ],
+      "independent_units": 16,
+      "bootstrap_unit": "task"
+    },
+    "cluster_bootstrap": {
+      "difference": 0.1875,
+      "interval_95": [
+        0.0625,
+        0.25
+      ],
+      "independent_units": 4,
+      "bootstrap_unit": "cluster"
+    },
+    "pass_at_3": 1.0,
+    "pass_power_3": 0.4666666666666667,
+    "economics": {
+      "total_cost": 6.0,
+      "successes": 2,
+      "cost_per_success": 3.0
+    },
+    "grader": {
+      "tp": 1,
+      "fp": 1,
+      "fn": 1,
+      "tn": 1,
+      "precision": 0.5,
+      "recall": 0.5
+    }
+  },
+  "lab-04": {
+    "complete": {
+      "jobs": [
+        "source-a",
+        "source-b",
+        "source-c"
+      ],
+      "evidence": {
+        "source-a": {
+          "source": "source-a",
+          "status": "inspected"
+        },
+        "source-b": {
+          "source": "source-b",
+          "status": "inspected"
+        },
+        "source-c": {
+          "source": "source-c",
+          "status": "inspected"
+        }
+      },
+      "verified": true
+    },
+    "missing": {
+      "jobs": [
+        "source-a",
+        "source-b",
+        "source-c"
+      ],
+      "evidence": {
+        "source-a": {
+          "source": "source-a",
+          "status": "inspected"
+        },
+        "source-c": {
+          "source": "source-c",
+          "status": "inspected"
+        }
+      },
+      "verified": false
+    },
+    "empty": {
+      "jobs": [],
+      "evidence": {},
+      "verified": false
+    },
+    "duplicate_jobs": {
+      "rejected": true,
+      "reason": "duplicate job IDs"
+    },
+    "mixed_routing": {
+      "visited": [
+        "dynamic",
+        "static"
+      ]
+    },
+    "projected_subgraph": {
+      "jobs": [
+        "source-a",
+        "source-b",
+        "source-c"
+      ],
+      "evidence": {
+        "source-a": {
+          "source": "source-a",
+          "status": "inspected"
+        },
+        "source-b": {
+          "source": "source-b",
+          "status": "inspected"
+        },
+        "source-c": {
+          "source": "source-c",
+          "status": "inspected"
+        }
+      },
+      "verified": true
+    },
+    "reducer_conflict": {
+      "rejected": true,
+      "reason": "conflicting evidence: a"
+    }
+  },
+  "lab-05": {
+    "interrupt_count": 1,
+    "effects_after_crash": 1,
+    "resumed": {
+      "intent": {
+        "operation_id": "graph-op",
+        "tenant": "tenant-a",
+        "order_id": "order-7",
+        "amount_cents": 2400,
+        "policy_version": 1
+      },
+      "approval_id": "approval-04b55c36badb4ef1a88a92f6cd3f2421",
+      "actor": "operator-a",
+      "now": 11,
+      "result": {
+        "receipt": "receipt-8b58c5146ac04e49a7a105d5e02fabda",
+        "duplicate": true
+      },
+      "verified": true
+    },
+    "effect_count": 1
+  },
+  "lab-06": {
+    "models": [
+      {
+        "kind": "single",
+        "calls": 6,
+        "critical_seconds": 24,
+        "message_copies": 0,
+        "communication_units": 0,
+        "assumptions": "equal call duration; unlimited worker slots; no tool/queue delay; no quality estimate"
+      },
+      {
+        "kind": "parallel",
+        "calls": 7,
+        "critical_seconds": 12,
+        "message_copies": 3,
+        "communication_units": 300,
+        "assumptions": "equal call duration; unlimited worker slots; no tool/queue delay; no quality estimate"
+      },
+      {
+        "kind": "supervisor",
+        "calls": 10,
+        "critical_seconds": 24,
+        "message_copies": 12,
+        "communication_units": 1200,
+        "assumptions": "equal call duration; unlimited worker slots; no tool/queue delay; no quality estimate"
+      },
+      {
+        "kind": "workflow",
+        "calls": 6,
+        "critical_seconds": 8,
+        "message_copies": 6,
+        "communication_units": 600,
+        "assumptions": "equal call duration; unlimited worker slots; no tool/queue delay; no quality estimate"
+      },
+      {
+        "kind": "debate",
+        "calls": 7,
+        "critical_seconds": 12,
+        "message_copies": 9,
+        "communication_units": 900,
+        "assumptions": "equal call duration; unlimited worker slots; no tool/queue delay; no quality estimate"
+      }
+    ],
+    "scope": "scheduling arithmetic only; no quality or speed benchmark"
+  },
+  "lab-07": {
+    "accepted": "accepted",
+    "duplicate": "duplicate",
+    "stale": {
+      "rejected": true,
+      "reason": "stale task revision"
+    },
+    "conflict": {
+      "rejected": true,
+      "reason": "conflicting duplicate completion"
+    },
+    "own_tenant": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"tenant\": \"tenant-a\", \"paid\": 2400}"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "other_tenant": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "error": {
+        "code": -32602,
+        "message": "resource unavailable"
+      }
+    },
+    "protocol_scope": "JSON-RPC teaching subset; not full MCP/A2A"
+  },
+  "lab-08": {
+    "active": [
+      {
+        "id": "m1",
+        "claim": "full refund",
+        "source": "policy-v1",
+        "observed": 10
+      }
+    ],
+    "other_tenant": [],
+    "expired": [],
+    "deleted": [],
+    "coverage": {
+      "count": 12,
+      "processed": 23,
+      "calls": 5
+    },
+    "insufficient_budget": {
+      "rejected": true,
+      "reason": "call budget cannot cover all records"
+    }
+  },
+  "lab-09": {
+    "cases": {
+      "valid": {
+        "rejected": false,
+        "effects": 1
+      },
+      "wrong_tenant": {
+        "rejected": true,
+        "reason": "actor not authorized for tenant",
+        "effects": 0
+      },
+      "forged": {
+        "rejected": true,
+        "reason": "missing, revoked, or expired approval",
+        "effects": 0
+      },
+      "expired": {
+        "rejected": true,
+        "reason": "missing, revoked, or expired approval",
+        "effects": 0
+      },
+      "revoked": {
+        "rejected": true,
+        "reason": "missing, revoked, or expired approval",
+        "effects": 0
+      },
+      "changed_amount": {
+        "rejected": true,
+        "reason": "course policy requires the exact full paid amount",
+        "effects": 0
+      },
+      "stale_policy": {
+        "rejected": true,
+        "reason": "stale policy version",
+        "effects": 0
+      },
+      "injected_note": {
+        "rejected": true,
+        "reason": "actor not authorized for tenant",
+        "effects": 0
+      }
+    },
+    "scope": "fixed service-boundary coverage cases, not a live injection benchmark"
+  },
+  "lab-10": {
+    "epochs": [
+      1,
+      2
+    ],
+    "stale": {
+      "rejected": true,
+      "reason": "stale or expired worker cannot commit"
+    },
+    "budget": {
+      "first": true,
+      "second": false,
+      "spent": 35,
+      "reserved": 0
+    },
+    "one_worker": [
+      {
+        "arrival": 0,
+        "start": 0,
+        "end": 10,
+        "wait": 0,
+        "latency": 10
+      },
+      {
+        "arrival": 0,
+        "start": 10,
+        "end": 20,
+        "wait": 10,
+        "latency": 20
+      },
+      {
+        "arrival": 0,
+        "start": 20,
+        "end": 30,
+        "wait": 20,
+        "latency": 30
+      },
+      {
+        "arrival": 0,
+        "start": 30,
+        "end": 40,
+        "wait": 30,
+        "latency": 40
+      }
+    ],
+    "two_workers": [
+      {
+        "arrival": 0,
+        "start": 0,
+        "end": 10,
+        "wait": 0,
+        "latency": 10
+      },
+      {
+        "arrival": 0,
+        "start": 0,
+        "end": 10,
+        "wait": 0,
+        "latency": 10
+      },
+      {
+        "arrival": 0,
+        "start": 10,
+        "end": 20,
+        "wait": 10,
+        "latency": 20
+      },
+      {
+        "arrival": 0,
+        "start": 10,
+        "end": 20,
+        "wait": 10,
+        "latency": 20
+      }
+    ],
+    "migration": {
+      "schema_version": 2,
+      "operation_id": "op",
+      "terminal_status": "pending"
+    },
+    "unknown_version": {
+      "rejected": true,
+      "reason": "unsupported schema version"
+    }
+  },
+  "lab-11": {
+    "selection": {
+      "winner": "negation",
+      "history": [
+        {
+          "policy": "keyword",
+          "train": 0.75,
+          "dev": 0.75
+        },
+        {
+          "policy": "negation",
+          "train": 1.0,
+          "dev": 1.0
+        },
+        {
+          "policy": "evidence",
+          "train": 0.75,
+          "dev": 0.75
+        }
+      ],
+      "holdout_score": 1.0,
+      "holdout_evaluations": 1,
+      "scope": "finite policy search with a deterministic candidate menu; not GEPA performance"
+    },
+    "bandit": {
+      "counts": [
+        181,
+        19
+      ],
+      "estimated_value": [
+        0.6129834254143645,
+        0.4421052631578947
+      ],
+      "total_reward": 119.35000000000035,
+      "true_expected_utilities": [
+        0.6,
+        0.5
+      ],
+      "scope": "stationary two-action simulation; no LLM training"
+    }
+  },
+  "lab-12": {
+    "product": {
+      "intent": {
+        "operation_id": "refund-7",
+        "tenant": "tenant-a",
+        "order_id": "order-7",
+        "amount_cents": 2400,
+        "policy_version": 1
+      },
+      "trace": [
+        {
+          "event": "crash_after_effect",
+          "effect_count": 1
+        },
+        {
+          "event": "recovered",
+          "result": {
+            "restored": false,
+            "receipt": "receipt-39752ee80ab140e388823b8f21cc8cdd",
+            "duplicate": true
+          },
+          "effect_count": 1
+        },
+        {
+          "event": "checkpoint_restored",
+          "result": {
+            "restored": true,
+            "receipt": "receipt-39752ee80ab140e388823b8f21cc8cdd",
+            "duplicate": true
+          }
+        }
+      ],
+      "verified": true,
+      "effect_count": 1,
+      "scope": "simulated transactional effect service; no external action"
+    },
+    "coding_reference": [
+      {
+        "task": "invoice",
+        "policy": "reference",
+        "before": {
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "Traceback (most recent call last):\n  File \"/tmp/course-code-n7jcvvyv/acceptance.py\", line 2, in <module>\n    assert total(120, 3) == 360\n           ^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+        },
+        "after": {
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "verified": true,
+        "artifact_sha256": "908d700daf758ced33ca70cc54a80286c7e35f839ece99435780f010755394eb",
+        "scope": "trusted supplied Python fixtures; subprocess is NOT a security sandbox"
+      },
+      {
+        "task": "inventory",
+        "policy": "reference",
+        "before": {
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "Traceback (most recent call last):\n  File \"/tmp/course-code-9qx1yty0/acceptance.py\", line 9, in <module>\n    raise AssertionError(\"invalid quantity accepted\")\nAssertionError: invalid quantity accepted\n"
+        },
+        "after": {
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "verified": true,
+        "artifact_sha256": "a3689ff97e0ddfb03853a7b51fe23305ae7bd620c5b50f7f564724e6ceb1909c",
+        "scope": "trusted supplied Python fixtures; subprocess is NOT a security sandbox"
+      },
+      {
+        "task": "tenant",
+        "policy": "reference",
+        "before": {
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "Traceback (most recent call last):\n  File \"/tmp/course-code-_rurpnda/acceptance.py\", line 3, in <module>\n    assert not visible({\"public\":True,\"tenant\":\"b\"},\"a\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+        },
+        "after": {
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "verified": true,
+        "artifact_sha256": "2e894a7b5b11f11285fd2286c46d1b0dbed382f3416fe8b10d1a7640f8622b3d",
+        "scope": "trusted supplied Python fixtures; subprocess is NOT a security sandbox"
+      },
+      {
+        "task": "pagination",
+        "policy": "reference",
+        "before": {
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "Traceback (most recent call last):\n  File \"/tmp/course-code-_w5xhl4k/acceptance.py\", line 3, in <module>\n    assert next_offset(10,10,20) is None\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+        },
+        "after": {
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "verified": true,
+        "artifact_sha256": "b3620f5f11601a77d1276d12b61a9029bc78111ad9698fa27da58b59f373d296",
+        "scope": "trusted supplied Python fixtures; subprocess is NOT a security sandbox"
+      },
+      {
+        "task": "money",
+        "policy": "reference",
+        "before": {
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "Traceback (most recent call last):\n  File \"/tmp/course-code-rmbvl994/acceptance.py\", line 3, in <module>\n    assert not valid_cents(True)\n           ^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+        },
+        "after": {
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "verified": true,
+        "artifact_sha256": "b27cf526b09b02f728a303684cf86c7cf4b2d8195e7bc8692fe76bb4727ddc2f",
+        "scope": "trusted supplied Python fixtures; subprocess is NOT a security sandbox"
+      },
+      {
+        "task": "status",
+        "policy": "reference",
+        "before": {
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "Traceback (most recent call last):\n  File \"/tmp/course-code-4eqhpidu/acceptance.py\", line 2, in <module>\n    assert terminal(False,\"done\")==\"review\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+        },
+        "after": {
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "verified": true,
+        "artifact_sha256": "9dc9723d419f03fc717f6a45a0d71f66e1c7809a71d58519da38f303f41f8dcc",
+        "scope": "trusted supplied Python fixtures; subprocess is NOT a security sandbox"
+      }
+    ],
+    "coding_negative_control": [
+      {
+        "task": "invoice",
+        "policy": "unchanged",
+        "before": {
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "Traceback (most recent call last):\n  File \"/tmp/course-code-9s0r1cz8/acceptance.py\", line 2, in <module>\n    assert total(120, 3) == 360\n           ^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+        },
+        "after": {
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "Traceback (most recent call last):\n  File \"/tmp/course-code-9s0r1cz8/acceptance.py\", line 2, in <module>\n    assert total(120, 3) == 360\n           ^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+        },
+        "verified": false,
+        "artifact_sha256": "678893c982c56d6b9cd51689a0f80c49e6b9b78ce5cf7dbe8fe7415e00ee6c2e",
+        "scope": "trusted supplied Python fixtures; subprocess is NOT a security sandbox"
+      },
+      {
+        "task": "inventory",
+        "policy": "unchanged",
+        "before": {
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "Traceback (most recent call last):\n  File \"/tmp/course-code-3g9m7e_c/acceptance.py\", line 9, in <module>\n    raise AssertionError(\"invalid quantity accepted\")\nAssertionError: invalid quantity accepted\n"
+        },
+        "after": {
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "Traceback (most recent call last):\n  File \"/tmp/course-code-3g9m7e_c/acceptance.py\", line 9, in <module>\n    raise AssertionError(\"invalid quantity accepted\")\nAssertionError: invalid quantity accepted\n"
+        },
+        "verified": false,
+        "artifact_sha256": "759bbab4db9fc5f67e5a61929aac87fae54aa4393e62755e8ce94a86b1bf3f0d",
+        "scope": "trusted supplied Python fixtures; subprocess is NOT a security sandbox"
+      },
+      {
+        "task": "tenant",
+        "policy": "unchanged",
+        "before": {
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "Traceback (most recent call last):\n  File \"/tmp/course-code-zfftxs9m/acceptance.py\", line 3, in <module>\n    assert not visible({\"public\":True,\"tenant\":\"b\"},\"a\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+        },
+        "after": {
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "Traceback (most recent call last):\n  File \"/tmp/course-code-zfftxs9m/acceptance.py\", line 3, in <module>\n    assert not visible({\"public\":True,\"tenant\":\"b\"},\"a\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+        },
+        "verified": false,
+        "artifact_sha256": "c238b26948123c67178d59159b749d9e874ff7cbe1232e74e1559132e049f7f0",
+        "scope": "trusted supplied Python fixtures; subprocess is NOT a security sandbox"
+      },
+      {
+        "task": "pagination",
+        "policy": "unchanged",
+        "before": {
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "Traceback (most recent call last):\n  File \"/tmp/course-code-i3aw3ykw/acceptance.py\", line 3, in <module>\n    assert next_offset(10,10,20) is None\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+        },
+        "after": {
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "Traceback (most recent call last):\n  File \"/tmp/course-code-i3aw3ykw/acceptance.py\", line 3, in <module>\n    assert next_offset(10,10,20) is None\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+        },
+        "verified": false,
+        "artifact_sha256": "8e3558837f43a189f258889c8bfd76d59f7d3e6f54124782ea7ac3b8eb419bc3",
+        "scope": "trusted supplied Python fixtures; subprocess is NOT a security sandbox"
+      },
+      {
+        "task": "money",
+        "policy": "unchanged",
+        "before": {
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "Traceback (most recent call last):\n  File \"/tmp/course-code-wf8cxki9/acceptance.py\", line 3, in <module>\n    assert not valid_cents(True)\n           ^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+        },
+        "after": {
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "Traceback (most recent call last):\n  File \"/tmp/course-code-wf8cxki9/acceptance.py\", line 3, in <module>\n    assert not valid_cents(True)\n           ^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+        },
+        "verified": false,
+        "artifact_sha256": "426643585aea21288efb065c9bc47d634d63fc7c3d3857c2e769fd31ed97820f",
+        "scope": "trusted supplied Python fixtures; subprocess is NOT a security sandbox"
+      },
+      {
+        "task": "status",
+        "policy": "unchanged",
+        "before": {
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "Traceback (most recent call last):\n  File \"/tmp/course-code-g137id9s/acceptance.py\", line 2, in <module>\n    assert terminal(False,\"done\")==\"review\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+        },
+        "after": {
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "Traceback (most recent call last):\n  File \"/tmp/course-code-g137id9s/acceptance.py\", line 2, in <module>\n    assert terminal(False,\"done\")==\"review\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+        },
+        "verified": false,
+        "artifact_sha256": "5183abca879dc509616f8bfbf5de1a4b1df9fb8b295441964fca77c18b054e63",
+        "scope": "trusted supplied Python fixtures; subprocess is NOT a security sandbox"
+      }
+    ]
+  }
+}

@@ -1,0 +1,38 @@
+# Fill in before an experiment. Null means not yet specified.
+experiment_id: null
+hypothesis: null
+intervention: null
+baseline: null
+minimum_practically_useful_effect: null
+primary_metric: null
+secondary_metrics: []
+task_population: null
+independent_sampling_unit: null
+split_method: null
+holdout_access_policy: null
+number_of_tasks: null
+attempts_per_task: null
+harness_commit: null
+model_identifier: null
+model_settings: {}
+context_policy_version: null
+tool_contract_version: null
+environment_revision: null
+grader_version: null
+budget:
+  total_cost_ceiling: null
+  max_turns_per_run: null
+  max_tool_calls_per_run: null
+  max_concurrent_workers: null
+  deadline_per_run_seconds: null
+analysis:
+  pairing_key: null
+  bootstrap_unit: null
+  confidence_level: 0.95
+  handling_of_timeouts: null
+  handling_of_infrastructure_failures: null
+  stopping_rule: null
+selection_cost_included: null
+candidate_lineage: []
+result_location: null
+known_limitations: []

@@ -1,0 +1,74 @@
+[
+  {
+    "module": 1,
+    "title": "Control and outcome",
+    "prompt": "A tool returns HTTP 202 (accepted for later processing) and the agent reports success. What state should the task enter, what evidence is missing, and which identifier supports later reconciliation? Separately: the run has exhausted its tool budget with the job still pending. Which terminal status is truthful, and what must the final message contain?",
+    "answer": "Enter pending/accepted, retain the asynchronous job or operation ID, and wait for an authoritative terminal result. A transport acknowledgment is not the outcome. Test delayed completion and deadline expiry. On exhaustion, the truthful status is exhausted or pending-reconciliation, never success; the final message must carry the job identifier and a way to check the outcome later. A claim of completion at budget exhaustion is the false-completion case from Lesson 1."
+  },
+  {
+    "module": 2,
+    "title": "Context and contracts",
+    "prompt": "A highly relevant retrieved record belongs to another tenant, and the required policy exceeds the available context budget. Can either be included partially to improve success?",
+    "answer": "The other-tenant record is outside the authorized candidate set. Mandatory policy cannot be silently truncated. Fail or renegotiate the budget/task, preserve scope, and measure outcomes after a valid compilation."
+  },
+  {
+    "module": 3,
+    "title": "Evaluation",
+    "prompt": "A candidate wins 12 of 16 paired tasks drawn from four templates. The engineer reports 16 independent samples and selects the best of 40 prompt variants on this set. Identify two inferential problems. Then: a task has 3 successes in 4 recorded attempts. Give the finite-sample pass@2 and pass^2 without substituting p=0.75 into the independent-trial formulas, and say which product question each answers.",
+    "answer": "Template dependence reduces the independent unit count; resample or split at the family level. Repeated candidate selection makes this development evidence optimistic. Use a fresh family-separated evaluation and report the full search budget. With n=4, c=3, k=2 there are C(4,2)=6 attempt pairs. The single failure cannot fill a pair by itself, so every pair contains a success and pass@2=1-C(1,2)/C(4,2)=1. Only the three all-success pairs count for pass^2=C(3,2)/C(4,2)=0.5. pass@2 answers whether a working attempt exists somewhere in two tries; pass^2 answers whether every attempt is reliable. The plug-in values 0.9375 and 0.5625 answer a different, model-based question."
+  },
+  {
+    "module": 4,
+    "title": "Graph semantics",
+    "prompt": "Two workers write the same evidence key with different values. One run chooses A and another chooses B because completion order changes. What reducer policy and acceptance test are needed? Separately: a node returns Command(goto=\"verify\") and the graph also has add_edge from that node to \"review\". Predict what runs in the pinned LangGraph release and state the repair.",
+    "answer": "Reject conflicting values or define an explicit domain resolution rule with provenance. Test order independence on compatible updates and conflict detection separately. Do not allow scheduling order to decide truth. For the routing case, both verify and review are scheduled: a Command adds a dynamic edge and does not suppress a static edge. Use one routing mechanism per node and add a test that asserts the set of visited nodes."
+  },
+  {
+    "module": 5,
+    "title": "Durability",
+    "prompt": "An approval expires after an effect commits but before the graph resumes. Does expiry prove the action failed? What can recovery safely do? Separately: a retry policy generates a fresh idempotency key on every attempt. Which guarantee does that silently discard, and what should the key identify instead?",
+    "answer": "Expiry says the old record cannot authorize a new action now. It does not erase a committed effect. Reconcile through an authorized read, verify the existing outcome, and restore controller continuity without a new mutation. A fresh key per attempt turns each retry into a new logical operation, so the service cannot deduplicate and a timeout followed by retry can produce two effects. The key must identify the logical business operation, reused across attempts and bound to the canonical payload."
+  },
+  {
+    "module": 6,
+    "title": "Architecture",
+    "prompt": "A team gets better answers using twice the calls, a stronger coordinator, and a new verifier. What has been established, and how would you isolate coordination?",
+    "answer": "The whole configuration improved under its tested conditions. Hold model/tool/evaluator opportunity comparable, vary coordination deliberately, include strong single-agent and independent-candidate baselines, and report actual cost and latency."
+  },
+  {
+    "module": 7,
+    "title": "Coordination and protocols",
+    "prompt": "A valid A2A artifact arrives for revision 2 after task revision 3 is cancelled. Should transport validity allow integration?",
+    "answer": "No. Check current task revision, ownership, cancellation, and dependency identity before integration. Protocol validity does not override application lifecycle or authority. Preserve the rejected artifact as diagnostic evidence if permitted."
+  },
+  {
+    "module": 8,
+    "title": "Long-horizon state",
+    "prompt": "A memory says tests passed yesterday, but the repository and dependency lock changed overnight. Is the feature verified? Separately: a retrieval over 23 policy records must count how many meet a condition, the classifier handles 5 records per call, and the budget allows 4 calls. What should the system do before making any call?",
+    "answer": "The old result is historical evidence for another artifact/environment. Inspect current state and rerun relevant acceptance checks. Preserve provenance; do not promote remembered text to current verification. Full coverage needs ceiling(23/5)=5 calls, so the 4-call budget cannot complete the declared task; reject or renegotiate before the first call rather than returning a 20-record partial count as a total. If partial results are permitted, the contract must say so and the output must report the uncovered records."
+  },
+  {
+    "module": 9,
+    "title": "Security and utility",
+    "prompt": "A defense blocks every external document and records zero attacks. What additional result is required before adoption?",
+    "answer": "Measure authorized completion on benign tasks, including legitimate external workflow guidance. Zero violations with zero usefulness fails the product contract. Evaluate end-to-end effects beyond detector labels."
+  },
+  {
+    "module": 10,
+    "title": "Operations",
+    "prompt": "A worker finishes after its lease expires and a new worker takes ownership. The old worker has already called an external write. Does fencing the queue result solve the whole problem? Separately: two workers each read a shared budget of 100 units, each sees 100 available, and each spends 60. Name the defect and the fix.",
+    "answer": "Queue fencing rejects stale result acceptance but cannot undo the external write. The effect service must enforce idempotency, fencing, or another valid concurrency contract. Reconcile the external state. The budget case is a check-then-spend race: both reads precede either spend, so the budget is oversubscribed to 120. Reserve atomically before dispatch, settle actual usage afterward, and give each reservation an identity so one worker cannot settle another's allocation."
+  },
+  {
+    "module": 11,
+    "title": "Optimization",
+    "prompt": "A reflective optimizer examines final-test failures, changes its playbook, and reports the improved score on the same test. What is the correct interpretation?",
+    "answer": "The test has become development data. The result describes fitting to that set, not untouched generalization. Preserve the exposure history and use a new independent evaluation population before promotion."
+  },
+  {
+    "module": 12,
+    "title": "Defense",
+    "prompt": "Your reference capstones pass locally. Which claims can you make, and which require additional experiments?",
+    "answer": "You can claim the tested fixture behaviors, state invariants, restart mechanics, and known reference-patch acceptance under pinned dependencies. Live-model capability, adversarial generalization, production scale, protocol conformance, and sandbox security require separate evidence."
+  }
+]

@@ -1,0 +1,154 @@
+/* Shared section layout primitives matching akaushik.org */
+
+.px-section {
+  max-width: var(--wrap-max);
+  margin: 0 auto;
+  padding: clamp(48px, 8vh, 96px) var(--wrap-pad) 0;
+}
+
+.px-head--column {
+  flex: 1 1 300px;
+  min-width: min(100%, 280px);
+}
+
+.px-head-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(30px, 3.4vw, 52px);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.px-head-label {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink40);
+  margin-bottom: 12px;
+}
+
+.px-split {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px clamp(32px, 5vw, 90px);
+  align-items: flex-start;
+}
+
+.px-split-body {
+  flex: 2 1 460px;
+  min-width: 0;
+}
+
+.px-split-intro {
+  margin: 14px 0 22px;
+  font-size: 14.5px;
+  line-height: 1.75;
+  color: var(--ink70);
+}
+
+.px-split-intro a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--px-cobalt);
+}
+
+/* Ruled rows */
+.px-row {
+  display: flex;
+  gap: 20px;
+  align-items: baseline;
+  padding: 15px 0;
+  border-top: 1px solid var(--line);
+}
+
+.px-row.is-last {
+  border-bottom: 1px solid var(--line);
+}
+
+.px-row-tag {
+  flex: 0 0 56px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--ink40);
+  text-transform: uppercase;
+}
+
+.px-row-body {
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--ink70);
+}
+
+.px-row-body strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Matter rows */
+.px-matter {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 32px;
+  align-items: baseline;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+  transition:
+    padding-left 0.18s ease,
+    color 0.18s ease;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.px-matter:hover {
+  padding-left: 10px;
+}
+
+.px-matter:hover .px-matter-title {
+  color: var(--px-cobalt-ink);
+}
+
+.px-matter-title {
+  font-weight: 500;
+  font-size: clamp(17px, 2vw, 22px);
+  letter-spacing: -0.015em;
+  transition: color 0.18s ease;
+}
+
+.px-matter-tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink40);
+}
+
+/* Tone utilities */
+.is-cobalt { color: var(--px-cobalt-ink); }
+.is-amber { color: var(--px-amber-ink); }
+.is-red { color: var(--px-red-ink); }
+.is-lime { color: var(--px-lime-ink); }
+.is-ink { color: var(--ink); }
+
+/* Project Field Height */
+.px-project-field {
+  position: relative;
+  height: clamp(240px, 32vh, 320px);
+  width: 100%;
+  max-width: var(--wrap-max);
+  margin: 0 auto;
+  border-block: 1px solid var(--line);
+}
+
+.px-project-field canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

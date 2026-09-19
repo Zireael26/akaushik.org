@@ -1,0 +1,17 @@
+{
+  "task": "tenant",
+  "policy": "reference",
+  "before": {
+    "returncode": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"/tmp/course-code-_rurpnda/acceptance.py\", line 3, in <module>\n    assert not visible({\"public\":True,\"tenant\":\"b\"},\"a\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+  },
+  "after": {
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "verified": true,
+  "artifact_sha256": "2e894a7b5b11f11285fd2286c46d1b0dbed382f3416fe8b10d1a7640f8622b3d",
+  "scope": "trusted supplied Python fixtures; subprocess is NOT a security sandbox"
+}

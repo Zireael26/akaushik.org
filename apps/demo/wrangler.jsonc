@@ -1,0 +1,89 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "demo-preview-worker",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-09-09",
+  "compatibility_flags": ["nodejs_compat"],
+  "account_id": "ca127da6bde0b3d48082bdd84132dc09",
+  "workers_dev": true,
+  // The preview is only reachable on this host: the Worker's exact Host
+  // allowlist rejects the workers.dev name outside qualification.
+  "routes": [
+    {
+      "pattern": "preview.demo.akaushik.org",
+      "custom_domain": true
+    }
+  ],
+  "vars": {
+    "ENVIRONMENT": "development",
+    "CANONICAL_HOST": "preview.demo.akaushik.org",
+    "VERICITE_API_BASE": "https://api.vericite.ai",
+    "VERICITE_ORIGIN": "https://demo.akaushik.org",
+    "VERICITE_MAX_SOURCES": "5"
+  },
+  // Resource ids are filled in by scripts/provision.mjs, which creates the
+  // databases and rewrites this file. Placeholders are left visible
+  // rather than blank so a deploy against an unprovisioned config fails loudly.
+  // Secrets (set with `wrangler secret put`, never committed). Anything that
+  // names the client or the upstream channel is a secret, not a var, because
+  // this repository is public:
+  //   BA_SECRET, VERICITE_API_KEY, VERICITE_CHANNEL_ID (required)
+  //   DEMO_TITLE, DEMO_SUBTITLE, DEMO_SUGGESTIONS (optional branding)
+  "d1_databases": [
+    {
+      "binding": "AUTH_DB",
+      "database_name": "demo-preview-auth",
+      "database_id": "663e99fb-5d08-4b34-8492-cb11dd88c6a9"
+    },
+    {
+      "binding": "DEMO_DB",
+      "database_name": "demo-preview-chat",
+      "database_id": "8c96be83-c717-48cf-9c08-cc6017665cf4"
+    }
+  ],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "env": {
+    "production": {
+      "name": "demo-prod-worker",
+      "workers_dev": false,
+      "routes": [
+        {
+          "pattern": "demo.akaushik.org",
+          "custom_domain": true
+        }
+      ],
+      "vars": {
+        "ENVIRONMENT": "production",
+        "CANONICAL_HOST": "demo.akaushik.org",
+        "VERICITE_API_BASE": "https://api.vericite.ai",
+        "VERICITE_ORIGIN": "https://demo.akaushik.org",
+        "VERICITE_MAX_SOURCES": "5"
+      },
+      "d1_databases": [
+        {
+          "binding": "AUTH_DB",
+          "database_name": "demo-prod-auth",
+          "database_id": "ecaf193b-dfad-4f33-9f08-17fced15413d"
+        },
+        {
+          "binding": "DEMO_DB",
+          "database_name": "demo-prod-chat",
+          "database_id": "9508b706-299d-4e80-a969-0b807d4afc9c"
+        }
+      ],
+      "assets": {
+        "directory": ".open-next/assets",
+        "binding": "ASSETS"
+      },
+      "observability": {
+        "enabled": true
+      }
+    }
+  }
+}

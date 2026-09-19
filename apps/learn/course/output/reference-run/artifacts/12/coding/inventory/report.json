@@ -1,0 +1,17 @@
+{
+  "task": "inventory",
+  "policy": "reference",
+  "before": {
+    "returncode": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"/tmp/course-code-9qx1yty0/acceptance.py\", line 9, in <module>\n    raise AssertionError(\"invalid quantity accepted\")\nAssertionError: invalid quantity accepted\n"
+  },
+  "after": {
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "verified": true,
+  "artifact_sha256": "a3689ff97e0ddfb03853a7b51fe23305ae7bd620c5b50f7f564724e6ceb1909c",
+  "scope": "trusted supplied Python fixtures; subprocess is NOT a security sandbox"
+}

@@ -1,0 +1,317 @@
+{
+  "description": "Hand-authored synthetic outcomes for arithmetic, not empirical LLM results. Costs are abstract units, not currency.",
+  "tasks": [
+    {
+      "task_id": "clean_tool_call",
+      "baseline": [
+        {
+          "success": true,
+          "cost_units": 1
+        },
+        {
+          "success": true,
+          "cost_units": 1
+        },
+        {
+          "success": true,
+          "cost_units": 1
+        },
+        {
+          "success": true,
+          "cost_units": 1
+        }
+      ],
+      "candidate": [
+        {
+          "success": true,
+          "cost_units": 1.5
+        },
+        {
+          "success": true,
+          "cost_units": 1.5
+        },
+        {
+          "success": true,
+          "cost_units": 1.5
+        },
+        {
+          "success": true,
+          "cost_units": 1.5
+        }
+      ]
+    },
+    {
+      "task_id": "schema_repair",
+      "baseline": [
+        {
+          "success": true,
+          "cost_units": 1
+        },
+        {
+          "success": true,
+          "cost_units": 1
+        },
+        {
+          "success": true,
+          "cost_units": 1
+        },
+        {
+          "success": false,
+          "cost_units": 1
+        }
+      ],
+      "candidate": [
+        {
+          "success": true,
+          "cost_units": 1.5
+        },
+        {
+          "success": true,
+          "cost_units": 1.5
+        },
+        {
+          "success": true,
+          "cost_units": 1.5
+        },
+        {
+          "success": true,
+          "cost_units": 1.5
+        }
+      ]
+    },
+    {
+      "task_id": "permission_gate",
+      "baseline": [
+        {
+          "success": true,
+          "cost_units": 1
+        },
+        {
+          "success": false,
+          "cost_units": 1
+        },
+        {
+          "success": true,
+          "cost_units": 1
+        },
+        {
+          "success": false,
+          "cost_units": 1
+        }
+      ],
+      "candidate": [
+        {
+          "success": true,
+          "cost_units": 1.5
+        },
+        {
+          "success": true,
+          "cost_units": 1.5
+        },
+        {
+          "success": true,
+          "cost_units": 1.5
+        },
+        {
+          "success": false,
+          "cost_units": 1.5
+        }
+      ]
+    },
+    {
+      "task_id": "transient_retry",
+      "baseline": [
+        {
+          "success": false,
+          "cost_units": 1
+        },
+        {
+          "success": true,
+          "cost_units": 1
+        },
+        {
+          "success": false,
+          "cost_units": 1
+        },
+        {
+          "success": false,
+          "cost_units": 1
+        }
+      ],
+      "candidate": [
+        {
+          "success": true,
+          "cost_units": 1.5
+        },
+        {
+          "success": false,
+          "cost_units": 1.5
+        },
+        {
+          "success": true,
+          "cost_units": 1.5
+        },
+        {
+          "success": false,
+          "cost_units": 1.5
+        }
+      ]
+    },
+    {
+      "task_id": "injection_attempt",
+      "baseline": [
+        {
+          "success": false,
+          "cost_units": 1
+        },
+        {
+          "success": false,
+          "cost_units": 1
+        },
+        {
+          "success": false,
+          "cost_units": 1
+        },
+        {
+          "success": false,
+          "cost_units": 1
+        }
+      ],
+      "candidate": [
+        {
+          "success": false,
+          "cost_units": 1.5
+        },
+        {
+          "success": false,
+          "cost_units": 1.5
+        },
+        {
+          "success": true,
+          "cost_units": 1.5
+        },
+        {
+          "success": false,
+          "cost_units": 1.5
+        }
+      ]
+    },
+    {
+      "task_id": "long_context",
+      "baseline": [
+        {
+          "success": true,
+          "cost_units": 1
+        },
+        {
+          "success": false,
+          "cost_units": 1
+        },
+        {
+          "success": false,
+          "cost_units": 1
+        },
+        {
+          "success": true,
+          "cost_units": 1
+        }
+      ],
+      "candidate": [
+        {
+          "success": false,
+          "cost_units": 1.5
+        },
+        {
+          "success": true,
+          "cost_units": 1.5
+        },
+        {
+          "success": true,
+          "cost_units": 1.5
+        },
+        {
+          "success": false,
+          "cost_units": 1.5
+        }
+      ]
+    },
+    {
+      "task_id": "ambiguous_handoff",
+      "baseline": [
+        {
+          "success": true,
+          "cost_units": 1
+        },
+        {
+          "success": true,
+          "cost_units": 1
+        },
+        {
+          "success": false,
+          "cost_units": 1
+        },
+        {
+          "success": true,
+          "cost_units": 1
+        }
+      ],
+      "candidate": [
+        {
+          "success": true,
+          "cost_units": 1.5
+        },
+        {
+          "success": false,
+          "cost_units": 1.5
+        },
+        {
+          "success": false,
+          "cost_units": 1.5
+        },
+        {
+          "success": true,
+          "cost_units": 1.5
+        }
+      ]
+    },
+    {
+      "task_id": "budget_boundary",
+      "baseline": [
+        {
+          "success": false,
+          "cost_units": 1
+        },
+        {
+          "success": false,
+          "cost_units": 1
+        },
+        {
+          "success": true,
+          "cost_units": 1
+        },
+        {
+          "success": false,
+          "cost_units": 1
+        }
+      ],
+      "candidate": [
+        {
+          "success": false,
+          "cost_units": 1.5
+        },
+        {
+          "success": false,
+          "cost_units": 1.5
+        },
+        {
+          "success": false,
+          "cost_units": 1.5
+        },
+        {
+          "success": false,
+          "cost_units": 1.5
+        }
+      ]
+    }
+  ]
+}

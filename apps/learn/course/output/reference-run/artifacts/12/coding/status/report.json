@@ -1,0 +1,17 @@
+{
+  "task": "status",
+  "policy": "reference",
+  "before": {
+    "returncode": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"/tmp/course-code-4eqhpidu/acceptance.py\", line 2, in <module>\n    assert terminal(False,\"done\")==\"review\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+  },
+  "after": {
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "verified": true,
+  "artifact_sha256": "9dc9723d419f03fc717f6a45a0d71f66e1c7809a71d58519da38f303f41f8dcc",
+  "scope": "trusted supplied Python fixtures; subprocess is NOT a security sandbox"
+}

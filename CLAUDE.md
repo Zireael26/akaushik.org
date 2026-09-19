@@ -8,6 +8,7 @@ Personal portfolio site. Next.js 16 + React 19 + Tailwind 4 + raw Three.js / Hyp
 
 - `_reference/` - Archived portfolio/reference material.
 - `app/` - Next.js App Router pages, APIs, metadata routes, and work/writing routes.
+- `apps/` - Independently built private subdomains, each its own package, lockfile, Worker and Cloudflare bindings, excluded from root TS/ESLint/Vitest: `apps/friendsof` (client workspace, ADR-0021) and `apps/learn` (gated course reader, ADR-0022).
 - `components/` - Site, section, media, SEO, work, and pixel components.
 - `content/` - MDX case studies and writing.
 - `lib/` - Shared helpers and tested domain utilities.

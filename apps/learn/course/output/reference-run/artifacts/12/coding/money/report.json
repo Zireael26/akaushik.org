@@ -1,0 +1,17 @@
+{
+  "task": "money",
+  "policy": "reference",
+  "before": {
+    "returncode": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"/tmp/course-code-rmbvl994/acceptance.py\", line 3, in <module>\n    assert not valid_cents(True)\n           ^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+  },
+  "after": {
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "verified": true,
+  "artifact_sha256": "b27cf526b09b02f728a303684cf86c7cf4b2d8195e7bc8692fe76bb4727ddc2f",
+  "scope": "trusted supplied Python fixtures; subprocess is NOT a security sandbox"
+}

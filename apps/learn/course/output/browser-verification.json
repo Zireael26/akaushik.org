@@ -1,0 +1,140 @@
+{
+  "errors": [],
+  "checks": [
+    {
+      "name": "reader home",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "name": "lesson24 solution + notes + progress",
+      "width": 1440,
+      "overflow": false,
+      "solution_open": true,
+      "progress": "1/24"
+    },
+    {
+      "name": "search",
+      "matches": 1,
+      "width": 1440
+    },
+    {
+      "name": "embedded advanced atlas",
+      "width": 1440,
+      "panels": 7
+    },
+    {
+      "name": "atlas reducer",
+      "overflow": false
+    },
+    {
+      "name": "atlas ownership",
+      "overflow": false
+    },
+    {
+      "name": "atlas memory",
+      "overflow": false
+    },
+    {
+      "name": "atlas uncertainty",
+      "overflow": false
+    },
+    {
+      "name": "atlas queue",
+      "overflow": false
+    },
+    {
+      "name": "atlas approval",
+      "overflow": false
+    },
+    {
+      "name": "atlas optimization",
+      "overflow": false
+    },
+    {
+      "name": "seven advanced controls and boundary assertions",
+      "passed": true,
+      "observed": {
+        "reducer_conflict": "Conflict rejected; prior evidence retained",
+        "stale_revision": "Rejected",
+        "memory_at_expiry": "Unavailable",
+        "cluster_interval": "95% percentile interval: 6.3 to 25.0 points",
+        "task_interval": "95% percentile interval: -12.5 to 50.0 points",
+        "queue": "Last completion: 20s · mean latency: 15.0s",
+        "approval_at_40": "Execution denied",
+        "holdout": "Holdout: 100% on four synthetic lexical examples. This is selection mechanics, not a generalization estimate."
+      }
+    },
+    {
+      "name": "progress import/export roundtrip",
+      "export_has_lesson24": true,
+      "count_after_import": "3/24",
+      "passed": true
+    },
+    {
+      "name": "assessment and trace case content",
+      "passed": true
+    },
+    {
+      "name": "embedded foundation loop control",
+      "passed": true,
+      "status": "Step 2 / 7 · Build context"
+    },
+    {
+      "name": "reader home",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "name": "lesson24 solution + notes + progress",
+      "width": 390,
+      "overflow": false,
+      "solution_open": true,
+      "progress": "1/24"
+    },
+    {
+      "name": "search",
+      "matches": 1,
+      "width": 390
+    },
+    {
+      "name": "embedded advanced atlas",
+      "width": 390,
+      "panels": 7
+    },
+    {
+      "name": "mobile atlas reducer",
+      "overflow": false
+    },
+    {
+      "name": "mobile atlas ownership",
+      "overflow": false
+    },
+    {
+      "name": "mobile atlas memory",
+      "overflow": false
+    },
+    {
+      "name": "mobile atlas uncertainty",
+      "overflow": false
+    },
+    {
+      "name": "mobile atlas queue",
+      "overflow": false
+    },
+    {
+      "name": "mobile atlas approval",
+      "overflow": false
+    },
+    {
+      "name": "mobile atlas optimization",
+      "overflow": false
+    }
+  ],
+  "preview_files": [
+    "previews/reader-desktop.png",
+    "previews/reader-mobile.png",
+    "previews/queue-model.png"
+  ],
+  "note": "Re-run 12 September 2026 against the reader rebuilt after the Fable review, using Playwright Chromium offline over file://. Check names mirror the previous record; the seven boundary assertions and the content check now also assert text introduced by the review."
+}

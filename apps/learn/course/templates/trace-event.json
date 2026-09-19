@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "task_id": "example-task",
+  "run_id": "example-run",
+  "attempt_id": "example-attempt",
+  "operation_id": "stable-logical-operation",
+  "event_sequence": 0,
+  "event_type": "proposal",
+  "principal_ref": "trusted-principal-reference",
+  "context_version": "context-v1",
+  "harness_version": "commit-reference",
+  "tool_schema_version": "tool-v1",
+  "approval_ref": null,
+  "effect_receipt": null,
+  "outcome_status": "pending",
+  "budget_reserved": 0,
+  "budget_spent": 0,
+  "evidence_refs": [],
+  "redaction_policy": "exclude-secrets-and-unnecessary-personal-data"
+}

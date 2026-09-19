@@ -1,0 +1,3 @@
+# Fixture scope
+
+All data are synthetic teaching fixtures. The paired set has 16 tasks nested in only four families, so its intervals are demonstrations with weak inferential support. The optimization set deliberately repeats simple lexical patterns across distinct IDs to expose selection mechanics; it is NOT a family-separated generalization benchmark. For a real experiment, construct distinct scenario families and prevent template leakage. The security driver has eight fixed service-boundary cases. The coding environment has six seeded defects and known reference patches. None of these datasets measures live-model capability.

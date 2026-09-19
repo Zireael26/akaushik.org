@@ -6,6 +6,28 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Added
 
+- 2026-09-18: Added a private demo portal at `demo.akaushik.org`: a
+  password-gated chat over a hosted VeriCite answer API, with cited sources
+  that open the document at the cited page. The browser talks only to the
+  portal's own `/api/chat`, which checks the session, rate-limits per account,
+  and re-emits an allowlisted projection of the upstream stream. Everything
+  client-specific arrives as Worker vars and secrets, never in the repository.
+  Decisions in ADR-0023.
+
+- 2026-09-12: Added a gated course portal at `learn.akaushik.org`, serving the
+  24-lesson harness-engineering course behind a password on the pattern
+  ADR-0021 established. Its package, Worker, databases and storage are separate
+  from the portfolio, and its accounts are separate from the Friends workspace.
+  Decisions in ADR-0022. The course was audited and corrected by Claude Fable
+  5.1 before publication; the report is in `apps/learn/course/REVIEW-FABLE.md`.
+
+- 2026-09-12: `Learn` and `Friends` now appear in the primary navigation. Both
+  are private subdomains, so they are plain anchors with a trailing arrow
+  rather than `next/link` routes. At eight items the row engages the swipeable
+  overflow strip `header.css` was already written for, so the navigation e2e
+  contract narrowed from "the nav never scrolls sideways" to "the page never
+  scrolls sideways, and any nav overflow is reachable rather than clipped".
+
 - 2026-09-09: Added an isolated authenticated Friends workspace with immutable
   document revisions, explicit sharing, protected original media, search, and
   meeting records. Its package, Worker, databases, and storage remain separate

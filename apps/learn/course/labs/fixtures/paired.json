@@ -1,0 +1,98 @@
+[
+  {
+    "task": "easy-0",
+    "cluster": "easy",
+    "baseline": 1,
+    "candidate": 1
+  },
+  {
+    "task": "easy-1",
+    "cluster": "easy",
+    "baseline": 1,
+    "candidate": 1
+  },
+  {
+    "task": "easy-2",
+    "cluster": "easy",
+    "baseline": 1,
+    "candidate": 1
+  },
+  {
+    "task": "easy-3",
+    "cluster": "easy",
+    "baseline": 0,
+    "candidate": 1
+  },
+  {
+    "task": "stateful-0",
+    "cluster": "stateful",
+    "baseline": 0,
+    "candidate": 0
+  },
+  {
+    "task": "stateful-1",
+    "cluster": "stateful",
+    "baseline": 1,
+    "candidate": 0
+  },
+  {
+    "task": "stateful-2",
+    "cluster": "stateful",
+    "baseline": 0,
+    "candidate": 1
+  },
+  {
+    "task": "stateful-3",
+    "cluster": "stateful",
+    "baseline": 1,
+    "candidate": 1
+  },
+  {
+    "task": "evidence-0",
+    "cluster": "evidence",
+    "baseline": 0,
+    "candidate": 1
+  },
+  {
+    "task": "evidence-1",
+    "cluster": "evidence",
+    "baseline": 0,
+    "candidate": 1
+  },
+  {
+    "task": "evidence-2",
+    "cluster": "evidence",
+    "baseline": 1,
+    "candidate": 1
+  },
+  {
+    "task": "evidence-3",
+    "cluster": "evidence",
+    "baseline": 1,
+    "candidate": 0
+  },
+  {
+    "task": "adversarial-0",
+    "cluster": "adversarial",
+    "baseline": 0,
+    "candidate": 0
+  },
+  {
+    "task": "adversarial-1",
+    "cluster": "adversarial",
+    "baseline": 0,
+    "candidate": 0
+  },
+  {
+    "task": "adversarial-2",
+    "cluster": "adversarial",
+    "baseline": 1,
+    "candidate": 1
+  },
+  {
+    "task": "adversarial-3",
+    "cluster": "adversarial",
+    "baseline": 0,
+    "candidate": 1
+  }
+]

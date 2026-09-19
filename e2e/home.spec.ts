@@ -39,10 +39,24 @@ test.describe('Home page', () => {
     const nav = page.getByRole('navigation', { name: 'Primary' });
     await expect(nav).toHaveCount(1);
     await expect(nav).toBeVisible();
-    // Six links in a list, so a screen reader announces how many there are.
+    // Eight links in a list, so a screen reader announces how many there are.
+    // Six are same-origin; Learn and Friends are the private subdomains.
     await expect(nav.getByRole('list')).toHaveCount(1);
-    await expect(nav.getByRole('listitem')).toHaveCount(6);
-    await expect(nav.getByRole('link')).toHaveCount(6);
+    await expect(nav.getByRole('listitem')).toHaveCount(8);
+    await expect(nav.getByRole('link')).toHaveCount(8);
+
+    // The offsite pair carries an absolute href. Asserted rather than followed:
+    // both are gated Workers on other origins, and a nav test has no business
+    // waiting on their sign-in pages.
+    for (const [name, host] of [
+      ['Learn', 'learn.akaushik.org'],
+      ['Friends', 'friendsof.akaushik.org'],
+    ] as const) {
+      await expect(nav.getByRole('link', { name, exact: true })).toHaveAttribute(
+        'href',
+        `https://${host}`,
+      );
+    }
 
     const contactLink = nav.getByRole('link', { name: 'Contact', exact: true });
     await contactLink.focus();
@@ -71,11 +85,18 @@ test.describe('Home page', () => {
      *   1. On a coarse pointer, a nav link is at least 44px tall. header.css
      *      states that requirement; nothing was checking it, and it was being
      *      missed by four pixels.
-     *   2. Nothing scrolls sideways. That is the property `overflow-x: auto`
-     *      was a guess at — and the wrong guess, because the nav wraps and so
-     *      never overflows in the first place. Asserting the outcome instead of
-     *      one possible mechanism means a future layout that wraps differently
-     *      still passes iff it is still usable.
+     *   2. The *page* never scrolls sideways. The nav strip may: header.css
+     *      § "the header on a phone" makes the row `flex-wrap: nowrap` with
+     *      `overflow-x: auto` precisely so a row too long for the screen
+     *      becomes a swipeable strip instead of a ragged two-line wrap with an
+     *      orphan. That was dormant while the nav had six items and engaged
+     *      when Learn and Friends were added; it is the designed behaviour,
+     *      not a regression.
+     *
+     *      So the contract is: the document must not overflow, and any nav
+     *      overflow must be reachable — scrollable rather than clipped. A
+     *      layout that hides a destination off the edge with `overflow: hidden`
+     *      still fails, which is the failure this was really guarding against.
      *
      * Whether the nav sits below the wordmark is deliberately not asserted: at
      * 768px with a mouse the row legitimately fits on one line, and at 375px it
@@ -86,21 +107,29 @@ test.describe('Home page', () => {
         coarsePointer: matchMedia('(pointer: coarse)').matches,
         linkHeight: element.querySelector('a')!.getBoundingClientRect().height,
         navOverflows: element.scrollWidth > element.clientWidth,
+        navOverflowX: getComputedStyle(element).overflowX,
         documentOverflows:
           document.documentElement.scrollWidth > document.documentElement.clientWidth,
       }));
 
-      expect(geometry.navOverflows, 'the nav must not scroll sideways').toBe(false);
       expect(geometry.documentOverflows, 'the page must not scroll sideways').toBe(false);
+
+      if (geometry.navOverflows) {
+        expect(
+          ['auto', 'scroll'],
+          'a nav too wide for the screen must be swipeable, not clipped',
+        ).toContain(geometry.navOverflowX);
+      }
 
       if (geometry.coarsePointer) {
         // WCAG 2.5.5 and header.css § "hit targets >= 44px on touch".
         expect(geometry.linkHeight).toBeGreaterThanOrEqual(44);
       }
 
-      // Five of the six nav items are hashes into the home page; Writing is a
-      // route of its own. Both shapes have to work from a narrow viewport,
-      // where the header is tallest and most likely to cover its own target.
+      // Five of the eight nav items are hashes into the home page; Writing is a
+      // route of its own, and Learn and Friends leave the origin entirely.
+      // Both on-site shapes have to work from a narrow viewport, where the
+      // header is tallest and most likely to cover its own target.
       for (const [name, id] of [
         ['Profile', 'profile'],
         ['Method', 'method'],

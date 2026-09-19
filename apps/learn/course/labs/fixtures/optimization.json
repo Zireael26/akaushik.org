@@ -1,0 +1,68 @@
+{
+  "train": [
+    {
+      "id": "train-0",
+      "text": "urgent",
+      "label": true
+    },
+    {
+      "id": "train-1",
+      "text": "not urgent",
+      "label": false
+    },
+    {
+      "id": "train-2",
+      "text": "routine",
+      "label": false
+    },
+    {
+      "id": "train-3",
+      "text": "confirmed urgent",
+      "label": true
+    }
+  ],
+  "dev": [
+    {
+      "id": "dev-0",
+      "text": "urgent case",
+      "label": true
+    },
+    {
+      "id": "dev-1",
+      "text": "not urgent case",
+      "label": false
+    },
+    {
+      "id": "dev-2",
+      "text": "routine case",
+      "label": false
+    },
+    {
+      "id": "dev-3",
+      "text": "confirmed urgent case",
+      "label": true
+    }
+  ],
+  "holdout": [
+    {
+      "id": "holdout-0",
+      "text": "urgent ticket",
+      "label": true
+    },
+    {
+      "id": "holdout-1",
+      "text": "not urgent ticket",
+      "label": false
+    },
+    {
+      "id": "holdout-2",
+      "text": "routine ticket",
+      "label": false
+    },
+    {
+      "id": "holdout-3",
+      "text": "confirmed urgent ticket",
+      "label": true
+    }
+  ]
+}
