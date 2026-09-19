@@ -20,7 +20,7 @@
  *   ship_degraded/degraded, abstain. Unknown verdicts render no chip.
  */
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import './chat.css';
 
 export interface ChatSource {
@@ -36,12 +36,30 @@ export interface ChatProps {
   suggestions: string[] | null;
 }
 
+/**
+ * Where an in-flight answer is, driven by the stream: `searching` until the
+ * sources event, `reading` until the first chunk, `writing` while chunks
+ * arrive, `checking` once they stop and the server is verifying claims (it
+ * sends nothing until the verdict), `done` at end of stream.
+ */
+type Phase = 'searching' | 'reading' | 'writing' | 'checking' | 'done';
+
+const PHASES: Phase[] = ['searching', 'reading', 'writing', 'checking'];
+
+// Chunks land ~60ms apart; a pause this long means the text is complete and
+// verification has started.
+const CHECKING_AFTER_MS = 700;
+
 interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   text: string;
   sources?: ChatSource[];
   verdict?: string;
+  phase?: Phase;
+  /** Retrieved passages and their distinct pages, known from the sources event onward. */
+  sourceCount?: number;
+  pages?: string[];
 }
 
 type DonePayload = {
@@ -217,6 +235,61 @@ function stripSourceFooter(text: string): string {
   return lines.join('\n');
 }
 
+function pagesOf(sources: ChatSource[]): string[] {
+  const pages = sources
+    .map((s) => (typeof s.page === 'number' || (typeof s.page === 'string' && s.page !== '') ? String(s.page) : ''))
+    .filter(Boolean);
+  return [...new Set(pages)];
+}
+
+function passages(n: number): string {
+  return `${n} passage${n === 1 ? '' : 's'}`;
+}
+
+function stepLabel(step: Phase, sourceCount: number): string {
+  if (step === 'searching') return 'Searching the documents';
+  if (step === 'reading') return `Reading ${passages(sourceCount)}`;
+  if (step === 'writing') return 'Writing the answer';
+  return 'Checking every claim against the sources';
+}
+
+/** Live step list for an in-flight answer; each step lights up on its event. */
+function Steps({ phase, pages, sourceCount }: { phase: Phase; pages: string[]; sourceCount: number }) {
+  const current = PHASES.indexOf(phase);
+  return (
+    <ol className="dm-steps">
+      {PHASES.slice(0, current + 1).map((step, i) => {
+        const active = i === current;
+        return (
+          <li key={step} className="dm-step" data-state={active ? 'active' : 'done'}>
+            {active ? (
+              <span className="dm-meter" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+              </span>
+            ) : (
+              <span className="dm-tick" aria-hidden="true">
+                ✓
+              </span>
+            )}
+            <span>{stepLabel(step, sourceCount)}</span>
+            {step === 'reading' && pages.length > 0 ? (
+              <span className="dm-pages">
+                {pages.map((p, n) => (
+                  <span key={p} className="dm-page" style={{ '--i': n } as CSSProperties}>
+                    p.{p}
+                  </span>
+                ))}
+              </span>
+            ) : null}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 export function Chat({ title, subtitle, suggestions }: ChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -248,8 +321,11 @@ export function Chat({ title, subtitle, suggestions }: ChatProps) {
     setInput('');
     const userMsg: ChatMessage = { id: newId(), role: 'user', text: question };
     const answerId = newId();
-    setMessages((prev) => [...prev, userMsg, { id: answerId, role: 'assistant', text: '' }]);
+    setMessages((prev) => [...prev, userMsg, { id: answerId, role: 'assistant', text: '', phase: 'searching' }]);
     setStreaming(true);
+    let checkTimer: ReturnType<typeof setTimeout> | undefined;
+    const patchAnswer = (fields: Partial<ChatMessage>) =>
+      setMessages((prev) => prev.map((m) => (m.id === answerId ? { ...m, ...fields } : m)));
 
     try {
       const res = await fetch('/api/chat', {
@@ -275,8 +351,9 @@ export function Chat({ title, subtitle, suggestions }: ChatProps) {
       const appendText = (delta: string) => {
         if (!delta) return;
         buffer += delta;
-        const snapshot = buffer;
-        setMessages((prev) => prev.map((m) => (m.id === answerId ? { ...m, text: snapshot } : m)));
+        patchAnswer({ text: buffer, phase: 'writing' });
+        clearTimeout(checkTimer);
+        checkTimer = setTimeout(() => patchAnswer({ phase: 'checking' }), CHECKING_AFTER_MS);
       };
 
       const replaceText = (text: string) => {
@@ -289,6 +366,10 @@ export function Chat({ title, subtitle, suggestions }: ChatProps) {
       // verification verdict, possibly a gate signal), so merge — never
       // replace — or the last event would discard the earlier ones.
       const applyDone = (payload: DonePayload) => {
+        // Sources lead the stream: move to "reading" and show their pages.
+        if (Array.isArray(payload.sources) && !final.current?.sources) {
+          patchAnswer({ phase: 'reading', sourceCount: payload.sources.length, pages: pagesOf(payload.sources) });
+        }
         const prev = final.current ?? {};
         final.current = {
           ...prev,
@@ -367,23 +448,25 @@ export function Chat({ title, subtitle, suggestions }: ChatProps) {
         if (streamDone) break;
       }
       drain(decoder.decode() + '\n');
+      clearTimeout(checkTimer);
 
       const verdict =
         final.current?.verdict ??
         final.current?.answer_verification?.verdict ?? final.current?.verification?.verdict ?? undefined;
       if (final.current && (final.current.sources || verdict !== undefined)) {
         const sources = Array.isArray(final.current.sources) ? final.current.sources : undefined;
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === answerId ? { ...m, sources, verdict: typeof verdict === 'string' ? verdict : undefined } : m,
-          ),
-        );
+        patchAnswer({ sources, verdict: typeof verdict === 'string' ? verdict : undefined, phase: 'done' });
+      } else {
+        patchAnswer({ phase: 'done' });
       }
     } catch (err) {
+      clearTimeout(checkTimer);
       const message = err instanceof Error ? err.message : 'Something went wrong. Try again.';
       setError(message);
       // Drop the empty placeholder answer so the thread stays readable.
-      setMessages((prev) => prev.filter((m) => m.id !== answerId || m.text.length > 0));
+      setMessages((prev) =>
+        prev.filter((m) => m.id !== answerId || m.text.length > 0).map((m) => (m.id === answerId ? { ...m, phase: 'done' } : m)),
+      );
     } finally {
       setStreaming(false);
     }
@@ -439,10 +522,23 @@ export function Chat({ title, subtitle, suggestions }: ChatProps) {
                 className="dm-bubble dm-bubble-assistant"
                 data-verdict={normaliseVerdict(m.verdict ?? '') || undefined}
               >
+                {m.phase && m.phase !== 'done' ? (
+                  <Steps phase={m.phase} pages={m.pages ?? []} sourceCount={m.sourceCount ?? 0} />
+                ) : null}
+
                 {m.text ? (
-                  <div className="dm-text">{renderAnswer(streaming && index === messages.length - 1 ? m.text : stripSourceFooter(m.text), m.id, m.sources)}</div>
-                ) : streaming && index === messages.length - 1 ? (
-                  <p className="dm-text dm-streaming">Answering&hellip;</p>
+                  <div className="dm-text" data-writing={m.phase === 'writing' || undefined}>
+                    {renderAnswer(streaming && index === messages.length - 1 ? m.text : stripSourceFooter(m.text), m.id, m.sources)}
+                  </div>
+                ) : null}
+
+                {m.phase === 'done' && m.sourceCount ? (
+                  <p className="dm-trace">
+                    <span aria-hidden="true">✓ </span>
+                    {normaliseVerdict(m.verdict ?? '') === 'abstain'
+                      ? `Searched ${passages(m.sourceCount)}`
+                      : `Read ${passages(m.sourceCount)}${m.verdict ? ' · claims checked' : ''}`}
+                  </p>
                 ) : null}
 
                 {normaliseVerdict(m.verdict ?? '') === 'abstain' ? (
@@ -464,7 +560,12 @@ export function Chat({ title, subtitle, suggestions }: ChatProps) {
                     {m.sources.map((s, i) => {
                       const n = String(i + 1);
                       return (
-                        <li key={`${m.id}-${i}`} id={sourceAnchor(m.id, n)} className="dm-source">
+                        <li
+                          key={`${m.id}-${i}`}
+                          id={sourceAnchor(m.id, n)}
+                          className="dm-source"
+                          style={{ '--i': i } as CSSProperties}
+                        >
                           <span className="dm-source-num" aria-hidden="true">
                             [{n}]
                           </span>

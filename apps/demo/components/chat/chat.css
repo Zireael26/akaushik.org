@@ -174,10 +174,127 @@
   color: var(--ink);
 }
 
-.dm-streaming {
+/* In-flight steps: each row enters when its stream event lands. */
+.dm-steps {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--ink40);
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+  color: var(--ink60);
+}
+
+.dm-step {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  animation: dm-rise 240ms ease-out both;
+}
+
+.dm-step[data-state='active'] {
+  color: var(--ink);
+}
+
+.dm-tick {
+  width: 18px;
+  text-align: center;
+  color: var(--px-cobalt-ink);
+}
+
+/* Three pixel cells lighting in turn: the site's pixel motif as a spinner. */
+.dm-meter {
+  display: inline-flex;
+  gap: 2px;
+  width: 18px;
+}
+
+.dm-meter i {
+  width: 4px;
+  height: 4px;
+  background: var(--px-cobalt);
+  opacity: 0.2;
+  animation: dm-cell 900ms steps(1, end) infinite;
+}
+
+.dm-meter i:nth-child(2) {
+  animation-delay: 300ms;
+}
+
+.dm-meter i:nth-child(3) {
+  animation-delay: 600ms;
+}
+
+.dm-pages {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.dm-page {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 10.5px;
+  color: var(--px-cobalt-ink);
+  animation: dm-rise 240ms ease-out both;
+  animation-delay: calc(var(--i, 0) * 90ms);
+}
+
+/* Block caret after the streaming text. */
+.dm-text[data-writing] > :last-child::after {
+  content: '';
+  display: inline-block;
+  width: 0.5em;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -0.15em;
+  background: var(--px-cobalt);
+  animation: dm-blink 1s steps(1, end) infinite;
+}
+
+.dm-trace {
+  margin: 10px 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink45);
+  animation: dm-fade 300ms ease-out both;
+}
+
+@keyframes dm-rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes dm-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes dm-cell {
+  0% {
+    opacity: 1;
+  }
+  33% {
+    opacity: 0.2;
+  }
+}
+
+@keyframes dm-blink {
+  50% {
+    opacity: 0;
+  }
 }
 
 .dm-cite {
@@ -199,6 +316,7 @@
   padding: 4px 10px;
   border-radius: 999px;
   color: var(--ink70);
+  animation: dm-fade 300ms ease-out both;
 }
 
 .dm-verdict[data-tone='abstain'] {
@@ -226,6 +344,8 @@
   border-top: 1px solid var(--line);
   padding-top: 10px;
   scroll-margin-top: 16px;
+  animation: dm-rise 280ms ease-out both;
+  animation-delay: calc(120ms + var(--i, 0) * 80ms);
 }
 
 .dm-source-num {
@@ -361,6 +481,17 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dm-wrap *,
+  .dm-wrap *::after {
+    animation: none !important;
+  }
+
+  .dm-meter i:first-child {
+    opacity: 1;
+  }
 }
 
 @media (min-width: 720px) {
