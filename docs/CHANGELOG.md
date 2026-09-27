@@ -4,6 +4,16 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ## [Unreleased]
 
+### Security
+
+- 2026-09-27: Upgraded Next.js to 16.3.6 in the portfolio and in the friends,
+  course and demo portals (previously 16.3.0, and 16.3.5 for demo). This clears
+  three CRITICAL advisories: GHSA-2xp9-vwfh-vxw4 (RCE in the AVIF image
+  optimizer), GHSA-p293-qw3h-jr36, and GHSA-vcvr-r3jv-pc5j (RCE in `next/og`
+  ImageResponse). `eslint-config-next` moves with it. This is a mechanical
+  patch bump under ADR-0001/ADR-0017, and its release-age exception is
+  recorded in ADR-0024.
+
 ### Added
 
 - 2026-09-18: Added a private demo portal at `demo.akaushik.org`: a
