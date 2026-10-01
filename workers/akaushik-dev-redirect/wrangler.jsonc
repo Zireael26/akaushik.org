@@ -1,0 +1,29 @@
+{
+  "$schema": "https://unpkg.com/wrangler/config-schema.json",
+  // Preview first: workers.dev only, no routes, no DNS. Deploy with
+  //   CLOUDFLARE_ACCOUNT_ID=ca127da6bde0b3d48082bdd84132dc09 env -u CLOUDFLARE_API_TOKEN npx wrangler deploy
+  "name": "akaushik-dev-redirect-preview",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-15",
+  "account_id": "ca127da6bde0b3d48082bdd84132dc09",
+  "workers_dev": true,
+  "observability": { "enabled": true },
+
+  // CUTOVER (approved by owner 2026-10-01 17:10): zone routes on the production env.
+  // Deploy with `wrangler deploy --env production`.
+  // Rollback = delete these two routes; the proxied akaushik.dev record then
+  // serves the still-attached Vercel redirect again. That only holds while the
+  // Vercel domains akaushik.dev / www.akaushik.dev stay attached to the project
+  // and the DNS records stay proxied — do not detach them before 2026-10-15.
+  "env": {
+    "production": {
+      "name": "akaushik-dev-redirect",
+      "workers_dev": false,
+      "observability": { "enabled": true },
+      "routes": [
+        { "pattern": "akaushik.dev/*", "zone_name": "akaushik.dev" },
+        { "pattern": "www.akaushik.dev/*", "zone_name": "akaushik.dev" }
+      ]
+    }
+  }
+}
