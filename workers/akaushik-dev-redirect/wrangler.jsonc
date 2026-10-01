@@ -9,21 +9,21 @@
   "workers_dev": true,
   "observability": { "enabled": true },
 
-  // CUTOVER (owner-gated, NOT applied): add an env that carries zone routes,
-  // deploy with --env production only after the coordinator's CUTOVER GO.
+  // CUTOVER (approved by owner 2026-10-01 17:10): zone routes on the production env.
+  // Deploy with `wrangler deploy --env production`.
   // Rollback = delete these two routes; the proxied akaushik.dev record then
   // serves the still-attached Vercel redirect again. That only holds while the
   // Vercel domains akaushik.dev / www.akaushik.dev stay attached to the project
-  // and the DNS records stay proxied — do not detach them before the 14-day mark.
-  //
-  // "env": {
-  //   "production": {
-  //     "name": "akaushik-dev-redirect",
-  //     "workers_dev": false,
-  //     "routes": [
-  //       { "pattern": "akaushik.dev/*", "zone_name": "akaushik.dev" },
-  //       { "pattern": "www.akaushik.dev/*", "zone_name": "akaushik.dev" }
-  //     ]
-  //   }
-  // }
+  // and the DNS records stay proxied — do not detach them before 2026-10-15.
+  "env": {
+    "production": {
+      "name": "akaushik-dev-redirect",
+      "workers_dev": false,
+      "observability": { "enabled": true },
+      "routes": [
+        { "pattern": "akaushik.dev/*", "zone_name": "akaushik.dev" },
+        { "pattern": "www.akaushik.dev/*", "zone_name": "akaushik.dev" }
+      ]
+    }
+  }
 }
