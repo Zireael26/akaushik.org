@@ -7,12 +7,14 @@
   "compatibility_date": "2026-08-15",
   "account_id": "ca127da6bde0b3d48082bdd84132dc09",
   "workers_dev": true,
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
 
   // CUTOVER (owner-gated, NOT applied): add an env that carries zone routes,
   // deploy with --env production only after the coordinator's CUTOVER GO.
   // Rollback = delete these two routes; the proxied akaushik.dev record then
-  // serves the still-attached Vercel redirect again.
+  // serves the still-attached Vercel redirect again. That only holds while the
+  // Vercel domains akaushik.dev / www.akaushik.dev stay attached to the project
+  // and the DNS records stay proxied — do not detach them before the 14-day mark.
   //
   // "env": {
   //   "production": {
