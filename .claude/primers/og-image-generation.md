@@ -1,9 +1,9 @@
 ---
 slug: og-image-generation
-purpose: Next.js ImageResponse handlers rendering parchment-and-forest Open Graph previews for home, case-study, and writing pages from MDX frontmatter.
-pinned_to: e73ab4026fe93e8f216d4c3fea227ca26a1fdbac
+purpose: Three Next.js ImageResponse routes render 1200×630 PNG share cards for home, case-study, and writing pages; the slug routes draw from a generated content bundle.
+pinned_to: 883e508dd3e7e4c7b3247ebcb575228c6840b5bd
 created: 2026-05-15
-last_refreshed: 2026-05-15
+last_refreshed: 2026-10-03
 related_primers: [mdx-content-pipeline, hyperframes-reels]
 ---
 
@@ -11,65 +11,57 @@ related_primers: [mdx-content-pipeline, hyperframes-reels]
 
 ## Purpose
 
-Render social-preview images at 1200×630 for every shareable URL: the home page, each `/work/<slug>` case study, and each `/writing/<slug>` post. Designed to extend the site's parchment background + forest accent + Newsreader/Menlo typography to embedded link previews on Slack, Twitter, LinkedIn, iMessage.
+Three App Router `opengraph-image.tsx` handlers return `next/og` `ImageResponse` PNGs at 1200×630. They share the pixel palette, a deterministic SVG pixel band, and a flex-based card layout.
 
 ## Entry points
 
-- `app/opengraph-image.tsx` — home OG image. Edge runtime. Hand-coded layout (kicker, hero headline, footer); no frontmatter input.
-- `app/work/[slug]/opengraph-image.tsx` — per case-study image. Node runtime (required because `generateStaticParams` runs against `lib/content.ts`). Pulls `fm.index`, `fm.tag`, `fm.year`, `fm.title`, `fm.dek`, `fm.role`, `fm.stack`.
-- `app/writing/[slug]/opengraph-image.tsx` — per writing post. Node runtime. Pulls `fm.title`, `fm.dek`, `fm.date` (formatted via `lib/dates.ts:formatMonthYear`).
+- `app/opengraph-image.tsx` — home card with hard-coded copy and no content lookup. Exports its alt text, dimensions, and PNG type.
+- `app/work/[slug]/opengraph-image.tsx` — case-study card: year, index/tag, title, dek, role, and stack.
+- `app/writing/[slug]/opengraph-image.tsx` — writing card: title, dek, and date formatted by `lib/dates.ts:formatMonthYear`.
+
+All three handlers declare the Node.js runtime and 1200×630 image/png output. The two slug routes set dynamicParams = false and export generateStaticParams().
 
 ## Data flow
 
-A LinkedIn unfurl of `https://akaushik.org/work/neev`:
-
-1. The platform fetches `https://akaushik.org/work/neev/opengraph-image` (Next.js wires this from the file route automatically).
-2. `generateStaticParams()` in the per-slug handler called `getPostSlugs('case-studies')` at build time, so `neev` is already in the prerendered set.
-3. The route handler awaits `params`, calls `getPost('case-studies', slug)` from `lib/content.ts`. Missing slug → `notFound()` (404). Found → frontmatter narrowed to `CaseStudyFrontmatter`.
-4. The handler returns `new ImageResponse(<jsx>)` with inline styles. Layout: top row (`akaushik.org / work` ↔ `fm.year`), middle (`fm.index · fm.tag` kicker in forest, `fm.title` at 88px, italic `fm.dek` at 34px), bottom row (`fm.role` ↔ `fm.stack.join(' · ')`).
-5. `next/og` rasterises the JSX (Satori under the hood) to PNG at 1200×630. Result is cached as a static asset per deploy.
-6. Writing variant differs only in fields used (`formatMonthYear(fm.date)` instead of year, no kicker, smaller heading at 64px). Home variant is purely static and edge-rendered for quick refresh when copy changes.
+- Work params come from `getAllPosts('case-studies')`; writing params come from `getAllPosts('writing', { includeUnlisted: true })`. Both route handlers load each requested slug through `getPost()` and call `notFound()` for absent posts or production-hidden drafts.
+- `lib/content.ts` reads the generated `CONTENT_BUNDLE`, not MDX files at request time. `package.json`'s `prebuild` regenerates it with `scripts/build-content-bundle.ts`.
+- Case-study cards display `year`, `index`, `tag`, `title`, `dek`, `role`, and `stack`; the stack footer still guards with `Array.isArray()` before joining. Writing cards display `formatMonthYear(date)` when a date exists, otherwise an empty date label.
+- The date helper formats in UTC. Case-study and writing pixel bands seed from the slug; the home band uses fixed hash coordinates. All use `h`, `PALETTE`, `canvasBg(false)`, and `inkAlpha` from `lib/pixel.ts`.
 
 ## Dependencies
 
-- `next/og` — `ImageResponse` (Satori-based renderer). Limited CSS subset; flex-only, no grid.
-- `lib/content.ts` (`mdx-content-pipeline` primer) — `getPost`, `getPostSlugs` for params + frontmatter.
-- `lib/dates.ts:formatMonthYear` — writing-post date formatting.
-- `app/layout.tsx` `metadata.openGraph.images` — Next.js auto-wires the file-route OG image when the route opts in; no manual `<meta>` registration needed.
+- `next/og` — `ImageResponse` and Satori rendering.
+- `lib/content.ts` — frontmatter and slug data from the generated MDX bundle.
+- `lib/dates.ts:formatMonthYear` — writing-card date label.
+- Page title/description metadata is separate from the image JSX; see `app/layout.tsx` and the page `generateMetadata()` functions.
 
-## Test commands
+## Manual verification
+
+`pnpm dev` serves on port 3100. Open these image routes and inspect the raster output:
 
 ```bash
-# Render in dev and view directly
-pnpm dev
-open http://localhost:3000/opengraph-image
-open "http://localhost:3000/work/neev/opengraph-image"
-open "http://localhost:3000/writing/the-evidence-of-shipping/opengraph-image"
-
-# Verify the OG image surfaces via the page metadata
-curl -s http://localhost:3000/work/neev | rg -i 'og:image'
-
-# Production check
-pnpm build && pnpm start
+open http://localhost:3100/opengraph-image
+open http://localhost:3100/work/neev/opengraph-image
+open http://localhost:3100/writing/ai-for-msme/opengraph-image
 ```
 
-No dedicated test fixture — visual review is the verification. Playwright (`pnpm test:e2e`) covers HTML page rendering, not the rasterised image.
+For a production-mode render, `pnpm build && pnpm start` starts the app on port 3100.
 
 ## Gotchas
 
-- **Edge runtime caps assets at ~1MB and forbids `node:fs`.** The home `opengraph-image.tsx` declares `runtime = 'edge'` because it ships zero MDX-derived data; per-slug variants stay on the Node runtime so `getPost` + `getPostSlugs` can read the filesystem. Don't promote them to edge without first replacing the loader.
-- **No custom font loading today.** All three handlers fall back to `Georgia, serif` + `Menlo, monospace`, which Satori serves from its built-in subset. If a redesign demands the on-page Newsreader/JetBrains Mono fonts, you must `fetch` the WOFF/TTF bytes at build (or co-locate them) and pass them as `fonts: [{ name, data, … }]` on `ImageResponse`. Watch the edge size budget when you do.
-- **Satori's CSS subset is restrictive.** Flexbox only — no `grid`, no `gap`. `border-bottom`/`border-top` are supported, but shorthand `border` is finicky. Any unsupported property throws at render time, not at build, so verify visually after edits.
-- **Field shape from `lib/content.ts` is the contract.** `fm.stack` may be `string[]` _or_ `string` historically; per-slug handlers defend with `Array.isArray(fm.stack) ? fm.stack.join(' · ') : ''`. Don't drop the guard.
-- **Forest accent hex `#13423D` is hardcoded.** Same hex appears in all three files. If the design system retones the accent (see ADR-0007's swatch follow-ups), grep for `#13423D` across `app/**/opengraph-image.tsx` and update each — they don't import from a shared tokens module yet.
-- **`generateStaticParams` runs at build time, not on demand.** A new case study or writing post needs a build to surface its OG image. ISR (`revalidate`) is not configured on these handlers — they're treated as build-pinned assets.
-- **`notFound()` for missing slugs.** Edge unfurlers occasionally probe non-existent paths; the 404 response is fine for them. Don't switch to a placeholder image — empty OG is better than a misleading one.
+- **Node runtime, not edge.** All three handlers declare `runtime = 'nodejs'`; the slug routes use `generateStaticParams`, and their comments note that Edge cannot pre-render those params. The content loader is a generated bundle, not request-time `node:fs`.
+- **No font bytes are embedded.** The handlers set `fontFamily` stacks, but their comments say the bundled Satori build accepts TTF/OTF rather than the site's WOFF2 files, so `ImageResponse` uses its built-in default font. Do not assume the named site faces are actually loaded.
+- **Satori's CSS subset is restrictive.** Flexbox only: `display: grid` throws at render time; `gap`/`rowGap`/`columnGap` are supported. `border-bottom`/`border-top` are supported, but shorthand `border` is finicky. Unknown properties are silently ignored (only invalid values for fixed-choice properties throw), so verify visually after edits.
+- **Stack shape.** `CaseStudyFrontmatter.stack` is typed `string[]`, but the frontmatter parser casts parsed values without runtime validation; a malformed scalar can still be a string. The work-card handler checks `Array.isArray(fm.stack)` before joining. Keep the guard.
+- **Accent colors come from shared tokens.** The handlers use `PALETTE.cobalt` and the other `PALETTE` entries in `lib/pixel.ts`, not duplicated `#13423D` literals.
+- **Generated params, not on-demand slugs.** `getAllPosts()` excludes drafts by default; case studies also exclude unlisted posts, while writing explicitly includes unlisted posts. With `dynamicParams = false`, only generated slugs are admitted. A new eligible post needs the content bundle/build refreshed; neither OG handler configures `revalidate`.
+- **Missing or production-hidden posts call `notFound()`.** Edge unfurlers occasionally probe non-existent paths; the 404 response is fine for them. Don't switch to a placeholder image — empty OG is better than a misleading one.
 
 ## Out of scope
 
 - Twitter Card / `twitter:image` metadata — Next.js wires this from the same OG image file unless overridden in `metadata`.
-- Favicon + apple-touch-icon — separate concern under `app/icon.tsx` / `app/apple-icon.tsx` (or static files in `app/`).
-- HyperFrames reel posters (`.webp` at `public/video/work/*.webp`) — case-study card visuals, not OG images. See `hyperframes-reels` primer.
+- Favicon — separate concern: `app/icon.tsx` plus `public/favicon.{ico,svg}` (there is no apple-touch-icon).
+- Case-study reels — canvas pixel fields in `components/work/reels.tsx` (ADR-0020), not OG images. See `hyperframes-reels` primer.
 - Open Graph metadata strings (`title`, `description`) — owned by each page's `generateMetadata`, not by the OG handler.
 
 ## Notes

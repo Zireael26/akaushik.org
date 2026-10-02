@@ -1,93 +1,61 @@
 ---
 slug: hyperframes-reels
-purpose: HTML/GSAP compositions rendered to deterministic MP4 reels for case-study cards and hero bands via the HyperFrames CLI; artifacts are committed.
-pinned_to: e73ab4026fe93e8f216d4c3fea227ca26a1fdbac
+purpose: Current case-study reels are theme-responsive PixelFields; the HyperFrames render pipeline is retained only as an unconsumed legacy tool.
+pinned_to: 883e508dd3e7e4c7b3247ebcb575228c6840b5bd
 created: 2026-05-15
-last_refreshed: 2026-05-19
+last_refreshed: 2026-10-03
 related_primers: [og-image-generation, mdx-content-pipeline]
 ---
 
-# HyperFrames Reels
+# Reels: HyperFrames retired
 
-## Purpose
+## Current implementation
 
-Pre-render motion reels for the four home `Work` cards (600×400, 5s loop) and the four `/work/<slug>` hero bands (1600×900, 10s loop), so the site has ambient case-study motion without paying live-animation cost on the main thread. Compositions are authored as plain HTML + GSAP timelines, rendered locally via the HyperFrames CLI, and the resulting MP4 + WebP poster pair is committed alongside the source.
+The `Reel` interface survives, but case-study media is now a canvas field rather than an SVG/video stack (ADR-0020). The field draws the matching product source, follows the site's light/dark theme, and respects reduced motion. Writing-post loops were retired too; writing detail pages use `RouteField` instead.
 
-> The same pipeline serves the **writing-post loops** under `public/video/writing/` (16:9, 5s). Composition sources for the writing slugs land under `scripts/hyperframes/<slug>/` when they exist; the policy + exceptions are codified in **ADR-0011**. Two writing posts (`trellis`, `best-practices-into-trellis`) intentionally ship without loops per the non-visual exception in that ADR.
+- `components/work/reels.tsx` defines `ReelSlug`, `REEL_SLUGS`, `isReelSlug`, and `Reel({ slug, variant })`. The five slugs are Neev, VeriCite, Bluehost Agents, curat.money, and ClusterBid. `card` uses the `tile` field preset; `hero` uses `hero`.
+- `components/work/reel-field.tsx` resolves the product source by slug, seeds it with that slug, and mounts `PixelField` with `animate={3}`.
+- Active `Reel` call sites: `components/work/CaseStudyPage.tsx` and `components/sections/CaseStudyStub.tsx`. The home Work section is a matter-row list, not a reel-card grid (`components/sections/Work.tsx`).
+- `components/work/reels.test.tsx` verifies both variants for every slug and asserts the output contains no `<video>`, `<svg>`, or `/video/` media URL.
+- The shared field engine repaints for the current theme and suppresses ambient/source animation when either `html[data-motion="off"]` or OS reduced motion is active. No per-reel video gate is needed.
 
 ## Entry points
 
-- Composition projects live in `scripts/hyperframes/neev/`, `scripts/hyperframes/vericite/`, `scripts/hyperframes/bluehost-agents/`, `scripts/hyperframes/curat-money/`, and their concrete `scripts/hyperframes/neev-hero/`, `scripts/hyperframes/vericite-hero/`, `scripts/hyperframes/bluehost-agents-hero/`, `scripts/hyperframes/curat-money-hero/` variants. Each directory contains `index.html` and `hyperframes.json`.
-- `scripts/hyperframes/shared/tokens.css` + `base.css` — design tokens mirrored from `app/globals.css` plus composition layout/clip helpers. Subset only — flagged in the file header as drift-prone.
-- `scripts/hyperframes/render-all.mjs` — orchestrator. Walks `SLUGS`, invokes `npx hyperframes render` per project, post-processes each MP4 with ffmpeg (`-movflags +faststart`, H.264 baseline, yuv420p, silent).
-- `scripts/hyperframes/generate-posters.mjs` — pulls a frame at `t≈0.5s` as `.webp` for the `<video poster>` attribute.
-- `components/work/reels.tsx` — React integration. `Reel` stacks the SVG fallback (the original placeholder) underneath a `<video>` element; CSS hides the video when motion is off.
-- `docs/adr/0008-hyperframes-rendering-pipeline.md` — the decision record. Read this before touching the pipeline.
+- `components/work/reels.tsx` + `components/work/reel-field.tsx` — current case-study field integration.
+- `components/pixel/PixelField.tsx`, `lib/pixel/field.ts`, `lib/pixel.ts` — canvas mount, render loop, theme palette, and motion preference.
+- `lib/pixel/products.ts` — product-source registry; keep its slugs aligned with `ReelSlug`.
+- `components/work/reels.test.tsx` — reel markup contract.
+- `app/writing/[slug]/page.tsx` + `components/pixel/RouteField.tsx` — writing detail art, replacing the former writing loops.
+- `docs/adr/0020-canvas-fields-over-hyperframes-video.md` — accepted replacement decision. ADR-0008's case-study integration and ADR-0011's writing-loop policy are superseded.
 
 ## Data flow
 
-Re-rendering Neev after a composition edit:
+1. A work detail page or stub passes its slug and `variant="hero"` to `Reel`.
+2. `Reel` maps its variant to a field preset and mounts `ReelField`.
+3. `ReelField` looks up `productSource(slug)`, derives `seedFrom(slug)`, and passes both to `PixelField`.
+4. `PixelField` mounts the shared canvas engine. It renders with theme-aware palette values and holds animated geometry still for reduced-motion settings.
 
-1. Author edits `scripts/hyperframes/neev/index.html` (GSAP timeline registered on `window.__timelines["root"]`).
-2. From the repo root, the author runs `pnpm render:work --only neev`.
-3. `render-all.mjs` enters `scripts/hyperframes/neev/` and spawns `npx --yes hyperframes render --output …/neev.raw.mp4 --fps 30 --quality standard`.
-4. HyperFrames boots headless Chrome (bootstrapped lazily via `npx hyperframes browser ensure` on first run), mirrors `performance.now()` to deterministic frame timestamps, seeks the GSAP timeline frame-by-frame, captures each frame, and encodes to the raw MP4.
-5. `render-all.mjs` post-processes with `ffmpeg` to add `+faststart` (moov atom at head, required for `<video autoplay>` to begin before download completes), re-encoding H.264 high profile, yuv420p, no audio, CRF 23.
-6. Output lands at `public/video/work/neev.mp4`. Author runs `pnpm render:posters` to refresh `neev.webp`.
-7. Both artifacts are committed. CI does not re-render — `_movflags + faststart_` and the committed binary are the canonical artifact.
-8. On the live site, `components/work/reels.tsx:Reel` ships `<svg class="reel-fallback">` + `<video class="reel-video" preload="none" poster="…webp">`. CSS in `app/globals.css` hides `.reel-video` under `prefers-reduced-motion: reduce` and `[data-motion="off"]` — pure CSS gate, no hydration cost.
+## Legacy HyperFrames tooling
 
-## Dependencies
+The old HTML/GSAP compositions, shared CSS, `render-all.mjs`, and `generate-posters.mjs` remain under `scripts/hyperframes/`. `package.json` still exposes `render:work` and `render:posters`; the renderer's fixed eight-slug list writes to `public/video/work/`. These scripts remain callable and, when successful, write files; the current reel path has no consumer for those outputs. Do not treat their README or ADR-0008's former runtime wiring as current behavior. ADR-0020 records the retirement; the writing-loop retirement is also recorded there.
 
-- HyperFrames CLI (`npx hyperframes`) — invoked at author-time. Telemetry + update checks disabled via `HYPERFRAMES_NO_TELEMETRY=1` and `HYPERFRAMES_NO_UPDATE_CHECK=1` so a published update doesn't silently change render output.
-- Headless Chrome — auto-bootstrapped by HyperFrames; first render downloads it.
-- `ffmpeg` on PATH — required for `+faststart` post-pass. `brew install ffmpeg` / `apt install ffmpeg`.
-- `cwebp` (libwebp) — required by `generate-posters.mjs` because Homebrew's ffmpeg 8.x ships without libwebp. `brew install webp`.
-- `gsap` (`^3.13.0`) — already in main bundle for unrelated reasons; compositions load it via CDN inside the headless sandbox, not from `node_modules`.
-
-## Test commands
-
-The "test" for hyperframes is the deterministic local render — HyperFrames seeks frames against a fixed timestamp clock, so a passing render with byte-stable output is the verification surface.
+## Verification
 
 ```bash
-# Render every composition (8 MP4s, ~3–5 minutes on a dev box)
-pnpm render:work
-
-# Render one slug (fast author-time iteration)
-node scripts/hyperframes/render-all.mjs --only neev
-node scripts/hyperframes/render-all.mjs --only neev --skip-ffmpeg  # debug
-
-# Regenerate posters after MP4 changes
-pnpm render:posters
-
-# Self-check the CLI / Chrome bootstrap
-cd scripts/hyperframes/neev && npx hyperframes doctor
-
-# Visually inspect the result
-pnpm dev    # then load /work/neev and the home Work section
+pnpm test components/work/reels.test.tsx
 ```
 
-No Vitest or Playwright coverage — the artifact itself is the receipt. After re-rendering, `git diff --stat public/video/work/` shows which slugs changed.
+This focused test checks the shipping markup contract for every registered slug and both variants. `pnpm test` runs Vitest.
 
 ## Gotchas
 
-- **CI does not run the renderer.** The MP4s are committed artifacts. A composition edit that doesn't bring fresh `public/video/work/*.mp4` will ship the old reel silently. The author-time workflow is "edit composition, render locally, commit both."
-- **Token drift between `scripts/hyperframes/shared/tokens.css` and `app/globals.css:root`.** The hyperframes side is a hand-mirrored subset. ADR-0008 R3 flags this; the file header repeats the warning. A quarterly visual diff catches drift; no automated check.
-- **HyperFrames CLI is young.** Subcommand shape (`render`, `browser ensure`, `doctor`) could shift in a minor version. `render-all.mjs` is a thin wrapper around documented flags — a breaking change is a small patch.
-- **`+faststart` is mandatory.** Without it, `<video autoplay>` won't begin painting until the full file arrives. The skipped-ffmpeg flag is for debugging only — do not commit `*.raw.mp4` named without re-encoding.
-- **Browser autoplay rules can tighten.** `<video autoplay muted loop playsInline>` is the current safe combination; Safari + some Chrome flavours periodically tighten policies on silent loops. The CSS gate means the SVG fallback can take over without code churn.
-- **`<video preload="none">` is load-bearing.** Motion-disabled users never pay bytes for the MP4; only the poster WebP downloads. Removing it would re-introduce ~4.5 MB of MP4 bytes on every page load.
-- **One project per composition.** Tried-and-rejected alternative was one HyperFrames project with multiple compositions — CLI's multi-comp selection story is underdocumented and a broken timeline would block siblings.
-- **The SVG fallback is a literal port of the placeholder.** `Reel` always renders the SVG; the video paints over it when motion is on. A composition that drifts visually from its SVG will look discontinuous to a motion-off user toggling motion on.
-
-## Out of scope
-
-- The live OG-image renderer at `app/**/opengraph-image.tsx` — different rendering pipeline, different artifact lifecycle. See `og-image-generation` primer.
-- The R3F Wanderer crane and AgentGraph scenes — main-thread, not pre-rendered.
-- Composition authoring details (GSAP timeline shape, frame budget) — see `scripts/hyperframes/README.md`.
+- **Do not reintroduce the old video/SVG fallback or motion gate as current behavior.** The field is the shipped reel; the test rejects video, SVG, and media URLs.
+- **The retained renderer is archival, not the reel source of truth.** `render-all.mjs` still lists the former four card and four hero compositions, while the current field registry includes ClusterBid. Rendering can recreate unconsumed files; it does not update the current canvas artwork.
+- **The HyperFrames token stylesheet is stale relative to the live theme.** `scripts/hyperframes/shared/tokens.css` remains a hand-mirrored legacy subset; the current application tokens and pixel engine use a different palette. This drift matters only if the retired renderer is deliberately revived.
+- **Legacy `--skip-ffmpeg` is debug-only.** It renames the raw HyperFrames render to the output `.mp4` without re-encoding. Normal post-processing adds `+faststart`; there is no current Reel-path consumer for these outputs.
+- **One project per composition** remains the layout of the retained sources. The multi-composition CLI alternative was rejected in ADR-0008 because its selection story was underdocumented and a broken timeline could block siblings.
 
 ## Notes
 
-- `pnpm render:work --skip-ffmpeg` leaves the raw HyperFrames output without re-encoding — useful when diffing raw vs post-processed output to isolate a regression.
-- ADR-0008 covers eight risks/alternatives in detail (Lottie, Framer Motion, Rive, Remotion). Read it before proposing a switch.
-- `docs/CHANGELOG.md` should record composition rerenders alongside the binary commit — the process-gate enforces this when `public/video/work/*` is treated as `content/`-equivalent (it isn't today; revisit if drift becomes a problem).
+- `pnpm render:work --skip-ffmpeg` writes the raw HyperFrames output without re-encoding (as the output `.mp4`); it is useful when diffing raw vs post-processed output to isolate a regression.
+- ADR-0008 covers the pipeline rationale, risks, and alternatives in detail. Read it before proposing a switch.
