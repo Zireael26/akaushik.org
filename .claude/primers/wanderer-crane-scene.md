@@ -1,61 +1,25 @@
 ---
 slug: wanderer-crane-scene
-purpose: Home-only desktop paper-crane Three.js companion driven by document scroll and IntersectionObserver pose anchors, with a no-WebGL SVG fallback and strict route/motion gates.
-pinned_to: 087020d
+purpose: Retired-feature notice for the removed Wanderer scene, with its hand-written implementation notes retained as historical context.
+pinned_to: 883e508dd3e7e4c7b3247ebcb575228c6840b5bd
 created: 2026-05-15
-last_refreshed: 2026-07-15
+last_refreshed: 2026-10-03
 related_primers: []
 ---
 
 # Wanderer Crane Scene
 
-## Purpose
+## Status at HEAD
 
-A single paper-crane Three.js scene that floats alongside the home composite, repositioning between scripted poses as the visitor scrolls past `[data-companion-pose]` anchors. It is absent on non-home routes, viewports below 861px, reduced-motion presentations, and runtime motion-off. On an otherwise-allowed desktop, it falls back to the server-rendered SVG when WebGL is unavailable.
+The Three.js Wanderer is retired from the current site. The pixel-transplant plan records `Wanderer` and `three` as deleted, task T30 records the dead-code sweep as complete, and the changelog names the removed scene components, stylesheet, and unit test (`specs/004-pixel-transplant/plan.md:38`; `specs/004-pixel-transplant/tasks.md:72`; `docs/CHANGELOG.md:914`).
 
-## Entry points
+The current root layout renders `SiteNav`, page children, `SiteFooter`, and `Cursor`; it does not mount `<Wanderer />` (`app/layout.tsx:127-133`). One legacy `data-companion-pose="about"` attribute remains on the profile section; it is markup residue, not a live scene contract (`components/sections/About.tsx:61`; scene removal: `specs/004-pixel-transplant/tasks.md:72`).
 
-- `components/scene/Wanderer.tsx` — server component. Renders the `#companion` host div + inline SVG fallback; mounts `<WandererCraneClient />`.
-- `components/scene/WandererCraneClient.tsx` — client wrapper. Combines `usePathname()` with desktop, reduced-motion, and `[data-motion]` snapshots; lazy-imports the scene through `React.lazy`; unmounts when any policy gate closes.
-- `components/scene/WandererCrane.tsx` — the scene. Direct `useEffect`-driven Three.js: geometry, lighting, RAF loop, `IntersectionObserver` on pose anchors, scroll-velocity damping, MutationObserver for accent swaps.
+`docs/wanderer-redesign-brief.md` describes the pre-transplant reinstatement and is dated 2026-07-15; the later 2026-08-22 dead-code sweep supersedes its live-implementation status (`docs/wanderer-redesign-brief.md:1-4`; `docs/CHANGELOG.md:914`). Do not use the deleted component paths or old test commands as current entry points.
 
-## Data flow
+## Historical gotchas (pre-transplant; not current implementation guidance)
 
-A scroll past the `[data-companion-pose="work"]` section:
-
-1. `Wanderer` ships server-side: `#companion` host div + inline SVG silhouette + `<WandererCraneClient />` placeholder. CSS shows that host only when a later `main` sibling contains the home pose anchors and the desktop/motion media policy passes.
-2. On hydration, `WandererCraneClient` also requires `pathname === '/'`, a viewport of at least 861px, no reduced-motion preference, and `data-motion !== "off"`. A closed gate returns null and keeps the entire host hidden.
-3. When allowed, the wrapper marks the SVG as the settled `fallback` renderer while `React.lazy` resolves. `WandererCrane` then creates a `<canvas>` inside `#companion`, instantiates `WebGLRenderer` (guarded by try/catch), scene, perspective camera at `z=8`, three lights (key/rim/ambient), and `buildCrane()` (octahedron body, cone beak, two wings, tail strip).
-4. `IntersectionObserver` (thresholds `[0.2, 0.45, 0.7]`) watches every `[data-companion-pose]` element. Ratios are retained across incremental observer callbacks, so the globally highest intersecting section wins even when it did not cross a threshold in the latest callback. Its `data-companion-pose` value indexes `POSES` (eight: hero / work / about / writing / services / process / open / contact) and the result is copied into `target`.
-5. The RAF loop runs per frame: `damp = 1 - exp(-dt * 3.2)`, lerp every pose channel from `current` toward `target`, position the crane in viewport-normalized space (`halfW`/`halfH` from camera FOV), apply scroll-velocity rotation (`scrollVel * 2.2` on Y, `-scrollVel * 1.1` on Z), and flap the wings (`Math.sin(t * flapSpeed) * flapAmt` where both speed and amount inherit from the active pose plus `|scrollVel|`).
-6. Once the first real frame renders, the host is promoted to `data-wanderer-renderer="canvas"` and the inline SVG silhouette is hidden so both don't composite. Failed context creation leaves `fallback` active.
-7. A `MutationObserver` on `<html>` resyncs the crane's accent material color when `data-accent` or `data-mode` changes (theme swatch).
-8. Cleanup on unmount disposes geometries, materials, the renderer, observers, listeners; re-shows the SVG fallback.
-
-## Dependencies
-
-- `three` — direct API shared with the AgentGraph scene. Wrapper libraries are not installed.
-- `React.lazy` / `Suspense` — imports the crane chunk only after the route, viewport, and motion policy passes, without publishing a preload for gated clients.
-- `_reference/portfolio/companion.js` — historical 221-LOC source the crane is ported from. Geometry coords + pose tables match line-for-line; refer to it when a "why does it look this way" question comes up.
-- DOM contracts: every section that drives a pose change must carry `data-companion-pose="<name>"` matching a key in `POSES`. Unknown keys are silently ignored.
-
-## Test commands
-
-```bash
-# Unit: retain visible ratios across incremental observer callbacks and select
-# the globally most-visible pose anchor.
-pnpm exec vitest run components/scene/WandererCrane.test.ts
-
-# Build/start separately, then prove real canvas, forced no-WebGL fallback,
-# route/breakpoint absence, and live motion-policy teardown/restore.
-PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 pnpm exec playwright test \
-  e2e/canvas.spec.ts e2e/reduced-motion.spec.ts \
-  --project=chromium-desktop --workers=1
-```
-
-`WandererCrane.test.ts` is load-bearing for pose arbitration: it proves that an incremental callback for a less-visible section does not erase the still-visible dominant section, then proves dominance transfers when that section exits. It does not exercise the browser's `IntersectionObserver`; the Playwright coverage remains the runtime proof. The SVG silhouette inside `Wanderer.tsx` must remain a byte-faithful port of `_reference/portfolio/companion.js:211–219`.
-
-## Gotchas
+The notes below are preserved verbatim from the retired implementation primer. The scene components and unit test they describe were later deleted (`docs/CHANGELOG.md:914`; `specs/004-pixel-transplant/tasks.md:72`).
 
 - **Three lerps, not one.** Eight pose channels (x, y, z, rotY, rotX, scale, flap, spin) are lerped independently every frame. If you add a channel, add it to both `POSES` rows _and_ the per-frame lerp block; missing entries silently freeze at the hero defaults.
 - **The policy is intentionally checked twice.** `WandererCraneClient` owns live route/viewport/motion transitions through `usePathname` and `useSyncExternalStore`; `WandererCrane` repeats the checks at effect mount so a policy change while the lazy chunk is in flight cannot create a stale canvas.
@@ -67,13 +31,13 @@ PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 pnpm exec playwright test \
 - **First-render warmup is intentional.** `renderer.render(scene, camera)` runs once before the RAF loop so shaders compile before the SVG hides; removing it causes a one-frame "blank" between SVG-hide and first-paint.
 - **GPU pressure is explicitly bounded.** The canvas fills the viewport in CSS, but its drawing buffer never exceeds 1920×1080 physical pixels and DPR is capped at 1.5 below that limit. The RAF pauses while `document.hidden` is true. Re-measure before raising either ceiling.
 
-## Out of scope
+## Historical validation note
 
-- The AgentGraph hero scene (`components/scene/AgentGraph.tsx` + `AgentGraphClient.tsx`) — separate raw Three.js scene, separate decisions.
-- The TweakBridge / accent + motion control panel — sets `data-motion` and `data-accent` on `<html>`; this primer only consumes those attributes.
-- HyperFrames reels (`components/work/reels.tsx`) — separate motion surface for the case-study cards/hero bands.
+The former primer's test note is quoted verbatim as history; its named unit test was deleted with the scene (`docs/CHANGELOG.md:914`; `specs/004-pixel-transplant/tasks.md:72`).
 
-## Notes
+> `WandererCrane.test.ts` is load-bearing for pose arbitration: it proves that an incremental callback for a less-visible section does not erase the still-visible dominant section, then proves dominance transfers when that section exits. It does not exercise the browser's `IntersectionObserver`; the Playwright coverage remains the runtime proof. The SVG silhouette inside `Wanderer.tsx` must remain a byte-faithful port of `_reference/portfolio/companion.js:211–219`.
+
+## Historical notes
 
 - ADR-0012 records the wrapper-library removal. Both AgentGraph and Wanderer now use raw Three.js.
 - If a redesign demands a different pose set, edit `POSES` _and_ every section's `data-companion-pose` attribute together; mismatches fail open (no pose change) rather than error.
