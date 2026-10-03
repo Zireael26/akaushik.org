@@ -75,9 +75,16 @@ jobs:
       - name: Install axe-core CLI
         run: |
           chrome_major="$(google-chrome --version | sed -E 's/.* ([0-9]+)\..*/\1/')"
+          # pnpm refuses a global add unless its global bin dir is already on PATH,
+          # and the dir pnpm/action-setup configures is not. Use a dedicated one.
+          export PNPM_HOME="$RUNNER_TEMP/pnpm-global"
+          mkdir -p "$PNPM_HOME/bin"
+          export PATH="$PNPM_HOME/bin:$PATH"
+          echo "$PNPM_HOME/bin" >> "$GITHUB_PATH"
           # Global adds skip the workspace release-age policy, so state the 7-day minimum here.
           pnpm add --global --config.minimum-release-age=10080 --allow-build=chromedriver @axe-core/cli@4 "chromedriver@${chrome_major}"
-          pnpm bin --global >> "$GITHUB_PATH"
+          axe --version
+          chromedriver --version
 
       # Gate armed: home.spec.ts's WCAG axe test passes with 0 violations
       # (verified T5 audit remediation), so this step now fails the build
