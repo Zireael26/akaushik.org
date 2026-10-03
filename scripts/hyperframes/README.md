@@ -25,7 +25,7 @@ scripts/hyperframes/
 ```
 
 One project per composition trades a little duplication for a very simple
-render step (`cd <slug> && npx hyperframes render …`) and means a broken
+render step (`cd <slug> && pnpm dlx hyperframes render …`) and means a broken
 composition never blocks the others. The eight slugs:
 
 | Slug                      | Aspect  | Duration | Target                                           |
@@ -46,9 +46,9 @@ composition never blocks the others. The eight slugs:
 - `cwebp` (libwebp) — `brew install webp` / `apt install webp`. Needed by
   `generate-posters.mjs` because Homebrew's ffmpeg 8.x ships without libwebp
 - Headless Chrome — HyperFrames bootstraps this automatically via
-  `npx hyperframes browser ensure`; first render will download it
+  `pnpm dlx hyperframes browser ensure`; first render will download it
 
-Run `npx hyperframes doctor` from any composition dir to self-check.
+Run `pnpm dlx hyperframes doctor` from any composition dir to self-check.
 
 ## Commands
 

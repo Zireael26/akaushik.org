@@ -75,7 +75,8 @@ jobs:
       - name: Install axe-core CLI
         run: |
           chrome_major="$(google-chrome --version | sed -E 's/.* ([0-9]+)\..*/\1/')"
-          npm install -g @axe-core/cli@4 "chromedriver@${chrome_major}"
+          pnpm add --global --allow-build=chromedriver @axe-core/cli@4 "chromedriver@${chrome_major}"
+          pnpm bin --global >> "$GITHUB_PATH"
 
       # Gate armed: home.spec.ts's WCAG axe test passes with 0 violations
       # (verified T5 audit remediation), so this step now fails the build

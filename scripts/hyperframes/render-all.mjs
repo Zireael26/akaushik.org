@@ -3,7 +3,7 @@
    scripts/hyperframes/render-all.mjs
    --------------------------------------------------------------------
    Orchestrator for all HyperFrames compositions. Walks `SLUGS`, renders
-   each composition via `npx hyperframes render`, then post-processes the
+   each composition via `pnpm dlx hyperframes render`, then post-processes the
    MP4 with ffmpeg to add +faststart (move the moov atom to the head of
    the file, required so <video autoplay> can start before download ends).
 
@@ -17,8 +17,8 @@
    - CI does NOT run this script. The MP4s are committed artifacts; this
      is an author-time script.
    - Requires Node ≥22, a working ffmpeg on PATH, and the HyperFrames CLI
-     reachable via `npx hyperframes`. First render will auto-bootstrap
-     headless Chrome via `npx hyperframes browser ensure`.
+     reachable via `pnpm dlx hyperframes`. First render will auto-bootstrap
+     headless Chrome via `pnpm dlx hyperframes browser ensure`.
    --------------------------------------------------------------------- */
 
 import { execSync, spawnSync } from 'node:child_process';
@@ -85,9 +85,9 @@ for (const slug of targets) {
 
   // 1) Render via HyperFrames CLI. Composition id defaults to "root".
   const render = spawnSync(
-    'npx',
+    'pnpm',
     [
-      '--yes',
+      'dlx',
       'hyperframes',
       'render',
       '--output', rawOut,
