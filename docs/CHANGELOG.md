@@ -76,6 +76,12 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-10-03: Removed the last npm and npx calls. The HyperFrames render
+  script and its docs use `pnpm dlx hyperframes`, the redirect worker's deploy
+  note uses `pnpm exec wrangler`, and the Lighthouse workflow installs axe and
+  chromedriver with `pnpm add --global` under the same 7-day release-age
+  minimum as the workspace. No dependency or lockfile change.
+
 - 2026-08-23 — The cursor snap lands on its target and fills it. Two defects
   from the operator's second rejection, both fixed at the root:
 

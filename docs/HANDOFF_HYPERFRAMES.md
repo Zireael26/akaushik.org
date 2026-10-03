@@ -43,11 +43,11 @@ Read these, in this order, before any command:
 ```bash
 node --version            # must be ≥ 22
 ffmpeg -version | head -1 # must exist on PATH
-cd scripts/hyperframes/neev && npx hyperframes doctor
+cd scripts/hyperframes/neev && pnpm dlx hyperframes doctor
 cd ../../..
 ```
 
-If `hyperframes doctor` reports a missing headless Chrome, run `npx hyperframes browser ensure` — HyperFrames will download the matching binary under its cache dir. Do this once; it persists across renders.
+If `hyperframes doctor` reports a missing headless Chrome, run `pnpm dlx hyperframes browser ensure` — HyperFrames will download the matching binary under its cache dir. Do this once; it persists across renders.
 
 If any of the above fail, **stop and report back** to Abhishek with the exact error — do not try to work around missing tooling (that's what ADR-0008 R1 calls out). Install guidance: `brew install ffmpeg` on macOS, `apt install ffmpeg` on Debian/Ubuntu, Node 22 is already pinned in `package.json#engines`.
 
@@ -147,7 +147,7 @@ feat(work): swap SVG reel placeholders for HyperFrames MP4 loops (ADR-0008)
 - <video> stacks over SVG floor; [data-motion=off] + prefers-reduced-motion hide the video via pure CSS
 - components/work/reels.tsx gets a `variant: 'card' | 'hero'` prop
 - CaseStudyPage + CaseStudyStub pass variant="hero"
-- render:work + render:posters pnpm scripts drive npx hyperframes render + ffmpeg +faststart
+- render:work + render:posters pnpm scripts drive pnpm dlx hyperframes render + ffmpeg +faststart
 
 Closes the `placeholder-label · hyperframes` promise in the home Work section
 and the case-study hero bands. CI does not render; MP4s are author-time
