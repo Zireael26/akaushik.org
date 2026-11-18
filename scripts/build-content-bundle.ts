@@ -23,11 +23,16 @@
  */
 import { readFileSync, readdirSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { digestInputs, stampMatches, writeStamp } from './codegen-stamp';
 import { WRITING_ART_TOPICS } from '../lib/pixel/topics';
 
 const ROOT = join(import.meta.dirname, '..');
 const CONTENT_ROOT = join(ROOT, 'content');
 const OUT = join(ROOT, 'lib', 'content-bundle.generated.ts');
+// Machine-local freshness marker (gitignored). The output above is committed;
+// the stamp is not — a fresh clone regenerates once, then fast-exits on the
+// prebuild/pretypecheck/pretest repeats.
+const STAMP = join(ROOT, 'lib', '.content-bundle.stamp');
 const TYPES = ['case-studies', 'writing'] as const;
 
 const entries: Array<[string, string]> = [];
@@ -39,6 +44,20 @@ for (const type of TYPES) {
     const slug = name.replace(/\.mdx$/, '');
     entries.push([`${type}/${slug}`, readFileSync(join(dir, name), 'utf8')]);
   }
+}
+
+// Everything the output depends on: the corpus, this generator, and the topic
+// vocabulary the frontmatter validation below enforces. A stamp hit means a
+// full run already validated and wrote the current inputs, so this — the
+// second or third codegen pass of one gate cycle — can stop here.
+const digest = digestInputs([
+  ...entries,
+  ['scripts/build-content-bundle.ts', readFileSync(new URL(import.meta.url), 'utf8')],
+  ['lib/pixel/topics.ts', readFileSync(join(ROOT, 'lib', 'pixel', 'topics.ts'), 'utf8')],
+]);
+if (stampMatches(STAMP, digest) && existsSync(OUT)) {
+  console.log(`content-bundle: up-to-date (stamp hit, ${entries.length} files).`);
+  process.exit(0);
 }
 
 // Writing posts declare their topic art in frontmatter (`art: retrieval`) —
@@ -98,3 +117,4 @@ if (previous === file) {
   writeFileSync(OUT, file);
   console.log(`content-bundle: wrote ${entries.length} files to lib/content-bundle.generated.ts`);
 }
+writeStamp(STAMP, digest);

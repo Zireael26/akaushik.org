@@ -76,6 +76,17 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ### Changed
 
+- 2026-11-19: The content codegen pair is now stamp-gated.
+  `build-content-bundle.ts` and `build-mdx-modules.ts` hash their exact inputs
+  (corpus, generator sources, and for the compiled half the lockfile pinning
+  the MDX/Shiki toolchain) into a machine-local stamp; a matching stamp plus
+  existing output short-circuits the run before any compile work. One gate
+  cycle used to run the pair three times via `prebuild`/`pretypecheck`/
+  `pretest`, recompiling every MDX body with Shiki on each pass. Stamps are
+  gitignored, so a fresh clone regenerates once and then fast-exits. Also
+  untracked the 20 committed `__pycache__` bytecode paths under
+  `apps/learn/course/` and ignored `__pycache__/` + `*.py[cod]`.
+
 - 2026-10-03: Removed the last npm and npx calls. The HyperFrames render
   script and its docs use `pnpm dlx hyperframes`, the redirect worker's deploy
   note uses `pnpm exec wrangler`, and the Lighthouse workflow installs axe and
