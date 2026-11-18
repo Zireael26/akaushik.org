@@ -1,3 +1,5 @@
+# Keep isolated node_modules/.pnpm layout consistent across worktrees and private-HOME hooks.
+enableGlobalVirtualStore: false
 allowBuilds:
   esbuild: true
   sharp: true
