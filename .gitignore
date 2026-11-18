@@ -16,6 +16,10 @@ build/
 Thumbs.db
 /_tmp_*
 
+# python — the apps/learn course labs run in-repo; bytecode stays local
+__pycache__/
+*.py[cod]
+
 # debug
 npm-debug.log*
 yarn-debug.log*
