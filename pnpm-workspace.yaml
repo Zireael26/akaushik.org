@@ -1,3 +1,8 @@
+# Keep isolated node_modules/.pnpm layout consistent across worktrees and private-HOME hooks.
+# Explicit root-only packages avoids a pnpm 11 verifyDepsBeforeRun mismatch when subdirectories contain standalone package.json files.
+packages:
+  - "."
+enableGlobalVirtualStore: false
 allowBuilds:
   esbuild: true
   sharp: true
