@@ -120,7 +120,7 @@ test.describe('Ship It', () => {
     await expect
       .poll(() => canvas.evaluate((el: HTMLCanvasElement) => el.width))
       .toBeGreaterThan(400);
-    const sound = section.getByRole('button', { name: 'Toggle game sound' });
+    const sound = section.getByRole('button', { name: /toggle game sound/i });
     await expect(sound).toHaveAttribute('aria-pressed', 'false');
     await expect(sound).toHaveText('Sound off');
     await sound.click();

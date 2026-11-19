@@ -4,6 +4,11 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ## [Unreleased]
 
+### Fixed
+
+- 2026-11-19: Aligned the Ship It sound toggle button `aria-label` with its
+  visible `Sound on`/`Sound off` label to satisfy Axe `label-content-name-mismatch`.
+
 ### Security
 
 - 2026-09-27: Upgraded Next.js to 16.3.6 in the portfolio and in the friends,

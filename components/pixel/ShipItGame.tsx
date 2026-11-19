@@ -149,7 +149,7 @@ export function ShipItGame() {
           <button
             type="button"
             className="px-shipit-action"
-            aria-label="Toggle game sound"
+            aria-label={`Sound ${soundEnabled ? 'on' : 'off'} — toggle game sound`}
             aria-pressed={soundEnabled}
             onClick={toggleSound}
             disabled={!mounted}
