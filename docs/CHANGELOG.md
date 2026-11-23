@@ -4,6 +4,11 @@ All notable changes to akaushik.org (legacy host: developerabhishek.live, sunset
 
 ## [Unreleased]
 
+### Fixed
+
+- 2026-11-23: Removed author review notes from the public VeriCite and Curat
+  case studies and regenerated the portfolio text bundle.
+
 ### Security
 
 - 2026-09-27: Upgraded Next.js to 16.3.6 in the portfolio and in the friends,
