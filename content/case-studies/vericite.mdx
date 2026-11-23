@@ -45,8 +45,6 @@ The codebase is a disciplined monorepo with four top-level namespaces: `apps/` f
 - Monorepo with CI/CD pipelines, Kubernetes manifests under `k8s/`, and the product web surface deployed on Vercel.
 - Completed migration from Fastembed ONNX to TEI, including corpus re-validation and batch pipeline updates.
 
-*(Abhishek: confirm current deployment status and any institution-specific retrieval quality numbers you can share publicly.)*
-
 ## Trade-offs
 
 **TEI over Fastembed.** I chose more infrastructure to operate — a running TEI service with GPU access rather than an in-process ONNX runtime. The payoff is a wider model catalog, correct batching behavior, and a throughput curve that doesn't break before you want it to. For a consumer prototype, Fastembed is fine. For an institutional product where retrieval quality is the core claim, the infrastructure cost is the right trade.
@@ -57,4 +55,4 @@ The codebase is a disciplined monorepo with four top-level namespaces: `apps/` f
 
 ## Honest scope
 
-*(Abhishek: confirm how much of this is your individual design/implementation vs. team/contracted work; list explicitly what's yours to claim.)*
+This case study focuses on retrieval design. VeriCite’s [citation documentation](https://vericite.ai/docs/concepts/citations) shows how readers can open the source behind an answer. Its [escalation documentation](https://vericite.ai/docs/concepts/escalation) explains how questions the source material does not cover can be handed off to staff.
